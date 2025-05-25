@@ -212,33 +212,32 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 		}
 
         if (this.state === ArenaState.CLOSED) return;
-
-		const players: TankBody[] = [];
 		
-		for (let id = 0; id <= this.game.entities.lastId; ++id) {
-			const entity = this.game.entities.inner[id];
+		if ((this.game.tick % scoreboardUpdateInterval) === 0) {
+			const players: TankBody[] = [];
+			for (let id = 0; id <= this.game.entities.lastId; ++id) {
+				const entity = this.game.entities.inner[id];
 			
-			if (Entity.exists(entity) && entity instanceof TankBody && entity.cameraEntity instanceof ClientCamera && entity.cameraEntity.cameraData.values.player === entity) players.push(entity);
-
+				if (Entity.exists(entity) && entity instanceof TankBody && entity.cameraEntity instanceof ClientCamera && entity.cameraEntity.cameraData.values.player === entity) players.push(entity);
+			}
 			players.sort((p1, p2) => p2.scoreData.values.score - p1.scoreData.values.score);
 			this.leader = players[0];
-			if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
-				this.arenaData.leaderX = this.leader.positionData.values.x;
-				this.arenaData.leaderY = this.leader.positionData.values.y;
+
+			// Sorts them too DONT FORGET
+			this.updateScoreboard(players);
+
+			if (players.length === 0 && this.state === ArenaState.CLOSING) {
+				this.state = ArenaState.CLOSED;
+
+				setTimeout(() => {
+					this.game.end();
+				}, 10000);
+				return;
 			}
 		}
-
-		// Sorts them too DONT FORGET
-		if ((this.game.tick % scoreboardUpdateInterval) === 0) this.updateScoreboard(players);
-
-		if (players.length === 0 && this.state === ArenaState.CLOSING) {
-			this.state = ArenaState.CLOSED;
-
-			setTimeout(() => {
-				this.game.end();
-			}, 10000);
-			return;
+		if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
+			this.arenaData.leaderX = this.leader.positionData.values.x;
+			this.arenaData.leaderY = this.leader.positionData.values.y;
 		}
 	}
-
 }
