@@ -149,7 +149,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 	}
 	
 	protected updateArenaState() {
-		this.shapes.tick();
 
 		if ((this.game.tick % scoreboardUpdateInterval) === 0) {
 			const players = this.getAlivePlayers();
@@ -165,14 +164,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 				return;
 			}
 		}
-
-		if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
-			this.arenaData.leaderX = this.leader.positionData.values.x;
-			this.arenaData.leaderY = this.leader.positionData.values.y;
-		}
-
-		if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss)
-		this.spawnBoss();
 	}
 
 	protected getAlivePlayers() {
@@ -245,6 +236,15 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 	}
 
 	public tick(tick: number) {
+		this.shapes.tick();
 		this.updateArenaState();
+
+		if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
+			this.arenaData.leaderX = this.leader.positionData.values.x;
+			this.arenaData.leaderY = this.leader.positionData.values.y;
+		}
+
+		if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss)
+		this.spawnBoss();
 	}
 }
