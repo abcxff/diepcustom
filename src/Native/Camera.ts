@@ -112,8 +112,7 @@ export default class ClientCamera extends CameraEntity {
     /** Client interface. */
     public client: Client;
     /** All entities in the view of the camera. Represented by id. */
-    private view: Entity[] = [];
-
+    private view: Set<Entity> = new Set();
     /** Always existant relations field group. Present in all GUI/camera entities. */
     public relationsData: RelationsGroup = new RelationsGroup(this);
     /** Entity being spectated if any (deathscreen). */
@@ -138,21 +137,21 @@ export default class ClientCamera extends CameraEntity {
         this.relationsData.values.team = this;
     }
 
-    /** Adds an entity the camera's current view. */
-    private addToView(entity: Entity) {
-        let c = this.view.find(r => r.id === entity.id)
-        if (c) {
-            console.log(c.toString(), entity.toString(), c === entity)
+    /** Used to set the current camera's level. Should be the only way used to set level. */
+    public setLevel(level: number) {
+        const previousLevel = this.cameraData.values.level;
+        this.cameraData.level = level;
+        this.sizeFactor = Math.pow(1.01, level - 1);
+        this.cameraData.levelbarMax = level < maxPlayerLevel ? 1 : 0; // quick hack, not correct values
+        if (level <= maxPlayerLevel) {
+            this.cameraData.score = this.client.kills;
         }
-        this.view.push(entity);
-    }
 
-    /** Removes an entity the camera's current view. */
-    private removeFromView(id: number) {
-        const index = this.view.findIndex(r => r.id === id);
-        if (index === -1) return;
+        // Update stats available
+        const statIncrease = ClientCamera.calculateStatCount(level) - ClientCamera.calculateStatCount(previousLevel);
+        this.cameraData.statsAvailable += statIncrease;
 
-        removeFast(this.view, index);
+        this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor || 1);
     }
 
     /** Updates the camera's current view. */
@@ -184,22 +183,25 @@ export default class ClientCamera extends CameraEntity {
                 entity.positionData.values.y + size > t &&
                 entity.positionData.values.x + width > l &&
                 entity.positionData.values.y - size < b) {
-                    if (entity !== this.cameraData.values.player &&!(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) {
-                        entitiesInRange.push(entity);
-                    }
+                if (entity !== this.cameraData.values.player &&!(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) {
+                    entitiesInRange.push(entity);
                 }
+            }
         }
 
         for (let id = 0; id <= this.game.entities.lastId; ++id) {
             const entity = this.game.entities.inner[id];
             
-            if (entity instanceof ObjectEntity && !entitiesInRange.includes(entity) && (entity.physicsData.values.flags & PhysicsFlags.showsOnMap)) entitiesInRange.push(entity);
+            if (entity instanceof ObjectEntity && !entitiesInRange.includes(entity) && (entity.physicsData.values.flags & PhysicsFlags.showsOnMap)) {
+                entitiesInRange.push(entity);
+            }
         }
 
-        if (Entity.exists(this.cameraData.values.player) && this.cameraData.values.player instanceof ObjectEntity) entitiesInRange.push(this.cameraData.values.player);
+        if (Entity.exists(this.cameraData.values.player) && this.cameraData.values.player instanceof ObjectEntity) {
+            entitiesInRange.push(this.cameraData.values.player);
+        }
 
-        for (let i = 0; i < this.view.length; ++i) {
-            const entity = this.view[i]
+        for (const entity of this.view) {
             if (entity instanceof ObjectEntity) {
                 // TODO(speed)
                 // Orphan children must be destroyed
@@ -208,11 +210,13 @@ export default class ClientCamera extends CameraEntity {
                     continue;
                 }
             }
+
             // If the entity is gone, notify the client, if its updated, notify the client
             if (entity.hash === 0) {
                 deletes.push({ id: entity.id, hash: entity.preservedHash });
+                this.view.delete(entity);
             } else if (entity.entityState & EntityStateFlags.needsCreate) {
-                if (entity.entityState & EntityStateFlags.needsDelete) deletes.push({hash: entity.hash, id: entity.id, noDelete: true});
+                if (entity.entityState & EntityStateFlags.needsDelete) deletes.push({ hash: entity.hash, id: entity.id, noDelete: true });
                 creations.push(entity);
             } else if (entity.entityState & EntityStateFlags.needsUpdate) {
                 updates.push(entity);
@@ -223,52 +227,39 @@ export default class ClientCamera extends CameraEntity {
         w.vu(deletes.length);
         for (let i = 0; i < deletes.length; ++i) {
             w.entid(deletes[i]);
-            if (!deletes[i].noDelete) this.removeFromView(deletes[i].id);
         }
 
         // Yeah.
-        if (this.view.length === 0) {
+        if (this.view.size === 0) {
             creations.push(this.game.arena, this);
-            this.view.push(this.game.arena, this);
+            this.view.add(this.game.arena);
+            this.view.add(this);
         }
-        
-        const entities = this.game.entities;
-        for (const id of this.game.entities.otherEntities) {
-            // TODO(speed)
-            if (this.view.findIndex(r => r.id === id) === -1) {
-                const entity = entities.inner[id];
 
-                if (!entity) continue;
-                if (entity instanceof CameraEntity) continue;
-
-                creations.push(entity);
-
-                this.addToView(entity);
-            }
+        for (const entityId of this.game.entities.otherEntities) {
+            const entity = this.game.entities.inner[entityId];
+            if(!entity || !this.view.has(entity) || entity instanceof CameraEntity) continue;
+            creations.push(entity);
+            this.view.add(entity);
         }
 
         for (const entity of entitiesInRange) {
-            if (this.view.indexOf(entity) === -1) {
+            if (!this.view.has(entity)) {
+                // creation
                 creations.push(entity);
-                this.addToView(entity);
+                this.view.add(entity);
 
-                if (entity instanceof ObjectEntity) {
-                    if (entity.children.length && !entity.isChild) {
-                        // add any of its children
-                        this.view.push.apply(this.view, entity.children);
-                        creations.push.apply(creations, entity.children);
-                    }
-                }
-            } else {
-                if (!Entity.exists(entity)) throw new Error("wtf");
-                // add untracked children, if it has any
                 if (entity.children.length && !entity.isChild) {
-                    for (let child of entity.children) {
-                        if (this.view.findIndex(r => r.id === child.id) === -1) {
-                            this.view.push.apply(this.view, entity.children);
-                            creations.push.apply(creations, entity.children);
-                        } //else if (child.hash === 0) deletes.push({hash: child.preservedHash, id: child})
-                    }
+                    // add any of its children
+                    for (const child of entity.children) this.view.add(child);
+                    creations.push.apply(creations, entity.children);
+                }
+            } else if (entity.children.length && !entity.isChild) {
+                // update (children)
+                for (const child of entity.children) {
+                    if (this.view.has(child)) continue;
+                    this.view.add(child);
+                    creations.push.apply(creations, entity.children);
                 }
             }
         }
