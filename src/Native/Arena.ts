@@ -147,9 +147,9 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 			}
 		} else if (this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) this.arenaData.flags ^= ArenaFlags.showsLeaderArrow;
 	}
-	
-	protected updateArenaState() {
 
+	/** Updates scoreboard and finalizes CLOSING of arena */
+	protected updateArenaState() {
 		if ((this.game.tick % scoreboardUpdateInterval) === 0) {
 			const players = this.getAlivePlayers();
 			// Sorts them too DONT FORGET
@@ -244,7 +244,8 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 			this.arenaData.leaderY = this.leader.positionData.values.y;
 		}
 
-		if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss)
-		this.spawnBoss();
+		if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss) {
+			this.spawnBoss();
+		}
 	}
 }
