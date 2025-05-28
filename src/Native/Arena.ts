@@ -128,47 +128,47 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     protected updateScoreboard(scoreboardPlayers: TankBody[]) {
         const scoreboardCount = this.arenaData.scoreboardAmount = (this.arenaData.values.flags & ArenaFlags.hiddenScores) ? 0 : Math.min(scoreboardPlayers.length, 10);
 
-		if (!scoreboardCount) {
-			if (this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
-				this.arenaData.flags ^= ArenaFlags.showsLeaderArrow;
-			}
+        if (!scoreboardCount) {
+            if (this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
+                this.arenaData.flags ^= ArenaFlags.showsLeaderArrow;
+            }
 
-			return;
-		}
+            return;
+        }
 
-		scoreboardPlayers.sort((p1, p2) => p2.scoreData.values.score - p1.scoreData.values.score);
-		this.leader = scoreboardPlayers[0];
-		
-		this.arenaData.flags |= ArenaFlags.showsLeaderArrow;
-		for (let i: ValidScoreboardIndex = 0; i < scoreboardCount; i = (i + 1) as ValidScoreboardIndex) {
-			const player = scoreboardPlayers[i];
-			
-			if (player.styleData.values.color === Color.Tank) this.arenaData.values.scoreboardColors[i] = Color.ScoreboardBar;
-			else this.arenaData.values.scoreboardColors[i] = player.styleData.values.color;
-			this.arenaData.values.scoreboardNames[i] = player.nameData.values.name;
-			this.arenaData.values.scoreboardScores[i] = player.scoreData.values.score;
-			// _currentTank only since ts ignore
-			this.arenaData.values.scoreboardTanks[i] = player['_currentTank'];
-		}
+        scoreboardPlayers.sort((p1, p2) => p2.scoreData.values.score - p1.scoreData.values.score);
+        this.leader = scoreboardPlayers[0];
+        
+        this.arenaData.flags |= ArenaFlags.showsLeaderArrow;
+        for (let i: ValidScoreboardIndex = 0; i < scoreboardCount; i = (i + 1) as ValidScoreboardIndex) {
+            const player = scoreboardPlayers[i];
+            
+            if (player.styleData.values.color === Color.Tank) this.arenaData.values.scoreboardColors[i] = Color.ScoreboardBar;
+            else this.arenaData.values.scoreboardColors[i] = player.styleData.values.color;
+            this.arenaData.values.scoreboardNames[i] = player.nameData.values.name;
+            this.arenaData.values.scoreboardScores[i] = player.scoreData.values.score;
+            // _currentTank only since ts ignore
+            this.arenaData.values.scoreboardTanks[i] = player['_currentTank'];
+        }
     }
 
     /** Updates scoreboard and finalizes CLOSING of arena */
     protected updateArenaState() {
         if ((this.game.tick % scoreboardUpdateInterval) !== 0) return;
 
-		const players = this.getAlivePlayers();
-		// Sorts them too DONT FORGET
-		this.updateScoreboard(players);
-		
-		if (players.length === 0 && this.state === ArenaState.CLOSING) {
-			this.state = ArenaState.CLOSED;
+        const players = this.getAlivePlayers();
+        // Sorts them too DONT FORGET
+        this.updateScoreboard(players);
+        
+        if (players.length === 0 && this.state === ArenaState.CLOSING) {
+            this.state = ArenaState.CLOSED;
 
-			// This is a one-time, end of life event, so we just use setTimeout
-			setTimeout(() => {
-				this.game.end();
-			}, 10000);
-			return;
-		}
+            // This is a one-time, end of life event, so we just use setTimeout
+            setTimeout(() => {
+                this.game.end();
+            }, 10000);
+            return;
+        }
     }
 
     protected getAlivePlayers() {
@@ -177,11 +177,11 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             const entity = this.game.entities.inner[id];
 
             if (
-				Entity.exists(entity) &&
-				entity instanceof TankBody &&
-				entity.cameraEntity instanceof ClientCamera &&
-				entity.cameraEntity.cameraData.values.player === entity
-			) players.push(entity);
+                Entity.exists(entity) &&
+                entity instanceof TankBody &&
+                entity.cameraEntity instanceof ClientCamera &&
+                entity.cameraEntity.cameraData.values.player === entity
+            ) players.push(entity);
         }
         return players;
     }
@@ -220,7 +220,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.state = ArenaState.CLOSING;
         this.arenaData.flags |= ArenaFlags.noJoining;
 
-		// This is a one-time, end of life event, so we just use setTimeout
+        // This is a one-time, end of life event, so we just use setTimeout
         setTimeout(() => {
             const acCount = Math.floor(Math.sqrt(this.width) / 10);
             const radius = this.width * Math.SQRT1_2 + 500;
