@@ -40,19 +40,19 @@ export class SandboxShapeManager extends ShapeManager {
  */
 export default class SandboxArena extends ArenaEntity {
     /** Limits shape count to floor(12.5 * player count) */
-	protected shapes: ShapeManager = new SandboxShapeManager(this);
+    protected shapes: ShapeManager = new SandboxShapeManager(this);
 
     public constructor(game: GameServer) {
         super(game);
 
-		this.updateBounds(2500, 2500);
+        this.updateBounds(2500, 2500);
         this.arenaData.values.flags |= ArenaFlags.canUseCheats;
-		// const w1 = new MazeWall(this.game, 0, 0, 500, 500);
+        // const w1 = new MazeWall(this.game, 0, 0, 500, 500);
     }
 
     public tick(tick: number) {
-		const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
-		if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
+        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
+        if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
 
         super.tick(tick);
     }

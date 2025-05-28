@@ -38,214 +38,224 @@ import Defender from "../Entity/Boss/Defender";
 import { bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
-	/** Alive, open */
-	OPEN = 0,
-	/** Game ended - someone won */
-	OVER = 1,
-	/** Lobby starts to close */
-	CLOSING = 2,
-	/** Lobby closed */
-	CLOSED = 3,
+    /** Alive, open */
+    OPEN = 0,
+    /** Game ended - someone won */
+    OVER = 1,
+    /** Lobby starts to close */
+    CLOSING = 2,
+    /** Lobby closed */
+    CLOSED = 3,
 }
 
 /**
  * The Arena Entity, sent to the client and also used for internal calculations.
  */
 export default class ArenaEntity extends Entity implements TeamGroupEntity {
-	/** Always existant arena field group. Present in all arenas. */
-	public arenaData: ArenaGroup = new ArenaGroup(this);
-	/** Always existant team field group. Present in all (or maybe just ffa) arenas. */
-	public teamData: TeamGroup = new TeamGroup(this);
-	/** Cached width of the arena. Not sent to the client directly. */
-	public width: number;
-	/** Cached height of the arena. Not sent to the client directly. */
-	public height: number;
-	/** Whether or not the arena allows new players to spawn. */
-	public state: ArenaState = ArenaState.OPEN;
+    /** Always existant arena field group. Present in all arenas. */
+    public arenaData: ArenaGroup = new ArenaGroup(this);
+    /** Always existant team field group. Present in all (or maybe just ffa) arenas. */
+    public teamData: TeamGroup = new TeamGroup(this);
+    /** Cached width of the arena. Not sent to the client directly. */
+    public width: number;
+    /** Cached height of the arena. Not sent to the client directly. */
+    public height: number;
+    /** Whether or not the arena allows new players to spawn. */
+    public state: ArenaState = ArenaState.OPEN;
 
-	public shapeScoreRewardMultiplier: number = 1;
+    public shapeScoreRewardMultiplier: number = 1;
 
-	/** Enable or disable natural boss spawning */
-	public allowBoss: boolean = true;
+    /** Enable or disable natural boss spawning */
+    public allowBoss: boolean = true;
 
-	/** The current boss spawned into the game */
-	public boss: AbstractBoss | null = null;
+    /** The current boss spawned into the game */
+    public boss: AbstractBoss | null = null;
 
-	/** Scoreboard leader */
-	public leader: TankBody | null = null;
+    /** Scoreboard leader */
+    public leader: TankBody | null = null;
 
-	/** Controller of all shapes in the arena. */
-	protected shapes = new ShapeManager(this);
+    /** Controller of all shapes in the arena. */
+    protected shapes = new ShapeManager(this);
 
-	/** Padding between arena size and maximum movement border. */
-	public ARENA_PADDING = 200;
+    /** Padding between arena size and maximum movement border. */
+    public ARENA_PADDING = 200;
 
-	public constructor(game: GameServer) {
-		super(game);
+    public constructor(game: GameServer) {
+        super(game);
 
-		this.updateBounds(this.width = 22300, this.height = 22300);
+        this.updateBounds(this.width = 22300, this.height = 22300);
 
-		this.arenaData.values.topY = -this.height / 2;
-		this.arenaData.values.bottomY = this.height / 2;
-		this.arenaData.values.leftX = -this.width / 2;
-		this.arenaData.values.rightX = this.width / 2;
+        this.arenaData.values.topY = -this.height / 2;
+        this.arenaData.values.bottomY = this.height / 2;
+        this.arenaData.values.leftX = -this.width / 2;
+        this.arenaData.values.rightX = this.width / 2;
 
-		this.arenaData.values.flags = ArenaFlags.gameReadyStart;
-		this.teamData.values.teamColor = Color.Neutral;
-	}
+        this.arenaData.values.flags = ArenaFlags.gameReadyStart;
+        this.teamData.values.teamColor = Color.Neutral;
+    }
 
-	/**
-	 * Finds a spawnable location on the map.
-	 */
-	 public findSpawnLocation(): VectorAbstract {
-		const pos = {
-			x: ~~(Math.random() * this.width - this.width / 2),
-			y: ~~(Math.random() * this.height - this.height / 2),
-		}
+    /**
+     * Finds a spawnable location on the map.
+     */
+     public findSpawnLocation(): VectorAbstract {
+        const pos = {
+            x: ~~(Math.random() * this.width - this.width / 2),
+            y: ~~(Math.random() * this.height - this.height / 2),
+        }
 
-		findSpawn: for (let i = 0; i < 20; ++i) {
-			const entities = this.game.entities.collisionManager.retrieve(pos.x, pos.y, 1000, 1000);
+        findSpawn: for (let i = 0; i < 20; ++i) {
+            const entities = this.game.entities.collisionManager.retrieve(pos.x, pos.y, 1000, 1000);
 
-			// Only spawn < 1000 units away from player, unless we can't find a place to spawn
-			for (let len = entities.length; --len >= 0;) {
-				if (entities[len] instanceof TankBody && (entities[len].positionData.values.x - pos.x) ** 2 + (entities[len].positionData.values.y - pos.y) ** 2 < 1_000_000) { // 1000^2
-					pos.x = ~~(Math.random() * this.width - this.width / 2);
-					pos.y = ~~(Math.random() * this.height - this.height / 2);
+            // Only spawn < 1000 units away from player, unless we can't find a place to spawn
+            for (let len = entities.length; --len >= 0;) {
+                if (entities[len] instanceof TankBody && (entities[len].positionData.values.x - pos.x) ** 2 + (entities[len].positionData.values.y - pos.y) ** 2 < 1_000_000) { // 1000^2
+                    pos.x = ~~(Math.random() * this.width - this.width / 2);
+                    pos.y = ~~(Math.random() * this.height - this.height / 2);
 
-					continue findSpawn;
-				}
-			}
+                    continue findSpawn;
+                }
+            }
 
-			break;
-		}
+            break;
+        }
 
-		return pos;
-	}
+        return pos;
+    }
 
-	/**
-	 * Updates the scoreboard / leaderboard arena fields.
-	 */
-	protected updateScoreboard(scoreboardPlayers: TankBody[]) {
+    /**
+     * Updates the scoreboard / leaderboard arena fields.
+     */
+    protected updateScoreboard(scoreboardPlayers: TankBody[]) {
+        const scoreboardCount = this.arenaData.scoreboardAmount = (this.arenaData.values.flags & ArenaFlags.hiddenScores) ? 0 : Math.min(scoreboardPlayers.length, 10);
 
-		const scoreboardCount = this.arenaData.scoreboardAmount = (this.arenaData.values.flags & ArenaFlags.hiddenScores) ? 0 : Math.min(scoreboardPlayers.length, 10);
+        if (!scoreboardCount) {
+            if (this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
+                this.arenaData.flags ^= ArenaFlags.showsLeaderArrow;
+            }
 
-		if (scoreboardCount) {
-			scoreboardPlayers.sort((p1, p2) => p2.scoreData.values.score - p1.scoreData.values.score);
-			this.leader = scoreboardPlayers[0];
-			
-			this.arenaData.flags |= ArenaFlags.showsLeaderArrow;
-			let i;
-			for (i = 0; i < scoreboardCount; ++i) {
-				const player = scoreboardPlayers[i];
-				
-				if (player.styleData.values.color === Color.Tank) this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = Color.ScoreboardBar;
-				else this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = player.styleData.values.color;
-				this.arenaData.values.scoreboardNames[i as ValidScoreboardIndex] = player.nameData.values.name;
-				this.arenaData.values.scoreboardScores[i as ValidScoreboardIndex] = player.scoreData.values.score;
-				// _currentTank only since ts ignore
-				this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = player['_currentTank'];
-			}
-		} else if (this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) this.arenaData.flags ^= ArenaFlags.showsLeaderArrow;
-	}
+            return;
+        }
 
-	/** Updates scoreboard and finalizes CLOSING of arena */
-	protected updateArenaState() {
-		if ((this.game.tick % scoreboardUpdateInterval) === 0) {
-			const players = this.getAlivePlayers();
-			// Sorts them too DONT FORGET
-			this.updateScoreboard(players);
-			
-			if (players.length === 0 && this.state === ArenaState.CLOSING) {
-				this.state = ArenaState.CLOSED;
+        scoreboardPlayers.sort((p1, p2) => p2.scoreData.values.score - p1.scoreData.values.score);
+        this.leader = scoreboardPlayers[0];
+        
+        this.arenaData.flags |= ArenaFlags.showsLeaderArrow;
+        for (let i: ValidScoreboardIndex = 0; i < scoreboardCount; i = (i + 1) as ValidScoreboardIndex) {
+            const player = scoreboardPlayers[i];
+            
+            if (player.styleData.values.color === Color.Tank) this.arenaData.values.scoreboardColors[i] = Color.ScoreboardBar;
+            else this.arenaData.values.scoreboardColors[i] = player.styleData.values.color;
+            this.arenaData.values.scoreboardNames[i] = player.nameData.values.name;
+            this.arenaData.values.scoreboardScores[i] = player.scoreData.values.score;
+            // _currentTank only since ts ignore
+            this.arenaData.values.scoreboardTanks[i] = player['_currentTank'];
+        }
+    }
 
-				setTimeout(() => {
-					this.game.end();
-				}, 10000);
-				return;
-			}
-		}
-	}
+    /** Updates scoreboard and finalizes CLOSING of arena */
+    protected updateArenaState() {
+        if ((this.game.tick % scoreboardUpdateInterval) !== 0) return;
 
-	protected getAlivePlayers() {
-		const players: TankBody[] = [];
-		for (let id = 0; id <= this.game.entities.lastId; ++id) {
-			const entity = this.game.entities.inner[id];
-			
-			if (Entity.exists(entity) && entity instanceof TankBody && entity.cameraEntity instanceof ClientCamera && entity.cameraEntity.cameraData.values.player === entity) players.push(entity);
-		}
-		return players;
-	}
+        const players = this.getAlivePlayers();
+        // Sorts them too DONT FORGET
+        this.updateScoreboard(players);
+        
+        if (players.length === 0 && this.state === ArenaState.CLOSING) {
+            this.state = ArenaState.CLOSED;
 
-	/**
-	 * Updates the size of the map. It should be the only way to modify arena size.
-	 */
-	public updateBounds(arenaWidth: number, arenaHeight: number) {
-		this.width = arenaWidth;
-		this.height = arenaHeight;
+            // This is a one-time, end of life event, so we just use setTimeout
+            setTimeout(() => {
+                this.game.end();
+            }, 10000);
+            return;
+        }
+    }
 
-		this.arenaData.topY = -arenaHeight / 2;
-		this.arenaData.bottomY = arenaHeight / 2;
-		this.arenaData.leftX = -arenaWidth / 2;
-		this.arenaData.rightX = arenaWidth / 2;
-	}
+    protected getAlivePlayers() {
+        const players: TankBody[] = [];
+        for (let id = 0; id <= this.game.entities.lastId; ++id) {
+            const entity = this.game.entities.inner[id];
 
-	/**
-	 * Allows the arena to decide how players are spawned into the game.
-	 */
-	public spawnPlayer(tank: TankBody, client: Client) {
-		const { x, y } = this.findSpawnLocation();
+            if (
+                Entity.exists(entity) &&
+                entity instanceof TankBody &&
+                entity.cameraEntity instanceof ClientCamera &&
+                entity.cameraEntity.cameraData.values.player === entity
+            ) players.push(entity);
+        }
+        return players;
+    }
 
-		tank.positionData.values.x = x;
-		tank.positionData.values.y = y;
-	}
+    /**
+     * Updates the size of the map. It should be the only way to modify arena size.
+     */
+    public updateBounds(arenaWidth: number, arenaHeight: number) {
+        this.width = arenaWidth;
+        this.height = arenaHeight;
 
-	/**
-	 * Closes the arena.
-	 */
-	public close() {
-		for (const client of this.game.clients) {
-			client.notify("Arena closed: No players can join", 0xFF0000, -1);
-		}
+        this.arenaData.topY = -arenaHeight / 2;
+        this.arenaData.bottomY = arenaHeight / 2;
+        this.arenaData.leftX = -arenaWidth / 2;
+        this.arenaData.rightX = arenaWidth / 2;
+    }
 
-		this.state = ArenaState.CLOSING;
-		this.arenaData.flags |= ArenaFlags.noJoining;
+    /**
+     * Allows the arena to decide how players are spawned into the game.
+     */
+    public spawnPlayer(tank: TankBody, client: Client) {
+        const { x, y } = this.findSpawnLocation();
 
-		setTimeout(() => {
+        tank.positionData.values.x = x;
+        tank.positionData.values.y = y;
+    }
 
-			const acCount = Math.floor(Math.sqrt(this.width) / 10);
-			const radius = this.width * Math.SQRT1_2 + 500;
-			for (let i = 0; i < acCount; ++i) {
-				const ac = new ArenaCloser(this.game);
+    /**
+     * Closes the arena.
+     */
+    public close() {
+        for (const client of this.game.clients) {
+            client.notify("Arena closed: No players can join", 0xFF0000, -1);
+        }
 
-				const angle = (i / acCount) * PI2;
-				ac.positionData.values.x = Math.cos(angle) * radius;
-				ac.positionData.values.y = Math.sin(angle) * radius;
-				ac.positionData.values.angle = angle + Math.PI;
-			}
+        this.state = ArenaState.CLOSING;
+        this.arenaData.flags |= ArenaFlags.noJoining;
 
-			saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
-		}, 5000);
-	}
+        // This is a one-time, end of life event, so we just use setTimeout
+        setTimeout(() => {
+            const acCount = Math.floor(Math.sqrt(this.width) / 10);
+            const radius = this.width * Math.SQRT1_2 + 500;
+            for (let i = 0; i < acCount; ++i) {
+                const ac = new ArenaCloser(this.game);
 
-	/** Spawns the boss into the arena */
-	protected spawnBoss() {
-		const TBoss = [Guardian, Summoner, FallenOverlord, FallenBooster, Defender]
-			[~~(Math.random() * 5)];
-		
-		this.boss = new TBoss(this.game);
-	}
+                const angle = (i / acCount) * PI2;
+                ac.positionData.values.x = Math.cos(angle) * radius;
+                ac.positionData.values.y = Math.sin(angle) * radius;
+                ac.positionData.values.angle = angle + Math.PI;
+            }
 
-	public tick(tick: number) {
-		this.shapes.tick();
-		this.updateArenaState();
+            saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
+        }, 5000);
+    }
 
-		if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
-			this.arenaData.leaderX = this.leader.positionData.values.x;
-			this.arenaData.leaderY = this.leader.positionData.values.y;
-		}
+    /** Spawns the boss into the arena */
+    protected spawnBoss() {
+        const TBoss = [Guardian, Summoner, FallenOverlord, FallenBooster, Defender]
+            [~~(Math.random() * 5)];
+        
+        this.boss = new TBoss(this.game);
+    }
 
-		if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss) {
-			this.spawnBoss();
-		}
-	}
+    public tick(tick: number) {
+        this.shapes.tick();
+        this.updateArenaState();
+
+        if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
+            this.arenaData.leaderX = this.leader.positionData.values.x;
+            this.arenaData.leaderY = this.leader.positionData.values.y;
+        }
+
+        if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss) {
+            this.spawnBoss();
+        }
+    }
 }

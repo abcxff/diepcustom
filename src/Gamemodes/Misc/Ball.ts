@@ -49,7 +49,7 @@ class CustomShapeManager extends SandboxShapeManager {
  */
 export default class BallArena extends ArenaEntity {
     /** Controller of all shapes in the arena. */
-	protected shapes: CustomShapeManager = new CustomShapeManager(this);
+    protected shapes: CustomShapeManager = new CustomShapeManager(this);
 
     public constructor(game: GameServer) {
         super(game);

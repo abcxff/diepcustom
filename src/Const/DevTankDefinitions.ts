@@ -1708,7 +1708,7 @@ const DevTankDefinitions: TankDefinition[] = [
                     lifeLength: 1,
                     absorbtionFactor: 1
                 }
-	},
+            },
             {
                 angle: Math.PI * (1 / 36),
                 offset: 20,
