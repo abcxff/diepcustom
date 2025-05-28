@@ -47,7 +47,7 @@ class JungleShapeManager extends SandboxShapeManager {
  */
 export default class JungleArena extends ArenaEntity {
     /** Limits shape count to floor(12.5 * player count) */
-	protected shapes: ShapeManager = new JungleShapeManager(this);
+    protected shapes: ShapeManager = new JungleShapeManager(this);
 
     protected playerTeam: TeamEntity;
 
@@ -56,7 +56,7 @@ export default class JungleArena extends ArenaEntity {
 
         this.playerTeam = new TeamEntity(game, Color.TeamBlue);
 
-		this.updateBounds(2500, 2500);
+        this.updateBounds(2500, 2500);
     }
 
     public spawnPlayer(tank: TankBody, client: Client): void {
@@ -68,8 +68,8 @@ export default class JungleArena extends ArenaEntity {
     }
 
     public tick(tick: number) {
-		const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
-		if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
+        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
+        if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
 
         super.tick(tick);
     }

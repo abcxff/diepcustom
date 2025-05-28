@@ -287,9 +287,9 @@ export const commandCallbacks = {
         const game = client.camera?.game;
         if(!game) return;
         for (let id = 0; id <= game.entities.lastId; ++id) {
-			const entity = game.entities.inner[id];
-			if (Entity.exists(entity) && entity instanceof LivingEntity && entity !== client.camera?.cameraData.player) entity.healthData.health = 0;
-		}
+            const entity = game.entities.inner[id];
+            if (Entity.exists(entity) && entity instanceof LivingEntity && entity !== client.camera?.cameraData.player) entity.healthData.health = 0;
+        }
     },
     admin_close_arena: (client: Client) => {
         client?.camera?.game.arena.close();
@@ -307,9 +307,9 @@ export const commandCallbacks = {
         if (!TEntity || !game) return;
 
         for (let id = 0; id <= game.entities.lastId; ++id) {
-			const entity = game.entities.inner[id];
-			if (Entity.exists(entity) && entity instanceof TEntity) entity.healthData.health = 0;
-		}
+            const entity = game.entities.inner[id];
+            if (Entity.exists(entity) && entity instanceof TEntity) entity.healthData.health = 0;
+        }
     }
 } as Record<CommandID, CommandCallback>
 

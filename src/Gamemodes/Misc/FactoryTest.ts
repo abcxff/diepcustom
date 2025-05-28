@@ -32,7 +32,7 @@ import Client from "../../Client";
  */
 export default class FactoryTestArena extends ArenaEntity {
     /** Limits shape count to floor(12.5 * player count) */
-	protected shapes: ShapeManager = new SandboxShapeManager(this);
+    protected shapes: ShapeManager = new SandboxShapeManager(this);
 
     /** The Fac */
     private nimdac: TankBody;
@@ -40,9 +40,9 @@ export default class FactoryTestArena extends ArenaEntity {
     public constructor(game: GameServer) {
         super(game);
 
-		this.updateBounds(2500, 2500);
+        this.updateBounds(2500, 2500);
 
-		const nimdac = this.nimdac = new TankBody(this.game, new CameraEntity(this.game), new Inputs());
+        const nimdac = this.nimdac = new TankBody(this.game, new CameraEntity(this.game), new Inputs());
 
         nimdac.cameraEntity.cameraData.player = nimdac;
         nimdac.setTank(Tank.Factory);
@@ -81,8 +81,8 @@ export default class FactoryTestArena extends ArenaEntity {
     }
 
     public tick(tick: number) {
-		const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
-		if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
+        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
+        if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
         if (this.nimdac && this.nimdac.inputs) {
             this.nimdac.inputs.mouse.magnitude = 5;
             this.nimdac.inputs.mouse.angle += 0.03;
