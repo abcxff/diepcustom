@@ -47,9 +47,9 @@ export default class LivingEntity extends ObjectEntity {
 	/** Damage reduction (mathematical health increase). */
     public damageReduction = 1;
 	/** Extra damage multipliers, needed for proper bullet penetration logic. */
-    public commonMinDamageMultiplier = 1;
-	/** Extra damage multipliers, needed for proper bullet damage logic. */
-	public commonMaxDamageMultiplier = 1;
+    public minDamageMultiplier = 1;
+    /** Extra damage multipliers, needed for proper bullet damage logic. */
+    public maxDamageMultiplier = 1;
 
 
     /** Extends ObjectEntity.destroy() - diminishes health as well. */
