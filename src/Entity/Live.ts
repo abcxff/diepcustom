@@ -75,12 +75,6 @@ export default class LivingEntity extends ObjectEntity {
 	common *= Math.min(entity2.maxDamageMultiplier, entity1.maxDamageMultiplier);
         let dF1 = (entity1.damagePerTick * common) * entity2.damageReduction;
         let dF2 = (entity2.damagePerTick * common) * entity1.damageReduction;
-		
-		// Hack?
-        if (entity1 instanceof TankBody && entity2 instanceof TankBody) {
-            dF1 *= 1.5;
-            dF2 *= 1.5;
-        }
 
         // Damage can't be more than enough to kill health
         const ratio = Math.max(1 - entity1.healthData.values.health / dF2, 1 - entity2.healthData.values.health / dF1)
@@ -88,7 +82,6 @@ export default class LivingEntity extends ObjectEntity {
             dF1 *= 1 - ratio;
             dF2 *= 1 - ratio;
         }
-
 
         // Plays the animation damage for entity 2
         if (entity2.lastDamageAnimationTick !== game.tick && !(entity2.styleData.values.flags & StyleFlags.hasNoDmgIndicator)) {
