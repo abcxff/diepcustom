@@ -44,8 +44,13 @@ export default class LivingEntity extends ObjectEntity {
     protected lastDamageTick = -1;
     /** Last tick that damage style flag was changed. */
     protected lastDamageAnimationTick = -1;
-    /** Damage reduction (mathematical health increase). */
+	/** Damage reduction (mathematical health increase). */
     public damageReduction = 1;
+	/** Extra damage multipliers, needed for proper bullet penetration logic. */
+    public commonMinDamageMultiplier = 1;
+	/** Extra damage multipliers, needed for proper bullet damage logic. */
+	public commonMaxDamageMultiplier = 1;
+
 
     /** Extends ObjectEntity.destroy() - diminishes health as well. */
     public destroy(animate=true) {
@@ -66,10 +71,12 @@ export default class LivingEntity extends ObjectEntity {
         const game = entity1.game;
 
         // entity2.lastDamageTick = entity1.lastDamageTick = entity1.game.tick;
-
-        let dF1 = entity1.damagePerTick * entity2.damageReduction;
-        let dF2 = entity2.damagePerTick * entity1.damageReduction;
-
+		let common = Math.max(entity2.commonMinDamageMultiplier, entity1.commonMinDamageMultiplier);
+		common *= Math.min(entity2.commonMaxDamageMultiplier, entity1.commonMaxDamageMultiplier);
+        let dF1 = (entity1.damagePerTick * common) * entity2.damageReduction;
+        let dF2 = (entity2.damagePerTick * common) * entity1.damageReduction;
+		
+		// Hack?
         if (entity1 instanceof TankBody && entity2 instanceof TankBody) {
             dF1 *= 1.5;
             dF2 *= 1.5;
