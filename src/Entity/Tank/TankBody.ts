@@ -95,6 +95,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         // spawn protection
         this.styleData.values.flags |= StyleFlags.isFlashing;
         this.damageReduction = 0;
+	this.minDamageMultiplier = 1;
+	this.maxDamageMultiplier = 1.5;
 
         if (this.game.playersOnMap) this.physicsData.values.flags |= PhysicsFlags.showsOnMap;
 
@@ -197,7 +199,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 if (entity.deletionAnimation) {
                     entity.deletionAnimation.frame = 0;
                     entity.styleData.opacity = 1;
-					entity.healthData.flags = HealthFlags.hiddenHealthbar;
+		    entity.healthData.flags = HealthFlags.hiddenHealthbar;
                 }
 
                 const sunchip = NecromancerSquare.fromShape(barrelToShoot, this, this.definition, entity);
