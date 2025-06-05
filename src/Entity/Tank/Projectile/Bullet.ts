@@ -92,6 +92,8 @@ export default class Bullet extends LivingEntity {
         this.healthData.values.health = this.healthData.values.maxHealth = (1.5 * bulletPenetration + 2) * bulletDefinition.health;
         this.damagePerTick = (7 + bulletDamage * 3) * bulletDefinition.damage;
         this.damageReduction = 0.25;
+		this.commonMaxDamageMultiplier = 4;
+		this.commonMinDamageMultiplier = 0.25;
 
         this.lifeLength = bulletDefinition.lifeLength * 72;
 

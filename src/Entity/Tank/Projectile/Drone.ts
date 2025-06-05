@@ -63,7 +63,7 @@ export default class Drone extends Bullet {
         } else {
             this.lifeLength = Infinity;
         }
-        this.deathAccelFactor = 1;
+        this.deathAccelFactor = 10000;
 
         this.physicsData.values.pushFactor = 4;
         this.physicsData.values.absorbtionFactor = bulletDefinition.absorbtionFactor;
@@ -73,6 +73,9 @@ export default class Drone extends Bullet {
         barrel.droneCount += 1;
 
         this.ai.movementSpeed = this.ai.aimSpeed = this.baseAccel;
+		
+		this.commonMaxDamageMultiplier = 4;
+		this.commonMinDamageMultiplier = 1;
     }
 
     /** Extends LivingEntity.destroy - so that the drone count decreases for the barrel. */
