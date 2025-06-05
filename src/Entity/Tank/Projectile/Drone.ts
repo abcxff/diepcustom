@@ -63,7 +63,7 @@ export default class Drone extends Bullet {
         } else {
             this.lifeLength = Infinity;
         }
-        this.deathAccelFactor = 10000;
+        this.deathAccelFactor = 1;
 
         this.physicsData.values.pushFactor = 4;
         this.physicsData.values.absorbtionFactor = bulletDefinition.absorbtionFactor;
