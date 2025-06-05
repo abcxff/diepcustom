@@ -48,9 +48,6 @@ export default class Trap extends Bullet {
         this.collisionEnd = this.lifeLength >> 3;
         this.lifeLength = (600 * barrel.definition.bullet.lifeLength) >> 3;
         if (tankDefinition && tankDefinition.id === DevTank.Bouncy) this.collisionEnd = this.lifeLength - 1;
-		
-		this.commonMaxDamageMultiplier = 4;
-		this.commonMinDamageMultiplier = 0.25;
         
         // Check this?
         this.positionData.values.angle = Math.random() * PI2;
