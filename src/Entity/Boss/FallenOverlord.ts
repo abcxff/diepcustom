@@ -35,8 +35,8 @@ export default class FallenOverlord extends AbstractBoss {
 
         for (const barrelDefinition of TankDefinitions[Tank.Overlord].barrels) {
 
-            const def = Object.assign({}, barrelDefinition, { droneCount: 7, reload: 0.25 });
-            def.bullet = Object.assign({}, def.bullet, { sizeRatio: 0.5, speed: 1.7, damage: 0.5, health: 12.5 });
+            const def = Object.assign({}, barrelDefinition, { droneCount: 7, reload: 0.36 });
+            def.bullet = Object.assign({}, def.bullet, { sizeRatio: 0.5, speed: 1.7, damage: 0.56, health: 12.5 });
             this.barrels.push(new Barrel(this, def));
         }
     }
