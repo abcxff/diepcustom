@@ -71,8 +71,8 @@ export default class LivingEntity extends ObjectEntity {
         const game = entity1.game;
 
         // entity2.lastDamageTick = entity1.lastDamageTick = entity1.game.tick;
-		let common = Math.max(entity2.commonMinDamageMultiplier, entity1.commonMinDamageMultiplier);
-		common *= Math.min(entity2.commonMaxDamageMultiplier, entity1.commonMaxDamageMultiplier);
+	let common = Math.max(entity2.minDamageMultiplier, entity1.minDamageMultiplier);
+	common *= Math.min(entity2.maxDamageMultiplier, entity1.maxDamageMultiplier);
         let dF1 = (entity1.damagePerTick * common) * entity2.damageReduction;
         let dF2 = (entity2.damagePerTick * common) * entity1.damageReduction;
 		
