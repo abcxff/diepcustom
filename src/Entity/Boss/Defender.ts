@@ -122,7 +122,6 @@ export default class Defender extends AbstractBoss {
                 tickBase.call(base, tick);
             }
         }
-		console.log(this.trappers[0].barrelData.reloadTime)
     }
 
     public get sizeFactor() {
