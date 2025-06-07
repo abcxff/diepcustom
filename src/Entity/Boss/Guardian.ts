@@ -41,7 +41,7 @@ const GuardianSpawnerDefinition: BarrelDefinition = {
         type: "drone",
         sizeRatio: 21 / (71.4 / 2),
         health: 12.5,
-        damage: 0.5,
+        damage: 0.56,
         speed: 1.7,
         scatterRate: 1,
         lifeLength: 1.5,
