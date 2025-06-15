@@ -11,14 +11,14 @@
 You may need to install [Node.js](https://nodejs.org/), as well as the [Yarn Package Manager](https://classic.yarnpkg.com/en/docs/install).\
 After doing so, download or clone this repository and install the dependencies with:
 ```bash
-$ yarn install
+$ npm install
 ```
 
 ## Running the Server
 
 Run the server with:
 ```bash
-$ yarn run server
+$ npm run server
 ```
 This builds and runs the server.
 
