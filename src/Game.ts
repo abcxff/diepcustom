@@ -200,8 +200,10 @@ export default class GameServer {
     private tickLoop() {
         
         this.tick += 1;
-        this.entities.tick(this.tick);
 
+        // process inputs before ticking entities for lower input latency
         for (const client of this.clients) client.tick(this.tick);
+        
+        this.entities.tick(this.tick);
     }
 }
