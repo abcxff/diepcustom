@@ -154,10 +154,12 @@ export class AI {
 
         for (let i = 0; i < entities.length; ++i) {
             const entity = entities[i];
+            
             if (!entity) continue;
 
             if (!entity.positionData || !entity.relationsData || !entity.physicsData || !(entity as ObjectEntity).velocity) continue;
-            if (this.targetFilterNonLiving && entity.healthData) continue; // Check if the target is living
+            
+            if (this.targetFilterNonLiving && !entity.healthData) continue; // Check if the target is living
 
             if (entity.physicsData.values.flags & PhysicsFlags.isBase) continue; // Check if the target is a base
 
