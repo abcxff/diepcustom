@@ -18,13 +18,11 @@
 
 import GameServer from "../Game";
 import Vector, { VectorAbstract } from "../Physics/Vector";
-import LivingEntity from "./Live";
 import ObjectEntity from "./Object";
-import TankBody from "./Tank/TankBody";
 
 import { InputFlags, PhysicsFlags } from "../Const/Enums";
 import { Entity } from "../Native/Entity";
-import { tps } from "../config";
+import { PhysicsGroup, PositionGroup, RelationsGroup } from "../Native/FieldGroups";
 
 // Beware
 // The logic in this file is somewhat messed up
@@ -89,7 +87,7 @@ export class AI {
     /** The current game. */
     public game: GameServer;
     /** The AI's target. */
-    public target: ObjectEntity | null = null;
+    public target: Entity & { positionData: PositionGroup, physicsData: PhysicsGroup, relationsData: RelationsGroup, velocity: Vector } | null = null;
     /** The speed at which the ai's owner can move. */
     public movementSpeed = 1;
     /** The speed at which the ai can reach the target. */
@@ -97,6 +95,8 @@ export class AI {
     /** If the AI should predict enemy's movements, and aim accordingly. */
     public doAimPrediction: boolean = false;
 
+    /** Optionally filter targets for health */
+    public targetFilterNonLiving = true;
     /** Target filter letting owner classes filter what can't be a target by position - false = not valid target */
     public targetFilter: (possibleTargetPos: VectorAbstract) => boolean;
 
@@ -124,8 +124,8 @@ export class AI {
     /* Finds the closest entity in a different team */
     public findTarget(tick: number) {
         // If there's a target interval, wait a cycle till looking for new target
-        if (this._findTargetInterval !== 0 && ((tick + this._creationTick) % this._findTargetInterval) !== 1)  {
-            return Entity.exists(this.target) ? this.target : (this.target=null);
+        if (this._findTargetInterval !== 0 && ((tick + this._creationTick) % this._findTargetInterval) !== 1) {
+            return Entity.exists(this.target) ? this.target : (this.target = null);
         }
 
         const rootPos = this.owner.rootParent.positionData.values;
@@ -146,23 +146,26 @@ export class AI {
         }
 
         // const entities = this.game.entities.inner.slice(0, this.game.entities.lastId);
-        const root = this.owner.rootParent === this.owner && this.owner.relationsData.values.owner instanceof ObjectEntity ? this.owner.relationsData.values.owner : this.owner.rootParent;
+        const root = (this.owner.rootParent === this.owner && (this.owner.relationsData.values.owner as ObjectEntity).positionData) ? this.owner.relationsData.values.owner as ObjectEntity : this.owner.rootParent;
         const entities = this.viewRange === Infinity ? this.game.entities.inner.slice(0, this.game.entities.lastId) : this.game.entities.collisionManager.retrieve(root.positionData.values.x, root.positionData.values.y, this.viewRange, this.viewRange);
 
         let closestEntity = null;
         let closestDistSq = this.viewRange ** 2;
 
         for (let i = 0; i < entities.length; ++i) {
-
             const entity = entities[i];
+            if (!entity) continue;
 
-            if (!(entity instanceof LivingEntity)) continue; // Check if the target is living
+            if (!entity.positionData || !entity.relationsData || !entity.physicsData || !(entity as ObjectEntity).velocity) continue;
+            if (this.targetFilterNonLiving && entity.healthData) continue; // Check if the target is living
 
             if (entity.physicsData.values.flags & PhysicsFlags.isBase) continue; // Check if the target is a base
 
-            if (!(entity.relationsData.values.owner === null || !(entity.relationsData.values.owner instanceof ObjectEntity))) continue; // Don't target entities who have an object owner
+            if (entity.relationsData.values.owner !== null && entity.relationsData.values.owner.positionData) continue; // Don't target entities who have an object owner
 
-            if (entity.relationsData.values.team === team || entity.physicsData.values.sides === 0) continue;
+            if (entity.relationsData.values.team === team) continue; // Check if target is own team
+
+            if (entity.physicsData.values.sides === 0) continue; // Check if target has a collider
 
             if (!this.targetFilter(entity.positionData.values)) continue; // Custom check
 
@@ -174,18 +177,19 @@ export class AI {
             }
         }
 
-        return this.target = closestEntity;
+        return this.target = closestEntity as Entity & { positionData: PositionGroup, physicsData: PhysicsGroup, relationsData: RelationsGroup, velocity: Vector };
     }
 
     /** Aims and predicts at the target. */
-    public aimAt(target: ObjectEntity) {
+    public aimAtTarget() {
+        if(!this.target) return;
 
         const movementSpeed = this.aimSpeed * 1.6;
         const ownerPos = this.owner.getWorldPosition();
 
         const pos = {
-            x: target.positionData.values.x,
-            y: target.positionData.values.y,
+            x: this.target.positionData.values.x,
+            y: this.target.positionData.values.y,
         }
 
         if (movementSpeed <= 0.001) { // Pls no weirdness
@@ -215,7 +219,7 @@ export class AI {
                 y: -delta.x / dist
             }
 
-            let entPerpComponent = unitDistancePerp.x * target.velocity.x + unitDistancePerp.y * target.velocity.y;
+            let entPerpComponent = unitDistancePerp.x * this.target.velocity.x + unitDistancePerp.y * this.target.velocity.y;
 
             if (entPerpComponent > movementSpeed * 0.9) entPerpComponent = movementSpeed * 0.9;
 
@@ -249,7 +253,7 @@ export class AI {
         }
 
         const target = this.findTarget(tick);
-        
+
         if (!target) {
             this.inputs.flags = 0;
             this.state = AIState.idle;
@@ -262,7 +266,7 @@ export class AI {
         } else {
             this.state = AIState.hasTarget;
             this.inputs.flags |= InputFlags.leftclick;
-            this.aimAt(target);
+            this.aimAtTarget();
         }
     }
 }
