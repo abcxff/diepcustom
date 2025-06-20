@@ -146,7 +146,7 @@ export class AI {
         }
 
         // const entities = this.game.entities.inner.slice(0, this.game.entities.lastId);
-        const root = (this.owner.rootParent === this.owner && (this.owner.relationsData.values.owner as ObjectEntity).positionData) ? this.owner.relationsData.values.owner as ObjectEntity : this.owner.rootParent;
+        const root = (this.owner.rootParent === this.owner && (this.owner.relationsData.values.owner as ObjectEntity)?.positionData) ? this.owner.relationsData.values.owner as ObjectEntity : this.owner.rootParent;
         const entities = this.viewRange === Infinity ? this.game.entities.inner.slice(0, this.game.entities.lastId) : this.game.entities.collisionManager.retrieve(root.positionData.values.x, root.positionData.values.y, this.viewRange, this.viewRange);
 
         let closestEntity = null;
