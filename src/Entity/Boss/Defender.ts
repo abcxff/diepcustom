@@ -37,7 +37,7 @@ const MountedTurretDefinition: BarrelDefinition = {
     bullet: {
         ...AutoTurretDefinition.bullet,
         speed: 2.3,
-        damage: 0.75,
+        damage: 1.3,
         health: 5.75,
         color: Color.Neutral
     }
@@ -46,13 +46,13 @@ const MountedTurretDefinition: BarrelDefinition = {
 /**
  * Definitions (stats and data) of the trap launcher on Defender
  */
-const DefenderDefinition: BarrelDefinition = {
+const TrapperDefinition: BarrelDefinition = {
     angle: 0,
     offset: 0,
     size: 120,
     width: 71.4,
     delay: 0,
-    reload: 4,
+    reload: 5,
     recoil: 2,
     isTrapezoid: false,
     trapezoidDirection: 0,
@@ -94,11 +94,12 @@ export default class Defender extends AbstractBoss {
 
         this.physicsData.values.sides = 3;
 
-        for (let i = 0; i < 3; ++i) {
+		const count = this.physicsData.values.sides;
+        for (let i = 0; i < count; i++) {
             // Add trap launcher
             this.trappers.push(new Barrel(this, {
-                ...DefenderDefinition,
-                angle: PI2 * ((i / 3) - 1 / 6)
+                ...TrapperDefinition,
+                angle: PI2 * ((i / count) - 1 / (count * 2))
             }));
 
             // TODO:
@@ -106,7 +107,7 @@ export default class Defender extends AbstractBoss {
             const base = new AutoTurret(this, MountedTurretDefinition);
             base.influencedByOwnerInputs = true;
 
-            const angle = base.ai.inputs.mouse.angle = PI2 * (i / 3);
+            const angle = base.ai.inputs.mouse.angle = PI2 * (i / count);
 
             base.positionData.values.y = this.physicsData.values.size * Math.sin(angle) * 0.6;
             base.positionData.values.x = this.physicsData.values.size * Math.cos(angle) * 0.6;
@@ -131,7 +132,7 @@ export default class Defender extends AbstractBoss {
        super.tick(tick);
 
         if (this.ai.state !== AIState.possessed) {
-            this.positionData.angle += this.ai.passiveRotation * Math.PI * Math.SQRT1_2;
+            this.positionData.angle += this.ai.passiveRotation * Math.PI * (2/3);
         }
     }
 }

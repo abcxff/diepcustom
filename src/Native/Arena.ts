@@ -27,7 +27,7 @@ import { ArenaGroup, TeamGroup } from "./FieldGroups";
 import { Entity } from "./Entity";
 import { Color, ArenaFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
-import { TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 import Client from "../Client";
 import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import Guardian from "../Entity/Boss/Guardian";
@@ -184,6 +184,17 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             ) players.push(entity);
         }
         return players;
+    }
+
+	protected getTeamPlayers(team: TeamEntity) {
+        const players = this.getAlivePlayers();
+        const teamPlayers: TankBody[] = [];
+        for (let i = 0; i < players.length; i++) {
+            const entity = players[i];
+
+            if (entity.relationsData.values.team === team) teamPlayers.push(entity);
+        }
+        return teamPlayers;
     }
 
     /**

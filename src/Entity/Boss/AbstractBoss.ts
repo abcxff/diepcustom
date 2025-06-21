@@ -125,7 +125,7 @@ export default class AbstractBoss extends LivingEntity {
         this.physicsData.values.absorbtionFactor = 0.05;
         this.positionData.values.flags |= PositionFlags.absoluteRotation;
         this.scoreReward = 30000 * this.game.arena.shapeScoreRewardMultiplier;
-        this.damagePerTick = 60;
+        this.damagePerTick = 40;
 
         this.ai = new AI(this);
         this.ai.viewRange = 2000;

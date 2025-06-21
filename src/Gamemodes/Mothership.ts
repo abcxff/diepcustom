@@ -97,7 +97,7 @@ export default class MothershipArena extends ArenaEntity {
 
         if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
     }
-    public updateScoreboard(scoreboardPlayers: TankBody[]) {
+    public updateScoreboard() {
         this.motherships.sort((m1, m2) => m2.healthData.values.health - m1.healthData.values.health);
 
         const length = Math.min(10, this.motherships.length);
@@ -116,7 +116,7 @@ export default class MothershipArena extends ArenaEntity {
        
         this.arenaData.scoreboardAmount = length;
     }
-    public tick(tick: number) {
+    public updateArenaState() {
         const length = Math.min(10, this.motherships.length);
         for (let i = 0; i < length; ++i) {
             const mothership = this.motherships[i];
@@ -146,7 +146,16 @@ export default class MothershipArena extends ArenaEntity {
                 }, 5000);
             }
         }
+        const players = this.getAlivePlayers();
+        if (players.length === 0 && this.state === ArenaState.CLOSING) {
+            this.state = ArenaState.CLOSED;
 
-        super.tick(tick);
+            // This is a one-time, end of life event, so we just use setTimeout
+            setTimeout(() => {
+                this.game.end();
+            }, 10000);
+            return;
+        }
+        this.updateScoreboard();
     }
 }

@@ -46,6 +46,16 @@ export const removeFast = (array: any[], index: number) => {
 }
 
 /**
+ * Self explanatory
+ */
+export const shuffleArray = (array: any[]) => {
+    for (let i = array.length - 1; i >= 1; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+/**
  * Contrains a value between bounds
  */
 export const constrain = (value: number, min: number, max: number) => {
