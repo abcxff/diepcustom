@@ -34,7 +34,7 @@ const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamPurple, Color.Team
 const MIN_PLAYERS = TEAM_COLORS.length;
 
 const SHRINK_AMOUNT = 100;
-const SHRINK_INTERVAL = 10 * tps;
+const SHRINK_INTERVAL = 15 * tps;
 const MIN_SIZE = 6600;
 
 shuffleArray(TEAM_COLORS); // Randomize leading team
@@ -44,8 +44,8 @@ shuffleArray(TEAM_COLORS); // Randomize leading team
  */
 export class TagShapeManager extends ShapeManager {
     protected get wantedShapes() {
-		const mult = 50 * 50;
-		const ratio = Math.ceil(Math.pow(this.game.arena.width / mult, 2));
+        const mult = 50 * 50;
+        const ratio = Math.ceil(Math.pow(this.game.arena.width / mult, 2));
         return Math.floor(12.5 * ratio);
     }
 }
@@ -54,7 +54,7 @@ export class TagShapeManager extends ShapeManager {
  * Tag Gamemode Arena
  */
 export default class TagArena extends ArenaEntity {
-	protected shapes: ShapeManager = new TagShapeManager(this);
+    protected shapes: ShapeManager = new TagShapeManager(this);
 	
     /** All team entities in game */
     public teams: TeamEntity[] = [];
@@ -77,26 +77,27 @@ export default class TagArena extends ArenaEntity {
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
-		this.updateArenaState();
-		const deathMixin = tank.onDeath.bind(tank); 
-		tank.onDeath = (killer: LivingEntity) => {
-			deathMixin(killer);
+        this.updateArenaState();
+        const deathMixin = tank.onDeath.bind(tank); 
+        tank.onDeath = (killer: LivingEntity) => {
+            deathMixin(killer);
+            this.updateArenaState();
 
-			if (this.game.clients.size < MIN_PLAYERS) return;
-			const team = tank.relationsData.values.team;
-			const killerTeam = killer.relationsData.values.team;
+            if (this.game.clients.size < MIN_PLAYERS) return;
+            const team = tank.relationsData.values.team;
+            const killerTeam = killer.relationsData.values.team;
 
-			const playerIsATeam = team instanceof TeamEntity && this.teams.includes(team);
-			if (!playerIsATeam) return;
+            const playerIsATeam = team instanceof TeamEntity && this.teams.includes(team);
+            if (!playerIsATeam) return;
 			
-			const killerTeamIsATeam = killerTeam instanceof TeamEntity && this.teams.includes(killerTeam);
-			if (killerTeamIsATeam) this.playerTeamMap.set(client, killerTeam); // Respawn with killer's team, if it is valid
-			else this.playerTeamMap.set(client, team);
-		}
+            const killerTeamIsATeam = killerTeam instanceof TeamEntity && this.teams.includes(killerTeam);
+            if (killerTeamIsATeam) this.playerTeamMap.set(client, killerTeam); // Respawn with killer's team, if it is valid
+            else this.playerTeamMap.set(client, team);
+        }
 
         if (!this.playerTeamMap.has(client)) {
             const team = this.game.clients.size <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
-		                 this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
+                         this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
             const { x, y } = this.findSpawnLocation();
 
             tank.positionData.values.x = x;
@@ -104,7 +105,7 @@ export default class TagArena extends ArenaEntity {
             tank.relationsData.values.team = team;
             tank.styleData.values.color = team.teamData.teamColor;
 
-			this.playerTeamMap.set(client, team)
+            this.playerTeamMap.set(client, team)
             return;
         }
 
@@ -126,44 +127,43 @@ export default class TagArena extends ArenaEntity {
         const length = Math.min(10, this.teams.length);
         for (let i = 0; i < length; ++i) {
             const team = this.teams[i];
-			const playerCount = this.getTeamPlayers(team).length;
+            const playerCount = this.getTeamPlayers(team).length;
             if (team.teamData.values.teamColor === Color.Tank) this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = Color.ScoreboardBar;
             else this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = team.teamData.values.teamColor;
             this.arenaData.values.scoreboardNames[i as ValidScoreboardIndex] = team.teamName;
-            // TODO: Change id
             this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = -1;
             this.arenaData.values.scoreboardScores[i as ValidScoreboardIndex] = playerCount;
             this.arenaData.values.scoreboardSuffixes[i as ValidScoreboardIndex] = playerCount === 1 ? " player" : " players";
         }
        
-        this.arenaData.scoreboardAmount = length;
+        this.arenaData.scoreboardAmount = Math.min(10, length);
     }
 	
-	public updateArenaState() {
-		this.teams.sort((t1, t2) => this.getTeamPlayers(t2).length - this.getTeamPlayers(t1).length);
+    public updateArenaState() {
+        this.teams.sort((t1, t2) => this.getTeamPlayers(t2).length - this.getTeamPlayers(t1).length);
         const length = Math.min(10, this.teams.length);
-		const arenaPlayerCount = this.getAlivePlayers().length; // Only count alive players for win condition
-		const leaderTeam = this.teams[0]; // Most players are in this team
+        const arenaPlayerCount = this.getAlivePlayers().length; // Only count alive players for win condition
+        const leaderTeam = this.teams[0]; // Most players are in this team
         for (let i = 0; i < length; ++i) {
-			const team = this.teams[i];
+            const team = this.teams[i];
 			
-			if (this.getTeamPlayers(leaderTeam).length === arenaPlayerCount && arenaPlayerCount >= MIN_PLAYERS) { // If all alive players are in the leading team, it has one since all other team's players have died
-				if (this.state === ArenaState.OPEN) {
-					this.game.broadcast()
-						.u8(ClientBound.Notification)
-						.stringNT(`${leaderTeam.teamName} HAS WON THE GAME!`)
-						.u32(ColorsHexCode[leaderTeam.teamData.values.teamColor])
-						.float(-1)
-						.stringNT("").send();
+            if (this.getTeamPlayers(leaderTeam).length === arenaPlayerCount && arenaPlayerCount >= MIN_PLAYERS) { // If all alive players are in the leading team, it has one since all other team's players have died
+                if (this.state === ArenaState.OPEN) {
+                    this.game.broadcast()
+                        .u8(ClientBound.Notification)
+                        .stringNT(`${leaderTeam.teamName} HAS WON THE GAME!`)
+                        .u32(ColorsHexCode[leaderTeam.teamData.values.teamColor])
+                        .float(-1)
+                        .stringNT("").send();
 						
-					this.state = ArenaState.OVER;
-					setTimeout(() => {
-						this.close();
-					}, 5000);
-				}
-			}
+                    this.state = ArenaState.OVER;
+                    setTimeout(() => {
+                        this.close();
+                    }, 5000);
+                }
+            }
         }
-		if (arenaPlayerCount === 0 && this.state === ArenaState.CLOSING) {
+        if (arenaPlayerCount === 0 && this.state === ArenaState.CLOSING) {
             this.state = ArenaState.CLOSED;
 
             // This is a one-time, end of life event, so we just use setTimeout
@@ -172,14 +172,13 @@ export default class TagArena extends ArenaEntity {
             }, 10000);
             return;
         }
-		if ((this.game.tick % scoreboardUpdateInterval) === 0) this.updateScoreboard();
-	}
 
-    public tick(tick: number) {
-		if ((this.game.tick % SHRINK_INTERVAL) === 0 && this.width > MIN_SIZE) {
-			this.updateBounds(this.width - SHRINK_AMOUNT, this.height - SHRINK_AMOUNT);
-		}
+        if ((this.game.tick % scoreboardUpdateInterval) === 0) {
+            this.updateScoreboard();
+        }
 
-        super.tick(tick);
+        if ((this.game.tick % SHRINK_INTERVAL) === 0 && this.width > MIN_SIZE) {
+            this.updateBounds(this.width - SHRINK_AMOUNT, this.height - SHRINK_AMOUNT);
+        }
     }
 }
