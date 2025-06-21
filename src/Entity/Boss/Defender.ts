@@ -94,7 +94,8 @@ export default class Defender extends AbstractBoss {
 
         this.physicsData.values.sides = 3;
 
-		const count = this.physicsData.values.sides;
+	const count = this.physicsData.values.sides;
+        const offset = 60 / this.physicsData.values.size;
         for (let i = 0; i < count; i++) {
             // Add trap launcher
             this.trappers.push(new Barrel(this, {
@@ -109,15 +110,15 @@ export default class Defender extends AbstractBoss {
 
             const angle = base.ai.inputs.mouse.angle = PI2 * (i / count);
 
-            base.positionData.values.y = this.physicsData.values.size * Math.sin(angle) * 0.6;
-            base.positionData.values.x = this.physicsData.values.size * Math.cos(angle) * 0.6;
+            base.positionData.values.y = this.physicsData.values.size * Math.sin(angle) * offset
+            base.positionData.values.x = this.physicsData.values.size * Math.cos(angle) * offset
 
             base.physicsData.values.flags |= PositionFlags.absoluteRotation;
 
             const tickBase = base.tick;
             base.tick = (tick: number) => {
-                base.positionData.y = this.physicsData.values.size * Math.sin(angle) * 0.6;
-                base.positionData.x = this.physicsData.values.size * Math.cos(angle) * 0.6;
+                base.positionData.y = this.physicsData.values.size * Math.sin(angle) * offset;
+                base.positionData.x = this.physicsData.values.size * Math.cos(angle) * offset;
 
                 tickBase.call(base, tick);
             }
