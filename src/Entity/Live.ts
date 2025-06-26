@@ -25,6 +25,13 @@ import { visibilityRateDamage } from "../Const/TankDefinitions";
 import { StyleFlags } from "../Const/Enums";
 import { HealthGroup } from "../Native/FieldGroups";
 
+export const enum DamageType {
+    /** No extra multiplier, just damagePerTick */
+    Default = 0,
+    /** Tank on tank collisions */
+    Tank = 1
+}
+
 /**
  * An Abstract class for all entities with health.
  */
@@ -46,6 +53,12 @@ export default class LivingEntity extends ObjectEntity {
     protected lastDamageAnimationTick = -1;
     /** Damage reduction (mathematical health increase). */
     public damageReduction = 1;
+    /** Extra damage multipliers, needed for proper bullet penetration logic. */
+    public minDamageMultiplier = 1;
+    /** Extra damage multipliers, needed for proper bullet damage logic. */
+    public maxDamageMultiplier = 1;
+    /** Damage type */
+    public damageType: DamageType = DamageType.Default;
 
     /** Extends ObjectEntity.destroy() - diminishes health as well. */
     public destroy(animate=true) {
@@ -67,10 +80,12 @@ export default class LivingEntity extends ObjectEntity {
 
         // entity2.lastDamageTick = entity1.lastDamageTick = entity1.game.tick;
 
-        let dF1 = entity1.damagePerTick * entity2.damageReduction;
-        let dF2 = entity2.damagePerTick * entity1.damageReduction;
+        let common = Math.max(entity2.minDamageMultiplier, entity1.minDamageMultiplier);
+        common *= Math.min(entity2.maxDamageMultiplier, entity1.maxDamageMultiplier);
+        let dF1 = (entity1.damagePerTick * common) * entity2.damageReduction;
+        let dF2 = (entity2.damagePerTick * common) * entity1.damageReduction;
 
-        if (entity1 instanceof TankBody && entity2 instanceof TankBody) {
+        if (entity1.damageType === DamageType.Tank && entity2.damageType === DamageType.Tank) {
             dF1 *= 1.5;
             dF2 *= 1.5;
         }
