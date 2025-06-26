@@ -197,7 +197,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 if (entity.deletionAnimation) {
                     entity.deletionAnimation.frame = 0;
                     entity.styleData.opacity = 1;
-					entity.healthData.flags = HealthFlags.hiddenHealthbar
+                    entity.healthData.flags = HealthFlags.hiddenHealthbar
                 }
 
                 const sunchip = NecromancerSquare.fromShape(barrelToShoot, this, this.definition, entity);

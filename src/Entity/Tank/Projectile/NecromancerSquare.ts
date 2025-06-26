@@ -56,8 +56,8 @@ export default class NecromancerSquare extends Drone {
         }
         this.deathAccelFactor = 1;
 
-		this.minDamageMultiplier = 4;
-		this.maxDamageMultiplier = 1;
+        this.minDamageMultiplier = 4;
+        this.maxDamageMultiplier = 1;
 
         this.physicsData.values.pushFactor = 4;
         this.physicsData.values.absorbtionFactor = bulletDefinition.absorbtionFactor;
