@@ -68,10 +68,10 @@ export default class TagArena extends ArenaEntity {
 
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
 		
-		for (const teamColor of TEAM_COLORS) {
-			const team = new TeamEntity(this.game, teamColor);
+        for (const teamColor of TEAM_COLORS) {
+            const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
-		}
+        }
 
         this.updateBounds(arenaSize * 2, arenaSize * 2);
     }
