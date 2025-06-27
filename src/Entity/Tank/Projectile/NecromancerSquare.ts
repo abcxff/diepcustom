@@ -46,18 +46,10 @@ export default class NecromancerSquare extends Drone {
         if (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) this.physicsData.values.flags ^= PhysicsFlags.noOwnTeamCollision;
         this.physicsData.values.flags |= PhysicsFlags.onlySameOwnerCollision;
 
-        // TODO(ABC):
-        // No hardcoded - unless it is hardcoded in diep (all signs show that it might be so far)
-        if (tankDefinition && tankDefinition.id === Tank.Battleship) {
-            this.lifeLength = 88;
-        } else {
-            this.lifeLength = Infinity;
-            if (this.physicsData.values.flags & PhysicsFlags.canEscapeArena) this.physicsData.values.flags ^= PhysicsFlags.canEscapeArena;
-        }
-        this.deathAccelFactor = 1;
-
-        this.minDamageMultiplier = 4;
+        this.minDamageMultiplier = 0.5;
         this.maxDamageMultiplier = 1;
+        this.damageReduction = 1;
+        this.damagePerTick *= 4
 
         this.physicsData.values.pushFactor = 4;
         this.physicsData.values.absorbtionFactor = bulletDefinition.absorbtionFactor;
