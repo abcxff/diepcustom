@@ -38,7 +38,7 @@ export default class FallenBooster extends AbstractBoss {
         for (const barrelDefinition of TankDefinitions[Tank.Booster].barrels) {
 
             const def = Object.assign({}, barrelDefinition, {});
-            def.bullet = Object.assign({}, def.bullet, { speed: 1.7, health: 6.25 });
+            def.bullet = Object.assign({}, def.bullet, { speed: 1.7, health: 6.25, damage:def.bullet.damage * 0.8 });
             this.barrels.push(new Barrel(this, def));
         }
     }
