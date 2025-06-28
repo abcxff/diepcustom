@@ -72,6 +72,8 @@ export default class AbstractShape extends LivingEntity {
         this.nameData.values.flags = NameFlags.hiddenName;
         this.positionData.values.flags |= PositionFlags.absoluteRotation;
         this.orbitAngle = this.positionData.values.angle = (Math.random() * PI2);
+        
+        this.maxDamageMultiplier = 4.0;
     }
 
     protected turnTo(angle: number) {

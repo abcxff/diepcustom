@@ -46,15 +46,8 @@ export default class NecromancerSquare extends Drone {
         if (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) this.physicsData.values.flags ^= PhysicsFlags.noOwnTeamCollision;
         this.physicsData.values.flags |= PhysicsFlags.onlySameOwnerCollision;
 
-        // TODO(ABC):
-        // No hardcoded - unless it is hardcoded in diep (all signs show that it might be so far)
-        if (tankDefinition && tankDefinition.id === Tank.Battleship) {
-            this.lifeLength = 88;
-        } else {
-            this.lifeLength = Infinity;
-            if (this.physicsData.values.flags & PhysicsFlags.canEscapeArena) this.physicsData.values.flags ^= PhysicsFlags.canEscapeArena;
-        }
-        this.deathAccelFactor = 1;
+        this.minDamageMultiplier = 1;
+        this.maxDamageMultiplier = 4;
 
         this.physicsData.values.pushFactor = 4;
         this.physicsData.values.absorbtionFactor = bulletDefinition.absorbtionFactor;
@@ -73,8 +66,8 @@ export default class NecromancerSquare extends Drone {
         
         const shapeDamagePerTick: number = shape['damagePerTick'];
 
-        sunchip.damagePerTick *= shapeDamagePerTick / 8;
-        sunchip.healthData.values.maxHealth = (sunchip.healthData.values.health *= (shapeDamagePerTick / 8));
+        sunchip.damagePerTick *= shapeDamagePerTick / 2;
+        sunchip.healthData.values.maxHealth = (sunchip.healthData.values.health *= (shapeDamagePerTick / 2));
         return sunchip;
     }
 }

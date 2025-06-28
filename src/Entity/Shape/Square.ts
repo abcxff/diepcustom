@@ -30,7 +30,7 @@ export default class Square extends AbstractShape {
         this.physicsData.values.sides = 4;
         this.styleData.values.color = shiny ? Color.Shiny : Color.EnemySquare;
 
-        this.damagePerTick = 8;
+        this.damagePerTick = 2;
         this.scoreReward = 10;
         this.isShiny = shiny;
 

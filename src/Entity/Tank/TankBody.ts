@@ -26,7 +26,7 @@ import LivingEntity from "../Live";
 import ObjectEntity from "../Object";
 import Barrel from "./Barrel";
 
-import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, PhysicsFlags, PositionFlags } from "../../Const/Enums";
+import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, PhysicsFlags, PositionFlags, HealthFlags } from "../../Const/Enums";
 import { Entity } from "../../Native/Entity";
 import { NameGroup, ScoreGroup } from "../../Native/FieldGroups";
 import { Addon, AddonById } from "./Addons";
@@ -97,7 +97,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.damageReduction = 0;
         if (this.game.playersOnMap) this.physicsData.values.flags |= PhysicsFlags.showsOnMap;
 
-        this.damagePerTick = 20;
+        this.damagePerTick = 5;
+        this.maxDamageMultiplier = 6;
         this.setTank(Tank.Basic);
     }
 
@@ -196,6 +197,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 if (entity.deletionAnimation) {
                     entity.deletionAnimation.frame = 0;
                     entity.styleData.opacity = 1;
+                    entity.healthData.flags = HealthFlags.hiddenHealthbar
                 }
 
                 const sunchip = NecromancerSquare.fromShape(barrelToShoot, this, this.definition, entity);
@@ -303,8 +305,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         // Update stat related
         updateStats: {
             // Damage
-            this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] * 6 + 20;
-            if (this._currentTank === Tank.Spike) this.damagePerTick *= 1.5;
+            this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] + 5;
+            if (this._currentTank === Tank.Spike) this.damagePerTick += 2;
 
             // Max Health
             const maxHealthCache = this.healthData.values.maxHealth;
