@@ -46,7 +46,7 @@ export default class NecromancerSquare extends Drone {
         if (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) this.physicsData.values.flags ^= PhysicsFlags.noOwnTeamCollision;
         this.physicsData.values.flags |= PhysicsFlags.onlySameOwnerCollision;
 
-        this.minDamageMultiplier = 0.5;
+        this.minDamageMultiplier = 1;
         this.maxDamageMultiplier = 1;
         this.damageReduction = 1;
         this.damagePerTick *= 4
