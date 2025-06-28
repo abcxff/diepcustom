@@ -99,7 +99,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
 
         this.damagePerTick = 5;
         this.maxDamageMultiplier = 6;
-       // this.damageType = DamageType.Tank;
         this.setTank(Tank.Basic);
     }
 
