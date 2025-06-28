@@ -22,7 +22,7 @@ import Square from "../Shape/Square";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
 import GameServer from "../../Game";
 import ClientCamera, { CameraEntity } from "../../Native/Camera";
-import LivingEntity, { DamageType } from "../Live";
+import LivingEntity from "../Live";
 import ObjectEntity from "../Object";
 import Barrel from "./Barrel";
 
@@ -97,8 +97,9 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.damageReduction = 0;
         if (this.game.playersOnMap) this.physicsData.values.flags |= PhysicsFlags.showsOnMap;
 
-        this.damagePerTick = 20;
-        this.damageType = DamageType.Tank;
+        this.damagePerTick = 5;
+        this.maxDamageMultiplier = 6;
+       // this.damageType = DamageType.Tank;
         this.setTank(Tank.Basic);
     }
 
@@ -305,8 +306,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         // Update stat related
         updateStats: {
             // Damage
-            this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] * 4 + 20;
-            if (this._currentTank === Tank.Spike) this.damagePerTick += 8;
+            this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] + 5;
+            if (this._currentTank === Tank.Spike) this.damagePerTick += 2;
 
             // Max Health
             const maxHealthCache = this.healthData.values.maxHealth;

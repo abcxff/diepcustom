@@ -47,9 +47,7 @@ export default class NecromancerSquare extends Drone {
         this.physicsData.values.flags |= PhysicsFlags.onlySameOwnerCollision;
 
         this.minDamageMultiplier = 1;
-        this.maxDamageMultiplier = 1;
-        this.damageReduction = 1;
-        this.damagePerTick *= 4
+        this.maxDamageMultiplier = 4;
 
         this.physicsData.values.pushFactor = 4;
         this.physicsData.values.absorbtionFactor = bulletDefinition.absorbtionFactor;
@@ -68,8 +66,8 @@ export default class NecromancerSquare extends Drone {
         
         const shapeDamagePerTick: number = shape['damagePerTick'];
 
-        sunchip.damagePerTick *= shapeDamagePerTick / 8;
-        sunchip.healthData.values.maxHealth = (sunchip.healthData.values.health *= (shapeDamagePerTick / 8));
+        sunchip.damagePerTick *= shapeDamagePerTick / 2;
+        sunchip.healthData.values.maxHealth = (sunchip.healthData.values.health *= (shapeDamagePerTick / 2));
         return sunchip;
     }
 }

@@ -78,7 +78,6 @@ export default class Bullet extends LivingEntity {
         this.physicsData.values.size = (barrel.physicsData.values.width / 2) * bulletDefinition.sizeRatio;
         this.styleData.values.color = bulletDefinition.color || tank.rootParent.styleData.values.color;
         this.styleData.values.flags |= StyleFlags.hasNoDmgIndicator;
-        this.healthData.values.flags = HealthFlags.hiddenHealthbar;
 
         const bulletDamage = statLevels ? statLevels[Stat.BulletDamage] : 0;
         const bulletPenetration = statLevels ? statLevels[Stat.BulletPenetration] : 0;
@@ -91,9 +90,9 @@ export default class Bullet extends LivingEntity {
 
         this.healthData.values.health = this.healthData.values.maxHealth = (1.5 * bulletPenetration + 2) * bulletDefinition.health;
         this.damagePerTick = (7 + bulletDamage * 3) * bulletDefinition.damage;
-        this.damageReduction = 0.25;
+        //this.damageReduction = 0.25;
         this.minDamageMultiplier = 0.25;
-        this.maxDamageMultiplier = 4;
+        this.maxDamageMultiplier = 1;
 		
         this.lifeLength = bulletDefinition.lifeLength * 72;
 
