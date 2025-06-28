@@ -51,7 +51,7 @@ export default class Crasher extends AbstractShape {
         this.styleData.values.color = Color.EnemyCrasher;
 
         this.scoreReward = large ? 25 : 15;
-        this.damagePerTick = 8;
+        this.damagePerTick = 2;
         this.isLarge = large;
         this.targettingSpeed = large ? 2.64 : 2.602;
 

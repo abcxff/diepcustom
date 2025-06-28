@@ -48,7 +48,7 @@ export default class Pentagon extends AbstractShape {
         this.isAlpha = isAlpha;
         this.isShiny = shiny;
 
-        this.damagePerTick = isAlpha ? 20 : 12;
+        this.damagePerTick = isAlpha ? 5 : 3;
         this.scoreReward = isAlpha ? 3000 : 130;
         
         if (shiny) {
