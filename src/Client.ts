@@ -240,8 +240,20 @@ export default class Client {
                 const flags = this.inputs.flags = r.vu() | this.inputs.cachedFlags;
                 this.inputs.cachedFlags = 0;
 
-                this.inputs.mouse.x = r.vf();
-                this.inputs.mouse.y = r.vf();
+                const fov = camera.cameraData.values.FOV;
+                const width = (1920 / fov) / 2;
+                const height = (1080 / fov) / 2;
+
+                const minX = camera.cameraData.values.cameraX - width;
+                const maxX = camera.cameraData.values.cameraX + width;
+                const minY = camera.cameraData.values.cameraY - height;
+                const maxY = camera.cameraData.values.cameraY + height;
+
+                const mouseX = r.vf();
+                const mouseY = r.vf();
+
+                this.inputs.mouse.x = util.constrain(mouseX, minX, maxX);
+                this.inputs.mouse.y = util.constrain(mouseY, minY, maxY);
 
                 if (!Vector.isFinite(this.inputs.mouse)) break;
                 const movement: VectorAbstract = {
