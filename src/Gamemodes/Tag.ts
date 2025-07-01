@@ -27,11 +27,14 @@ import { Entity } from "../Native/Entity";
 import { shuffleArray } from "../util";
 import { tps, scoreboardUpdateInterval } from "../config";
 
+import TeamBase from "../Entity/Misc/TeamBase"
+import Dominator from "../Entity/Misc/Dominator"
+
 import ShapeManager from "../Entity/Shape/Manager";
 
 const arenaSize = 11150;
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamPurple, Color.TeamGreen];
-const MIN_PLAYERS = TEAM_COLORS.length;
+const MIN_PLAYERS = TEAM_COLORS.length * 1; // It is higher in the official servers, though we do not have enough players for that
 
 const SHRINK_AMOUNT = 100;
 const SHRINK_INTERVAL = 15 * tps;
@@ -72,6 +75,12 @@ export default class TagArena extends ArenaEntity {
             const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
         }
+        
+        // Uncomment to enable a single dominator in the pentagon nest (was removed from the game in an old version)
+        /*
+        const domBaseSize = 3345 / 2
+        new Dominator(this, new TeamBase(game, this, 0, 0, domBaseSize, domBaseSize, false));
+        */
 
         this.updateBounds(arenaSize * 2, arenaSize * 2);
     }
@@ -96,7 +105,7 @@ export default class TagArena extends ArenaEntity {
         }
 
         if (!this.playerTeamMap.has(client)) {
-            const team = this.game.clients.size <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
+            const team = this.getAlivePlayers().length <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
                          this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
             const { x, y } = this.findSpawnLocation();
 
@@ -147,7 +156,7 @@ export default class TagArena extends ArenaEntity {
         for (let i = 0; i < length; ++i) {
             const team = this.teams[i];
 			
-            if (this.getTeamPlayers(leaderTeam).length === arenaPlayerCount && arenaPlayerCount >= MIN_PLAYERS) { // If all alive players are in the leading team, it has one since all other team's players have died
+            if (this.getTeamPlayers(leaderTeam).length === arenaPlayerCount && arenaPlayerCount >= MIN_PLAYERS) { // If all alive players are in the leading team, it has won since all other team's players have died
                 if (this.state === ArenaState.OPEN) {
                     this.game.broadcast()
                         .u8(ClientBound.Notification)
