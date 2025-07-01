@@ -34,7 +34,7 @@ import ShapeManager from "../Entity/Shape/Manager";
 
 const arenaSize = 11150;
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamPurple, Color.TeamGreen];
-const MIN_PLAYERS = TEAM_COLORS.length * 1; // It is higher in the official servers, though we do not have enough players for that
+const MIN_PLAYERS = TEAM_COLORS.length * 1; // It is higher in the official servers, though we do not have enough players for that (4 players per team)
 
 const SHRINK_AMOUNT = 100;
 const SHRINK_INTERVAL = 15 * tps;
