@@ -171,7 +171,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         }
     }
 
-    protected getAlivePlayers() {
+    public getAlivePlayers() {
         const players: TankBody[] = [];
         for (let id = 0; id <= this.game.entities.lastId; ++id) {
             const entity = this.game.entities.inner[id];
@@ -186,7 +186,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         return players;
     }
 
-	protected getTeamPlayers(team: TeamEntity) {
+    public getTeamPlayers(team: TeamEntity) {
         const players = this.getAlivePlayers();
         const teamPlayers: TankBody[] = [];
         for (let i = 0; i < players.length; i++) {
