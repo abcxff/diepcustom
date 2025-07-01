@@ -16,9 +16,9 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import { Color, NameFlags, StyleFlags, Tank } from "../../Const/Enums";
+import { Color, ColorsHexCode, NameFlags, StyleFlags, Tank, ClientBound } from "../../Const/Enums";
 import ArenaEntity from "../../Native/Arena";
-import { CameraEntity } from "../../Native/Camera";
+import ClientCamera, { CameraEntity } from "../../Native/Camera";
 import { AI, AIState, Inputs } from "../AI";
 import LivingEntity from "../Live";
 import Bullet from "../Tank/Projectile/Bullet";
@@ -38,6 +38,8 @@ export default class Dominator extends TankBody {
 
     /** The base its located on (used to change base color). */
     public base: TeamBase;
+    
+    public prefix: string | null = "";
 
     public constructor(arena: ArenaEntity, base: TeamBase, pTankId: Tank | null = null) {
         let tankId: Tank;
@@ -83,6 +85,8 @@ export default class Dominator extends TankBody {
         camera.cameraData.values.player = this;
 
         this.base = base;
+        
+        this.damagePerTick = 10;
 
         if (this.styleData.values.flags & StyleFlags.isFlashing) { 
             this.styleData.values.flags ^= StyleFlags.isFlashing;
@@ -92,11 +96,30 @@ export default class Dominator extends TankBody {
 
     public onDeath(killer: LivingEntity) {
         if (this.relationsData.values.team === this.game.arena && killer.relationsData.values.team instanceof TeamEntity) {
-            this.relationsData.team = killer.relationsData.values.team || this.game.arena;
+            const killerTeam = killer.relationsData.values.team;
+            this.relationsData.team = killerTeam || this.game.arena;
             this.styleData.color = this.relationsData.team.teamData?.teamColor || killer.styleData.values.color;
+            this.game.broadcast()
+                .u8(ClientBound.Notification)
+                .stringNT(`The ${this.prefix}${this.nameData.values.name} is now controlled by ${killerTeam.teamName}`)
+                .u32(ColorsHexCode[killerTeam.teamData.values.teamColor])
+                .float(7500)
+                .stringNT("").send();
+                
+            const teamPlayers = this.game.arena.getTeamPlayers(killerTeam);
+            for (const player of teamPlayers) {
+               if (player.cameraEntity instanceof ClientCamera) player.cameraEntity.client.notify(`Press H to take control of the ${this.nameData.values.name}`, ColorsHexCode[killerTeam.teamData.values.teamColor])
+            }
         } else {
             this.relationsData.team = this.game.arena
             this.styleData.color = this.game.arena.teamData.teamColor;
+            
+           this.game.broadcast()
+               .u8(ClientBound.Notification)
+               .stringNT(`The ${this.prefix}${this.nameData.values.name} is being contested`)
+               .u32(ColorsHexCode[Color.Neutral])
+               .float(7500)
+               .stringNT("").send();  
         }
 
         this.base.styleData.color = this.styleData.values.color;
@@ -131,5 +154,6 @@ export default class Dominator extends TankBody {
         }
 
         super.tick(tick);
+        this.damagePerTick = 10;
     }
 }
