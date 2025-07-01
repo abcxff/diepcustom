@@ -17,7 +17,7 @@
 */
 
 import Client from "../Client";
-import { Color, ColorsHexCode, ArenaFlags, ClientBound } from "../Const/Enums";
+import { Color, ColorsHexCode, ArenaFlags, ValidScoreboardIndex, ClientBound } from "../Const/Enums";
 import Dominator from "../Entity/Misc/Dominator";
 import TeamBase from "../Entity/Misc/TeamBase";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
@@ -103,7 +103,32 @@ export default class DominationArena extends ArenaEntity {
         }
         return doms;
     }
+    
+    public updateScoreboard() {
+        // Uncomment to enable scoreboard from latest version of the game (2025)
+        /*
+        this.dominators.sort((d1, d2) => d2.healthData.values.health - d1.healthData.values.health);
+
+        const length = Math.min(10, this.dominators.length);
+        for (let i = 0; i < length; ++i) {
+            const dom = this.dominators[i];
+            const team = dom.relationsData.values.team;
+            const isTeamATeam = team instanceof TeamEntity;
+            if (dom.styleData.values.color === Color.Tank) this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = Color.ScoreboardBar;
+            else this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = dom.styleData.values.color;
+            this.arenaData.values.scoreboardNames[i as ValidScoreboardIndex] = dom.prefix || dom.nameData.values.name;
+            // TODO: Change id
+            this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = dom['_currentTank'];
+            this.arenaData.values.scoreboardScores[i as ValidScoreboardIndex] = dom.healthData.values.health;
+            this.arenaData.values.scoreboardSuffixes[i as ValidScoreboardIndex] = " HP";
+        }
+       
+        this.arenaData.scoreboardAmount = length;
+        */
+    }
+    
     public updateArenaState() {
+        this.updateScoreboard();
         const dominatorCount = this.dominators.length; // Only count alive players for win condition
         for (const team of this.teams) {
             if (this.getTeamDominatorCount(team) === dominatorCount) { // If all dominators are on the same team, the game is over
@@ -120,6 +145,13 @@ export default class DominationArena extends ArenaEntity {
                         this.close();
                     }, 5000);
                 }
+            }
+        }
+        for (let i = this.dominators.length; i --> 0;) {
+            const dom = this.dominators[i];
+            if (!Entity.exists(dom)) {
+                const pop = this.dominators.pop();
+                if (pop && i < this.dominators.length) this.dominators[i] = pop;
             }
         }
         if (this.state === ArenaState.CLOSING && this.getAlivePlayers().length === 0) {
