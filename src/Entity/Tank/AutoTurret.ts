@@ -27,6 +27,7 @@ import { Entity } from "../../Native/Entity";
 import { NameGroup } from "../../Native/FieldGroups";
 import LivingEntity from "../Live";
 import { CameraEntity } from "../../Native/Camera";
+import { GuardObject } from "./Addons";
 
 export const AutoTurretDefinition: BarrelDefinition = {
     angle: 0,
@@ -122,8 +123,8 @@ export default class AutoTurret extends ObjectEntity {
      * Spreads onKill to owner
      */
     public onKill(killedEntity: LivingEntity) {
-        if (!(this.owner instanceof LivingEntity)) return;
-        this.owner.onKill(killedEntity);
+        if (!(this.owner instanceof LivingEntity) && !(this.owner instanceof GuardObject)) return;
+        this.owner.onKill(killedEntity); // GuardObject.onKill -> TankBody.onKill -> add score
     }
 
     public tick(tick: number) {
