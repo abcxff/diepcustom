@@ -28,16 +28,16 @@ import { Entity } from "../Native/Entity";
 
 
 const arenaSize = 11150;
-const baseSize = 3345;
+const baseSize = arenaSize / (3 + 1/3); // 3345, must scale with arena size
 const domBaseSize = baseSize / 2;
 
-const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed]; // Only supports up to 4 teams
+const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamGreen, Color.TeamPurple]; // Only supports up to 4 teams
 
 /**
  * Domination Gamemode Arena
  */
 export default class DominationArena extends ArenaEntity {
-    
+    /** All dominators in game */
     public dominators: Dominator[] = [];
     
     /** All team entities in game */
