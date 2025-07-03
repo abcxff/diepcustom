@@ -123,8 +123,7 @@ export default class AutoTurret extends ObjectEntity {
      * Spreads onKill to owner
      */
     public onKill(killedEntity: LivingEntity) {
-        if (!(this.owner instanceof LivingEntity) && !(this.owner instanceof GuardObject)) return;
-        this.owner.onKill(killedEntity); // GuardObject.onKill -> TankBody.onKill -> add score
+        (this.owner as unknown as LivingEntity)?.onKill?.(killedEntity);
     }
 
     public tick(tick: number) {
