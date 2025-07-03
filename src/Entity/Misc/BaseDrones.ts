@@ -26,8 +26,8 @@ import { BarrelDefinition } from "../../Const/TankDefinitions";
 import { PhysicsFlags, StyleFlags } from "../../Const/Enums";
 import { TeamGroupEntity } from "./TeamEntity";
 
-// Base drone barrel definition - creates 8 defensive drones
-const BaseGuardBarrelDefinition: BarrelDefinition = {
+// Base drone barrel definition - creates defensive drones
+const createBaseGuardBarrelDefinition = (droneCount: number): BarrelDefinition => ({
     angle: 0,
     offset: 0,
     size: 70,
@@ -38,7 +38,7 @@ const BaseGuardBarrelDefinition: BarrelDefinition = {
     isTrapezoid: true,
     trapezoidDirection: 0,
     addon: null,
-    droneCount: 8,
+    droneCount: droneCount,
     canControlDrones: false, // AI controlled
     bullet: {
         type: "drone",
@@ -50,17 +50,22 @@ const BaseGuardBarrelDefinition: BarrelDefinition = {
         lifeLength: -1,
         absorbtionFactor: 1
     }
-};
+});
 
 /**
- * Invisible base guard that spawns 8 defensive drones
+ * Invisible base guard that spawns defensive drones
  */
 export default class BaseGuard extends TankBody {
     /** The barrel that spawns the guard drones */
     private guardBarrel: Barrel;
+    /** Number of drones this guard should maintain */
+    private targetDroneCount: number;
 
-    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number) {
+    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, droneCount: number = 8) {
         super(game, new CameraEntity(game), new Inputs());
+
+        // Store the target drone count
+        this.targetDroneCount = droneCount;
 
         // Position the guard at the base
         this.positionData.values.x = x;
@@ -83,7 +88,7 @@ export default class BaseGuard extends TankBody {
         this.damageReduction = 1; // Immune to damage
 
         // Create the barrel that spawns drones
-        this.guardBarrel = new Barrel(this, BaseGuardBarrelDefinition);
+        this.guardBarrel = new Barrel(this, createBaseGuardBarrelDefinition(droneCount));
 
         // Set high level for strong drones
         this.cameraEntity.setLevel(75);
@@ -94,7 +99,7 @@ export default class BaseGuard extends TankBody {
         this.inputs.flags = 0;
         
         // Always try to spawn drones if we don't have enough
-        if (this.guardBarrel.droneCount < 8) {
+        if (this.guardBarrel.droneCount < this.targetDroneCount) {
             this.inputs.mouse.x = this.positionData.values.x;
             this.inputs.mouse.y = this.positionData.values.y;
         }
