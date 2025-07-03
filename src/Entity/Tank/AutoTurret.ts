@@ -123,7 +123,7 @@ export default class AutoTurret extends ObjectEntity {
      * Spreads onKill to owner
      */
     public onKill(killedEntity: LivingEntity) {
-        this.owner?.onKill?.(killedEntity);
+        (this.owner as LivingEntity)?.onKill?.(killedEntity);
     }
 
     public tick(tick: number) {
