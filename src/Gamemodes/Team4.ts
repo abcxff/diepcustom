@@ -22,6 +22,7 @@ import Client from "../Client";
 
 import TeamBase from "../Entity/Misc/TeamBase";
 import TankBody from "../Entity/Tank/TankBody";
+import BaseGuard from "../Entity/Misc/BaseDrones";
 
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
@@ -52,6 +53,12 @@ export default class Teams4Arena extends ArenaEntity {
         this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, arenaSize - baseSize / 2, baseSize, baseSize);
         this.greenTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamGreen), -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
         this.purpleTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamPurple), arenaSize - baseSize / 2, -arenaSize + baseSize / 2, baseSize, baseSize);
+        
+        // Add base guards with defensive drones for all teams
+        new BaseGuard(game, this.blueTeamBase.relationsData.values.team as TeamEntity, this.blueTeamBase.positionData.values.x, this.blueTeamBase.positionData.values.y);
+        new BaseGuard(game, this.redTeamBase.relationsData.values.team as TeamEntity, this.redTeamBase.positionData.values.x, this.redTeamBase.positionData.values.y);
+        new BaseGuard(game, this.greenTeamBase.relationsData.values.team as TeamEntity, this.greenTeamBase.positionData.values.x, this.greenTeamBase.positionData.values.y);
+        new BaseGuard(game, this.purpleTeamBase.relationsData.values.team as TeamEntity, this.purpleTeamBase.positionData.values.x, this.purpleTeamBase.positionData.values.y);
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
