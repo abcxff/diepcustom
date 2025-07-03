@@ -22,7 +22,6 @@ import Client from "../Client";
 
 import TeamBase from "../Entity/Misc/TeamBase";
 import TankBody from "../Entity/Tank/TankBody";
-import BaseGuard from "../Entity/Misc/BaseDrones";
 
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
@@ -53,12 +52,8 @@ export default class Teams2Arena extends ArenaEntity {
     public constructor(game: GameServer) {
         super(game);
         this.updateBounds(arenaSize * 2, arenaSize * 2);
-        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth);
-        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth);
-        
-        // Add base guards with defensive drones
-        new BaseGuard(game, this.blueTeamBase.relationsData.values.team as TeamEntity, this.blueTeamBase.positionData.values.x, this.blueTeamBase.positionData.values.y);
-        new BaseGuard(game, this.redTeamBase.relationsData.values.team as TeamEntity, this.redTeamBase.positionData.values.x, this.redTeamBase.positionData.values.y);
+        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth, true, true);
+        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth, true, true);
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {

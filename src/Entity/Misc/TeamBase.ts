@@ -21,12 +21,13 @@ import GameServer from "../../Game";
 import { HealthFlags, PhysicsFlags, StyleFlags } from "../../Const/Enums";
 import { TeamGroupEntity } from "./TeamEntity";
 import LivingEntity from "../Live";
+import BaseGuard from "./BaseDrones";
 /**
  * Represents Team Bases in game.
  */
 export default class TeamBase extends LivingEntity {
 
-    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, painful: boolean=true) {
+    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, painful: boolean=true, spawnGuards: boolean=false) {
         super(game);
 
         this.relationsData.values.team = team;
@@ -56,6 +57,11 @@ export default class TeamBase extends LivingEntity {
 
         this.healthData.flags |= HealthFlags.hiddenHealthbar
         this.healthData.health = this.healthData.values.maxHealth = 0xABCFF; // ;)
+
+        // Spawn base guard with defensive drones if requested
+        if (spawnGuards) {
+            new BaseGuard(game, team, x, y);
+        }
     }
 
     public tick(tick: number) {

@@ -24,7 +24,7 @@ import { Inputs } from "../../Entity/AI";
 
 import { BarrelDefinition } from "../../Const/TankDefinitions";
 import { PhysicsFlags, StyleFlags } from "../../Const/Enums";
-import { TeamEntity } from "./TeamEntity";
+import { TeamGroupEntity } from "./TeamEntity";
 
 // Base drone barrel definition - creates 8 defensive drones
 const BaseGuardBarrelDefinition: BarrelDefinition = {
@@ -59,7 +59,7 @@ export default class BaseGuard extends TankBody {
     /** The barrel that spawns the guard drones */
     private guardBarrel: Barrel;
 
-    public constructor(game: GameServer, team: TeamEntity, x: number, y: number) {
+    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number) {
         super(game, new CameraEntity(game), new Inputs());
 
         // Position the guard at the base

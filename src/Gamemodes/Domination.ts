@@ -20,7 +20,6 @@ import Client from "../Client";
 import { Color, ArenaFlags } from "../Const/Enums";
 import Dominator from "../Entity/Misc/Dominator";
 import TeamBase from "../Entity/Misc/TeamBase";
-import BaseGuard from "../Entity/Misc/BaseDrones";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import TankBody from "../Entity/Tank/TankBody";
 import GameServer from "../Game";
@@ -50,12 +49,8 @@ export default class DominationArena extends ArenaEntity {
 
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
 
-        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseSize / 2,  Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize);
-        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize);
-        
-        // Add base guards with defensive drones
-        new BaseGuard(game, this.blueTeamBase.relationsData.values.team as TeamEntity, this.blueTeamBase.positionData.values.x, this.blueTeamBase.positionData.values.y);
-        new BaseGuard(game, this.redTeamBase.relationsData.values.team as TeamEntity, this.redTeamBase.positionData.values.x, this.redTeamBase.positionData.values.y);
+        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseSize / 2,  Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize, true, true);
+        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize, true, true);
         
         new Dominator(this, new TeamBase(game, this, arenaSize / 2.5, arenaSize / 2.5, domBaseSize, domBaseSize, false));
         new Dominator(this, new TeamBase(game, this, arenaSize / -2.5, arenaSize / 2.5, domBaseSize, domBaseSize, false));
