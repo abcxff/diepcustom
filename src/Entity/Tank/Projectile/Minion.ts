@@ -31,7 +31,7 @@ import { CameraEntity } from "../../../Native/Camera";
  const MinionBarrelDefinition: BarrelDefinition = {
     angle: 0,
     offset: 0,
-    size: 80,
+    size: 85,
     width: 50.4,
     delay: 0,
     reload: 1,
