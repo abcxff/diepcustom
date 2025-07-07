@@ -17,7 +17,7 @@
 */
 
 import Client from "../Client";
-import { Color, ColorsHexCode, ArenaFlags, TeamFlags, ValidScoreboardIndex, ClientBound } from "../Const/Enums";
+import { Color, ColorsHexCode, ArenaFlags, ValidScoreboardIndex, ClientBound } from "../Const/Enums";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import TankBody from "../Entity/Tank/TankBody";
 import LivingEntity from "../Entity/Live";
