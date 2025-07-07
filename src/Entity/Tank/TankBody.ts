@@ -253,22 +253,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
     }
 
     public tick(tick: number) {
-        const movement: VectorAbstract = { x: 0, y: 0 };
-
-        if (this.inputs.flags & InputFlags.up) movement.y -= 1;
-        if (this.inputs.flags & InputFlags.down) movement.y += 1;
-        if (this.inputs.flags & InputFlags.right) movement.x += 1;
-        if (this.inputs.flags & InputFlags.left) movement.x -= 1;
-        
-        if (movement.x || movement.y) {
-            const angle = Math.atan2(movement.y, movement.x);
-
-            const magnitude = util.constrain(Math.sqrt(movement.x ** 2 + movement.y ** 2), -1, 1);
-
-            this.inputs.movement.magnitude = magnitude;
-            this.inputs.movement.angle = angle;
-        }
-        
         this.positionData.angle = Math.atan2(this.inputs.mouse.y - this.positionData.values.y, this.inputs.mouse.x - this.positionData.values.x);
 
         if (this.isInvulnerable) {

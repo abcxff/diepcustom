@@ -549,6 +549,23 @@ export default class Client {
     }
 
     public tick(tick: number) {
+        // Handle client inputs.
+        const movement: VectorAbstract = { x: 0, y: 0 };
+
+        if (this.inputs.flags & InputFlags.up) movement.y -= 1;
+        if (this.inputs.flags & InputFlags.down) movement.y += 1;
+        if (this.inputs.flags & InputFlags.right) movement.x += 1;
+        if (this.inputs.flags & InputFlags.left) movement.x -= 1;
+        
+        if (movement.x || movement.y) {
+            const angle = Math.atan2(movement.y, movement.x);
+
+            const magnitude = util.constrain(Math.sqrt(movement.x ** 2 + movement.y ** 2), -1, 1);
+
+            this.inputs.movement.magnitude = magnitude;
+            this.inputs.movement.angle = angle;
+        }
+
         for (let header = 0; header <= this.incomingCache.length; ++header) {
             if (header === ServerBound.Ping) continue;
 
