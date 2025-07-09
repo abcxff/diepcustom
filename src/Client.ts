@@ -547,6 +547,8 @@ export default class Client {
 
     /** Sends a notification packet to the client. */
     public notify(text: string, color = 0x000000, time = 4000, id = "") {
+        if (!this.ws) return; // Prevent server crash due to disconnected players
+
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
 
