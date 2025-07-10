@@ -21,12 +21,14 @@ import GameServer from "../../Game";
 import { HealthFlags, PhysicsFlags, StyleFlags } from "../../Const/Enums";
 import { TeamGroupEntity } from "./TeamEntity";
 import LivingEntity from "../Live";
+import BaseGuard from "./BaseDrones";
+
 /**
  * Represents Team Bases in game.
  */
 export default class TeamBase extends LivingEntity {
 
-    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, painful: boolean=true) {
+    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, painful: boolean=true, spawnGuards: boolean=false) {
         super(game);
 
         this.relationsData.values.team = team;
@@ -56,6 +58,46 @@ export default class TeamBase extends LivingEntity {
 
         this.healthData.flags |= HealthFlags.hiddenHealthbar
         this.healthData.health = this.healthData.values.maxHealth = 0xABCFF; // ;)
+
+        // Spawn base guards with defensive drones if requested
+        if (spawnGuards) {
+            this.spawnBaseGuards(game, team, x, y, width, height);
+        }
+    }
+
+    /**
+     * Spawns base guards based on base dimensions
+     * For 2TDM (wide horizontal bases): Distributes guards across the base
+     * For other modes (square bases): Single central guard
+     */
+    private spawnBaseGuards(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number) {
+        const aspectRatio = width / height;
+        
+        // 2TDM bases are very wide (aspect ratio > 5), so distribute guards
+        if (aspectRatio > 5) {
+            this.spawnDistributedGuards(game, team, x, y, width, height);
+        } else {
+            // Square bases (4TDM, Domination) - single central guard
+            new BaseGuard(game, team, x, y);
+        }
+    }
+
+    /**
+     * Spawns multiple guards distributed across a 2TDM-style base
+     * Creates 4 guards with 2 drones each, spread across the base length
+     */
+    private spawnDistributedGuards(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number) {
+        const guardCount = 4;
+        const dronesPerGuard = 2;
+        
+        // Spread guards across the base length (y-axis for 2TDM)
+        for (let i = 0; i < guardCount; i++) {
+            const yOffset = (i - (guardCount - 1) / 2) * (height * 0.6) / (guardCount - 1);
+            const guardY = y + yOffset;
+            
+            // Create a guard with fewer drones for distributed coverage
+            new BaseGuard(game, team, x, guardY, dronesPerGuard);
+        }
     }
 
     public tick(tick: number) {

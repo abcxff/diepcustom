@@ -49,8 +49,8 @@ export default class DominationArena extends ArenaEntity {
 
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
 
-        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseSize / 2,  Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize);
-        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize);
+        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseSize / 2,  Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize, true, true);
+        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, Math.random() > .5 ? (arenaSize - baseSize / 2) : -arenaSize + baseSize / 2, baseSize, baseSize, true, true);
         
         new Dominator(this, new TeamBase(game, this, arenaSize / 2.5, arenaSize / 2.5, domBaseSize, domBaseSize, false));
         new Dominator(this, new TeamBase(game, this, arenaSize / -2.5, arenaSize / 2.5, domBaseSize, domBaseSize, false));

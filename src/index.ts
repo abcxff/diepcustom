@@ -154,8 +154,11 @@ app.listen(PORT, (success) => {
     // NOTES(0): As of now, both servers run on the same process (and thread) here
     const ffa = new GameServer("ffa", "FFA");
     const sbx = new GameServer("sandbox", "Sandbox");
+    const teams = new GameServer("teams", "2TDM");
+    const teams4 = new GameServer("4teams", "4TDM");
+    const dom = new GameServer("dom", "Domination");
     
-    games.push(ffa, sbx);
+    games.push(ffa, sbx, teams, teams4, dom);
 
     util.saveToLog("Servers up", "All servers booted up.", 0x37F554);
     util.log("Dumping endpoint -> gamemode routing table");
