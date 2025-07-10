@@ -36,6 +36,7 @@ import { Inputs } from "../AI";
 import AbstractBoss from "../Boss/AbstractBoss";
 import { ArenaState } from "../../Native/Arena";
 import { AccessLevel, maxPlayerLevel } from "../../config";
+import { VectorAbstract } from "../../Physics/Vector";
 
 /**
  * Abstract type of entity which barrels can connect to.
