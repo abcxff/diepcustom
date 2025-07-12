@@ -529,22 +529,26 @@ export default class Client {
 
     /** Sends a notification packet to the client. */
     public notify(text: string, color = 0x000000, time = 4000, id = "") {
+        if (!this.ws) return; // Prevent server crash due to disconnected players
+
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
 
     /** Bans the ip from all servers until restart. */
     public ban() {
-        if(!this.ws) return;
-        util.saveToLog("IP Banned", "Banned " + this.ws.getUserData().ipAddress + this.toString(true), 0xEE326A);
+        const ws = this.ws;
+        if(!ws) return;
+
+        util.saveToLog("IP Banned", "Banned " + ws.getUserData().ipAddress + this.toString(true), 0xEE326A);
         if (this.accessLevel >= config.unbannableLevelMinimum) {
-            util.saveToLog("IP Ban Cancelled", "Cancelled ban on " + this.ws.getUserData().ipAddress + this.toString(true), 0x6A32EE);
+            util.saveToLog("IP Ban Cancelled", "Cancelled ban on " + ws.getUserData().ipAddress + this.toString(true), 0x6A32EE);
             return;
         }
 
-        bannedClients.add(this.ws.getUserData().ipAddress)
+        bannedClients.add(ws.getUserData().ipAddress)
 
         for (const client of this.game.clients) {
-            if(client.ws?.getUserData().ipAddress === this.ws.getUserData().ipAddress) client.terminate();
+            if(client.ws?.getUserData().ipAddress === ws.getUserData().ipAddress) client.terminate();
         }
     }
 

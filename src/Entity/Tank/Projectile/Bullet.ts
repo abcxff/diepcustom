@@ -56,7 +56,6 @@ export default class Bullet extends LivingEntity {
         
         this.tankDefinition = tankDefinition;
 
-        // if (barrel.definition.bullet.type === "drone") throw new TypeError("Invalid bullet type for this class");
         this.movementAngle = shootAngle;
         this.barrelEntity = barrel;
         this.spawnTick = barrel.game.tick;
@@ -94,7 +93,7 @@ export default class Bullet extends LivingEntity {
         this.minDamageMultiplier = 0.25;
         this.maxDamageMultiplier = 1;
 		
-        this.lifeLength = bulletDefinition.lifeLength * 72;
+        this.lifeLength = bulletDefinition.lifeLength * 75;
 
         const {x, y} = tank.getWorldPosition();
         
@@ -105,10 +104,7 @@ export default class Bullet extends LivingEntity {
 
     /** Extends LivingEntity.onKill - passes kill to the owner. */
     public onKill(killedEntity: LivingEntity) {
-        // TODO(ABC):
-        // Make this, work differently
-        /** @ts-ignore */
-        if (typeof this.tank.onKill === 'function') this.tank.onKill(killedEntity);
+        (this.tank as unknown as LivingEntity)?.onKill?.(killedEntity);
     }
 
     public tick(tick: number) {
