@@ -35,9 +35,11 @@ import Summoner from "../Entity/Boss/Summoner";
 import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
-import { bossSpawningInterval, scoreboardUpdateInterval } from "../config";
+import { tps, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
+    /** Waiting to start */
+    WAIT = -1,
     /** Alive, open */
     OPEN = 0,
     /** Game ended - someone won */
@@ -61,7 +63,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /** Cached height of the arena. Not sent to the client directly. */
     public height: number;
     /** Whether or not the arena allows new players to spawn. */
-    public state: ArenaState = ArenaState.OPEN;
+    public state: ArenaState = ArenaState.WAIT;
 
     public shapeScoreRewardMultiplier: number = 1;
 
@@ -91,6 +93,9 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.arenaData.values.rightX = this.width / 2;
 
         this.arenaData.values.flags = ArenaFlags.gameReadyStart;
+        this.arenaData.values.playersNeeded = 0;
+        this.arenaData.values.ticksUntilStart = 10 * tps; // 10 seconds
+        
         this.teamData.values.teamColor = Color.Neutral;
     }
 
@@ -170,7 +175,13 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             return;
         }
     }
-
+    
+    public manageCountdown() {
+        if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
+        if (this.state === ArenaState.WAIT && this.arenaData.values.ticksUntilStart <= 0) {
+            this.state = ArenaState.OPEN;
+        }
+    }
     public getAlivePlayers() {
         const players: TankBody[] = [];
         for (let id = 0; id <= this.game.entities.lastId; ++id) {
@@ -259,6 +270,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     public tick(tick: number) {
         this.shapes.tick();
         this.updateArenaState();
+        this.manageCountdown();
 
         if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
             this.arenaData.leaderX = this.leader.positionData.values.x;
