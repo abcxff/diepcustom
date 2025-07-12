@@ -37,6 +37,7 @@ import FactoryTestArena from "./Gamemodes/Misc/FactoryTest";
 import BallArena from "./Gamemodes/Misc/Ball";
 import MazeArena from "./Gamemodes/Maze";
 import TagArena from "./Gamemodes/Tag";
+import SurvivalArena from "./Gamemodes/Survival";
 
 /**
  * WriterStream that broadcasts to all of the game's WebSockets.
@@ -67,7 +68,7 @@ const GamemodeToArenaClass: Record<DiepGamemodeID, (typeof ArenaEntity) | null> 
     "sandbox": SandboxArena,
     "*": SandboxArena,
     "dom": DominationArena,
-    "survival": null,
+    "survival": SurvivalArena,
     "tag": TagArena,
     "mot": MothershipArena,
     "maze": MazeArena,
@@ -95,6 +96,8 @@ export default class GameServer {
     public playersOnMap: boolean = false;
     /** All clients connected. */
     public clients: Set<Client>;
+    /** All clients and usernames waiting to spawn while a countdown is active. */
+    public clientsAwaitingSpawn: Map<Client, string | null> = new Map();
     /** Entity manager of the game. */
     public entities: EntityManager;
     /** The current game tick. */
@@ -123,6 +126,7 @@ export default class GameServer {
             if (success) {
                 GameServer.globalPlayerCount -= 1;
                 this.broadcastPlayerCount();
+                this.clientsAwaitingSpawn.delete(client);
             }
 
             return success;
@@ -131,7 +135,8 @@ export default class GameServer {
         this.clients.clear = () => {
             GameServer.globalPlayerCount -= this.clients.size;
             this.broadcastPlayerCount();
-            
+            this.clientsAwaitingSpawn.clear();
+
             return _clear.call(this.clients);
         }
 
