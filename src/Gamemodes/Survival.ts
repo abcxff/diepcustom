@@ -58,19 +58,11 @@ export default class SurvivalArena extends ArenaEntity {
     public updateArenaState() {
         const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.arena.getAlivePlayers().length, 1))) * 100;
         if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
-        if (this.state === ArenaState.WAIT) {
-            this.arenaData.playersNeeded = minPlayers - this.game.clientsAwaitingSpawn.size;
-            if (this.arenaData.values.playersNeeded <= 0) this.arenaData.flags |= ArenaFlags.gameReadyStart;
-        }
 
         if ((this.game.tick % scoreboardUpdateInterval) === 0) {
             const players = this.getAlivePlayers();
             // Sorts them too DONT FORGET
             this.updateScoreboard(players);
-        }
-
-        if (this.arenaData.values.ticksUntilStart <= 0) {
-            this.arenaData.flags = ArenaFlags.noJoining;
         }
 
         for (const client of this.game.clients) {
@@ -104,5 +96,18 @@ export default class SurvivalArena extends ArenaEntity {
             }, 5000);
             return;
         }
+    }
+    
+    public manageCountdown() {
+        if (this.state === ArenaState.WAIT) {
+            this.arenaData.playersNeeded = minPlayers - this.game.clientsAwaitingSpawn.size;
+            if (this.arenaData.values.playersNeeded <= 0) this.arenaData.flags |= ArenaFlags.gameReadyStart;
+        }
+
+        if (this.arenaData.values.ticksUntilStart <= 0) {
+            this.arenaData.flags = ArenaFlags.noJoining; // No joining once the game has started, and also no respawns
+        }
+
+        super.manageCountdown();
     }
 }
