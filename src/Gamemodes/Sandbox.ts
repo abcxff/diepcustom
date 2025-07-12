@@ -47,6 +47,7 @@ export default class SandboxArena extends ArenaEntity {
 
         this.updateBounds(2500, 2500);
         this.arenaData.values.flags |= ArenaFlags.canUseCheats;
+        this.arenaData.values.ticksUntilStart = 0; // Sandbox should start instantly
         // const w1 = new MazeWall(this.game, 0, 0, 500, 500);
     }
 
