@@ -94,7 +94,7 @@ export default class Defender extends AbstractBoss {
 
         this.physicsData.values.sides = 3;
 
-	const count = this.physicsData.values.sides;
+        const count = this.physicsData.values.sides;
         const offset = 60 / this.physicsData.values.size;
         for (let i = 0; i < count; i++) {
             // Add trap launcher
@@ -133,7 +133,7 @@ export default class Defender extends AbstractBoss {
        super.tick(tick);
 
         if (this.ai.state !== AIState.possessed) {
-            this.positionData.angle += this.ai.passiveRotation * Math.PI * (2/3);
+            this.positionData.angle += this.ai.passiveRotation * 1.5;
         }
     }
 }
