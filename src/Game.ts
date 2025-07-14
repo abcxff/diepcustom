@@ -166,12 +166,14 @@ export default class GameServer {
 
         clearInterval(this._tickInterval);
 
+        /*
         for (const client of this.clients) {
             client.terminate()
         }
+        */
 
         this.tick = 0;
-        this.clients.clear();
+        //this.clients.clear();
         this.entities.clear();
 
         this.running = false;
@@ -190,12 +192,16 @@ export default class GameServer {
 
         util.log("New game instance booting up")
 
-        this.clients.clear();
+        //this.clients.clear();
 
         this.entities = new EntityManager(this);
         this.tick = 0;
 
         this.arena = new (GamemodeToArenaClass[this.gamemode] || GamemodeToArenaClass["*"])(this);
+
+        for (const client of this.clients) {
+            client.acceptClient();
+        }
 
         this._tickInterval = setInterval(() => {
             if (this.clients.size) this.tickLoop();
