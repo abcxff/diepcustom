@@ -65,11 +65,6 @@ export default class SurvivalArena extends ArenaEntity {
             this.updateScoreboard(players);
         }
 
-        for (const client of this.game.clients) {
-            const camera = client.camera;
-            if (camera && Entity.exists(camera.cameraData.values.player)) camera.cameraData.score += 0.25;
-        }
-
         const players = this.getAlivePlayers();
         const aliveCount = players.length;
 
@@ -114,5 +109,13 @@ export default class SurvivalArena extends ArenaEntity {
         }
 
         super.manageCountdown();
+    }
+
+    public tick(tick: number) {
+        for (const client of this.game.clients) {
+            const camera = client.camera;
+            if (camera && Entity.exists(camera.cameraData.values.player)) camera.cameraData.score += 0.2;
+        }
+        super.tick(tick);
     }
 }
