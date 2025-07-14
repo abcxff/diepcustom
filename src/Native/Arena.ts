@@ -242,21 +242,18 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.state = ArenaState.CLOSING;
         this.arenaData.flags |= ArenaFlags.noJoining;
 
-        // This is a one-time, end of life event, so we just use setTimeout
-        setTimeout(() => {
-            const acCount = Math.floor(Math.sqrt(this.width) / 10);
-            const radius = this.width * Math.SQRT1_2 + 500;
-            for (let i = 0; i < acCount; ++i) {
-                const ac = new ArenaCloser(this.game);
+        const acCount = Math.floor(Math.sqrt(this.width) / 10);
+        const radius = this.width * Math.SQRT1_2 + 5000;
+        for (let i = 0; i < acCount; ++i) {
+            const ac = new ArenaCloser(this.game);
 
-                const angle = (i / acCount) * PI2;
-                ac.positionData.values.x = Math.cos(angle) * radius;
-                ac.positionData.values.y = Math.sin(angle) * radius;
-                ac.positionData.values.angle = angle + Math.PI;
-            }
+            const angle = (i / acCount) * PI2;
+            ac.positionData.values.x = Math.cos(angle) * radius;
+            ac.positionData.values.y = Math.sin(angle) * radius;
+            ac.positionData.values.angle = angle + Math.PI;
+        }
 
-            saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
-        }, 5000);
+        saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
     }
 
     /** Spawns the boss into the arena */
