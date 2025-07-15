@@ -82,7 +82,7 @@ export default class Defender extends AbstractBoss {
     /** Defender's trap launchers */
     private trappers: Barrel[] = [];
     /** See AbstractBoss.movementSpeed */
-    public movementSpeed = 0.35;
+    public movementSpeed = 0.2;
 
     public constructor(game: GameServer) {
         super(game);
