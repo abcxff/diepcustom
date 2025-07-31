@@ -323,10 +323,10 @@ export default class Client {
                 if ((flags & InputFlags.suicide) && (!player.deletionAnimation || !player.deletionAnimation) && !this.inputs.isPossessing) {
                     if (this.accessLevel >= config.AccessLevel.BetaAccess || (this.game.arena.arenaData.values.flags & ArenaFlags.canUseCheats)) {
                         this.setHasCheated(true);
-                        
-                        this.notify("You've killed " + (player.nameData.values.name === "" ? "an unnamed tank" : player.nameData.values.name));
-                        camera.cameraData.killedBy = player.nameData.values.name;
+
                         player.destroy();
+                        player.onKill(player);
+                        player.onDeath(player);
                     }
                 }
                 
