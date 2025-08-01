@@ -176,9 +176,9 @@ export default class TankBody extends LivingEntity implements BarrelBase {
     }
     /** See LivingEntity.onKill */
     public onKill(entity: LivingEntity) {
-        if (Entity.exists(this.cameraEntity.cameraData.values.player)) this.scoreData.score = this.cameraEntity.cameraData.score += entity.scoreReward;
+        if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.scoreData.score = this.cameraEntity.cameraData.score += entity.scoreReward;
 
-        if (entity instanceof TankBody && entity.scoreReward && Math.max(this.cameraEntity.cameraData.values.level, maxPlayerLevel) - entity.cameraEntity.cameraData.values.level <= 20 || entity instanceof AbstractBoss) {
+        if (entity instanceof TankBody && entity.scoreReward || entity instanceof AbstractBoss) {
             if (this.cameraEntity instanceof ClientCamera) this.cameraEntity.client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
         }
 
