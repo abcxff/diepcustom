@@ -508,7 +508,8 @@ export default class Client {
 
     /** Sends a notification packet to the client. */
     public notify(text: string, color = 0x000000, time = 4000, id = "") {
-        if (!this.ws) return; // Prevent server crash due to disconnected players
+        const ws = this.ws;
+        if(!ws) return; return; // Prevent server crash due to disconnected players
 
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
@@ -529,6 +530,34 @@ export default class Client {
         for (const client of this.game.clients) {
             if(client.ws?.getUserData().ipAddress === ws.getUserData().ipAddress) client.terminate();
         }
+    }
+    
+    public createAndSpawnPlayer() {
+        const camera = this.camera;
+        if (!Entity.exists(camera)) return;
+
+        camera.cameraData.values.statsAvailable = 0;
+        camera.cameraData.values.level = 1;
+
+        for (let i = 0; i < StatCount; ++i) {
+            camera.cameraData.values.statLevels.values[i] = 0;
+        }
+
+        const tank = camera.cameraData.player = camera.relationsData.owner = camera.relationsData.parent = new TankBody(this.game, camera, this.inputs);
+        tank.setTank(Tank.Basic);
+        this.game.arena.spawnPlayer(tank, this);
+        camera.setLevel(camera.cameraData.values.respawnLevel);
+        tank.nameData.values.name = this.game.clientsAwaitingSpawn.get(this) || "";
+
+        if (this.hasCheated()) this.setHasCheated(true);
+
+        // Force-send a creation to the client - Only if it is not new
+        camera.entityState = EntityStateFlags.needsCreate | EntityStateFlags.needsDelete;
+        camera.spectatee = null;
+        this.inputs.isPossessing = false;
+        this.inputs.movement.magnitude = 0;
+  
+        if (camera.cameraData.values.flags & CameraFlags.gameWaitingStart) camera.cameraData.values.flags &= ~CameraFlags.gameWaitingStart;
     }
 
     public tick(tick: number) {
@@ -558,39 +587,6 @@ export default class Client {
             } else continue;
             this.incomingCache[header] = [];
         }
-        if (this.game.clientsAwaitingSpawn.has(this)) {
-            const camera = this.camera;
-            if (!Entity.exists(camera)) return;
-            if (this.game.arena.state === ArenaState.WAIT) {
-                camera.cameraData.values.flags = CameraFlags.gameWaitingStart
-                return;
-            }
-
-            camera.cameraData.values.statsAvailable = 0;
-            camera.cameraData.values.level = 1;
-
-            for (let i = 0; i < StatCount; ++i) {
-                camera.cameraData.values.statLevels.values[i] = 0;
-            }
-
-            const tank = camera.cameraData.player = camera.relationsData.owner = camera.relationsData.parent = new TankBody(this.game, camera, this.inputs);
-            tank.setTank(Tank.Basic);
-            this.game.arena.spawnPlayer(tank, this);
-            camera.setLevel(camera.cameraData.values.respawnLevel);
-            tank.nameData.values.name = this.game.clientsAwaitingSpawn.get(this) || "";
-
-            if (this.hasCheated()) this.setHasCheated(true);
-
-            // Force-send a creation to the client - Only if it is not new
-            camera.entityState = EntityStateFlags.needsCreate | EntityStateFlags.needsDelete;
-            camera.spectatee = null;
-            this.inputs.isPossessing = false;
-            this.inputs.movement.magnitude = 0;
-            
-            if (camera.cameraData.values.flags & CameraFlags.gameWaitingStart) camera.cameraData.values.flags &= ~CameraFlags.gameWaitingStart
-            
-            this.game.clientsAwaitingSpawn.delete(this);
-        }
         if (!this.camera) {
             if (tick === this.connectTick + 300) {
                 return this.terminate();
@@ -605,7 +601,23 @@ export default class Client {
         if (tick >= this.lastPingTick + 60 * config.tps) {
             return this.terminate();
         }
+
+        if (this.game.clientsAwaitingSpawn.has(this)) { // Is this client attempting to spawn?
+            const camera = this.camera;
+            if (!Entity.exists(camera)) return;
+            if (this.game.arena.state === ArenaState.WAIT) {
+                // If the game has not yet started, display countdown and keep this client in the waiting list
+                camera.cameraData.values.flags = CameraFlags.gameWaitingStart
+                return;
+            }
+            // Otherwise, proceed as usual
+            this.createAndSpawnPlayer();
+
+            // Remove this client from waiting list once this is done
+            this.game.clientsAwaitingSpawn.delete(this);
+        }
     }
+
     /** toString override from base Object. Adds debug info */
     public toString(verbose: boolean = false): string {
         const tokens: string[] = [];
