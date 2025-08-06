@@ -97,7 +97,7 @@ export default class GameServer {
     /** All clients connected. */
     public clients: Set<Client>;
     /** All clients and usernames waiting to spawn while a countdown is active. */
-    public clientsAwaitingSpawn: Map<Client, string | null> = new Map();
+    public clientsAwaitingSpawn: Map<Client, string> = new Map();
     /** Entity manager of the game. */
     public entities: EntityManager;
     /** The current game tick. */
