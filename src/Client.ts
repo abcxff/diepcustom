@@ -531,7 +531,8 @@ export default class Client {
             if(client.ws?.getUserData().ipAddress === ws.getUserData().ipAddress) client.terminate();
         }
     }
-    
+
+    /** Creates a tank and spawns it into the arena for this client. */
     public createAndSpawnPlayer() {
         const camera = this.camera;
         if (!Entity.exists(camera)) return;
