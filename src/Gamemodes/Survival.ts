@@ -116,6 +116,7 @@ export default class SurvivalArena extends ArenaEntity {
     }
     
     public spawnPlayer(tank: TankBody, client: Client) {
+        // Since all players spawn at once, we need to update arena size per each spawn. Otherwise it will be updated next tick and players will spawn too close together
         this.setSurvivalArenaSize();
         super.spawnPlayer(tank, client)
     }
