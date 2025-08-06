@@ -509,7 +509,7 @@ export default class Client {
     /** Sends a notification packet to the client. */
     public notify(text: string, color = 0x000000, time = 4000, id = "") {
         const ws = this.ws;
-        if(!ws) return; return; // Prevent server crash due to disconnected players
+        if(!ws) return; // Prevent server crash due to disconnected players
 
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
@@ -531,9 +531,8 @@ export default class Client {
             if(client.ws?.getUserData().ipAddress === ws.getUserData().ipAddress) client.terminate();
         }
     }
-
-    /** Creates a tank and spawns it into the arena for this client. */
-    public createAndSpawnPlayer() {
+    
+    public createAndSpawnPlayer(name: string) {
         const camera = this.camera;
         if (!Entity.exists(camera)) return;
 
@@ -548,7 +547,7 @@ export default class Client {
         tank.setTank(Tank.Basic);
         this.game.arena.spawnPlayer(tank, this);
         camera.setLevel(camera.cameraData.values.respawnLevel);
-        tank.nameData.values.name = this.game.clientsAwaitingSpawn.get(this) || "";
+        tank.nameData.values.name = name;
 
         if (this.hasCheated()) this.setHasCheated(true);
 
@@ -602,23 +601,7 @@ export default class Client {
         if (tick >= this.lastPingTick + 60 * config.tps) {
             return this.terminate();
         }
-
-        if (this.game.clientsAwaitingSpawn.has(this)) { // Is this client attempting to spawn?
-            const camera = this.camera;
-            if (!Entity.exists(camera)) return;
-            if (this.game.arena.state === ArenaState.WAIT) {
-                // If the game has not yet started, display countdown and keep this client in the waiting list
-                camera.cameraData.values.flags = CameraFlags.gameWaitingStart
-                return;
-            }
-            // Otherwise, proceed as usual
-            this.createAndSpawnPlayer();
-
-            // Remove this client from waiting list once this is done
-            this.game.clientsAwaitingSpawn.delete(this);
-        }
     }
-
     /** toString override from base Object. Adds debug info */
     public toString(verbose: boolean = false): string {
         const tokens: string[] = [];
