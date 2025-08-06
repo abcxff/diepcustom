@@ -31,7 +31,7 @@ const arenaSize = 11150;
 const baseSize = arenaSize / (3 + 1/3); // 3345, must scale with arena size
 const domBaseSize = baseSize / 2;
 
-const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamGreen, Color.TeamPurple]; // Only supports up to 4 teams
+const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed]; // Only supports up to 4 teams
 
 /**
  * Domination Gamemode Arena
@@ -44,7 +44,7 @@ export default class DominationArena extends ArenaEntity {
     public teams: TeamEntity[] = [];
 
     /** Maps clients to their teams */
-    public playerTeamMap: Map<Client, TeamEntity> = new Map();
+    public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
 
     public constructor(game: GameServer) {
         super(game);

@@ -39,7 +39,7 @@ export default class MothershipArena extends ArenaEntity {
     public motherships: Mothership[] = [];
 
     /** Maps clients to their mothership */
-    public playerTeamMotMap: Map<Client, Mothership> = new Map();
+    public playerTeamMotMap: WeakMap<Client, Mothership> = new WeakMap();
 
     public constructor(game: GameServer) {
         super(game);

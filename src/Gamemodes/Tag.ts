@@ -49,6 +49,7 @@ export class TagShapeManager extends ShapeManager {
     protected get wantedShapes() {
         const mult = 50 * 50;
         const ratio = Math.ceil(Math.pow(this.game.arena.width / mult, 2));
+        console.log(Math.floor(12.5 * ratio));
         return Math.floor(12.5 * ratio);
     }
 }
@@ -63,7 +64,7 @@ export default class TagArena extends ArenaEntity {
     public teams: TeamEntity[] = [];
 
     /** Maps clients to their team */
-    public playerTeamMap: Map<Client, TeamEntity> = new Map();
+    public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
 
     public constructor(game: GameServer) {
         super(game);

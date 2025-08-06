@@ -56,16 +56,16 @@ export default class SurvivalArena extends ArenaEntity {
     }
     
     public updateArenaState() {
-        this.setSurvivalArenaSize();
+        const players = this.getAlivePlayers();
+        const aliveCount = players.length;
+
+        this.setSurvivalArenaSize(aliveCount);
 
         if ((this.game.tick % scoreboardUpdateInterval) === 0) {
             const players = this.getAlivePlayers();
             // Sorts them too DONT FORGET
             this.updateScoreboard(players);
         }
-
-        const players = this.getAlivePlayers();
-        const aliveCount = players.length;
 
         if (aliveCount <= 1 && this.state === ArenaState.OPEN) {
             /*
@@ -91,19 +91,19 @@ export default class SurvivalArena extends ArenaEntity {
             return;
         }
     }
-
-    public setSurvivalArenaSize() {
-        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.arena.getAlivePlayers().length, 1))) * 100;
+    
+    public setSurvivalArenaSize(playerCount: number) {
+        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(playerCount, 1))) * 100;
         this.updateBounds(arenaSize, arenaSize);
     }
-
+    
     public manageCountdown() {
-        if (this.state === ArenaState.WAIT) {
+        if (this.state === ArenaState.COUNTDOWN) {
             this.arenaData.playersNeeded = minPlayers - this.game.clientsAwaitingSpawn.size;
             if (this.arenaData.values.playersNeeded <= 0) {
                 this.arenaData.flags |= ArenaFlags.gameReadyStart;
             } else {
-                this.arenaData.values.ticksUntilStart = 10 * tps;
+                this.arenaData.values.ticksUntilStart = 10 * tps; // Reset countdown
                 if (this.arenaData.flags & ArenaFlags.gameReadyStart) this.arenaData.flags &= ~ArenaFlags.gameReadyStart;
             }
         }
@@ -116,8 +116,7 @@ export default class SurvivalArena extends ArenaEntity {
     }
     
     public spawnPlayer(tank: TankBody, client: Client) {
-        // Since all players spawn at once, we need to update arena size per each spawn. Otherwise it will be updated next tick and players will spawn too close together
-        this.setSurvivalArenaSize();
+        this.setSurvivalArenaSize(this.game.clients.size);
         super.spawnPlayer(tank, client)
     }
 
