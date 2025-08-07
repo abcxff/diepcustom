@@ -117,18 +117,6 @@ export default class MothershipArena extends ArenaEntity {
         this.arenaData.scoreboardAmount = length;
     }
     public updateArenaState() {
-        const length = Math.min(10, this.motherships.length);
-        for (let i = 0; i < length; ++i) {
-            const mothership = this.motherships[i];
-            const team = mothership.relationsData.values.team;
-            const isTeamATeam = team instanceof TeamEntity;
-            if (isTeamATeam) {
-                team.teamData.mothershipX = mothership.positionData.values.x;
-                team.teamData.mothershipY = mothership.positionData.values.y;
-                team.teamData.flags |= TeamFlags.hasMothership;
-            }
-        }
-
         // backwards to preserve
         for (let i = this.motherships.length; i --> 0;) {
             const mot = this.motherships[i];
