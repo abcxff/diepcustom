@@ -290,18 +290,10 @@ export default class ObjectEntity extends Entity {
                 // in Diep.io source code, rectangles do not support collisions with other rectangles
                 // uncomment the following code to enable rect on rect collisions
                 /*
-                const rect1Left = this.positionData.values.x - this.physicsData.values.width / 2;
-                const rect1Right = this.positionData.values.x + this.physicsData.values.width / 2;
-                const rect1Top = this.positionData.values.y - this.physicsData.values.size / 2;
-                const rect1Bottom = this.positionData.values.y + this.physicsData.values.size / 2;
-                const rect2Left = entity.positionData.values.x - entity.physicsData.values.width / 2;
-                const rect2Right = entity.positionData.values.x + entity.physicsData.values.width / 2;
-                const rect2Top = entity.positionData.values.y - entity.physicsData.values.size / 2;
-                const rect2Bottom = entity.positionData.values.y + entity.physicsData.values.size / 2;
-                if (rect1Left <= rect2Right &&
-                        rect1Right >= rect2Left &&
-                        rect1Top <= rect2Bottom &&
-                        rect1Bottom >= rect2Top) this.cachedCollisions.push(entity);
+                if (
+                    Math.abs(entity.positionData.values.x - this.positionData.values.x) <= (entity.physicsData.values.size + this.physicsData.values.size) / 2 &&
+                    Math.abs(entity.positionData.values.y - this.positionData.values.y) <= (entity.physicsData.values.width +this.physicsData.values.width) / 2
+                   ) this.cachedCollisions.push(entity);
                 */
             } else if (this.physicsData.values.sides !== 2 && entity.physicsData.values.sides === 2) {
                 const dX = util.constrain(this.positionData.values.x, entity.positionData.values.x - entity.physicsData.values.size / 2, entity.positionData.values.x + entity.physicsData.values.size / 2) - this.positionData.values.x;
