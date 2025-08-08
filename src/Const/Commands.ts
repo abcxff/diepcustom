@@ -11,6 +11,7 @@ import ArenaCloser from "../Entity/Misc/ArenaCloser";
 import FallenAC from "../Entity/Misc/Boss/FallenAC";
 import Mothership from "../Entity/Misc/Mothership";
 import FallenSpike from "../Entity/Misc/Boss/FallenSpike";
+import FallenMegaTrapper from "../Entity/Misc/Boss/FallenMegaTrapper";
 import Dominator from "../Entity/Misc/Dominator";
 import ObjectEntity from "../Entity/Object";
 import AbstractShape from "../Entity/Shape/AbstractShape";
@@ -267,6 +268,7 @@ export const commandCallbacks = {
             ["FallenBooster", FallenBooster],
             ["FallenAC", FallenAC],
             ["FallenSpike", FallenSpike],
+            ["FallenMegaTrapper", FallenMegaTrapper],
             ["ArenaCloser", ArenaCloser],
             ["Mothership", Mothership],
             ["Crasher", Crasher],
