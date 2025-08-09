@@ -47,13 +47,13 @@ export default class Teams2Arena extends ArenaEntity {
     // }(this);
 
     /** Maps clients to their teams */
-    public playerTeamMap: Map<Client, TeamBase> = new Map();
+    public playerTeamMap: WeakMap<Client, TeamBase> = new WeakMap();
     
     public constructor(game: GameServer) {
         super(game);
         this.updateBounds(arenaSize * 2, arenaSize * 2);
-        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth);
-        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth);
+        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
+        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {

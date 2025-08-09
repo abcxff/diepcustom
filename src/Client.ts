@@ -122,7 +122,7 @@ export default class Client {
     }
 
     /** Accepts the client and creates a camera for it. */
-    private acceptClient() {
+    public acceptClient() {
         this.write().u8(ClientBound.ServerInfo).stringNT(this.game.gamemode).stringNT(config.host).send();
         this.write().u8(ClientBound.PlayerCount).vu(GameServer.globalPlayerCount).send();
         this.write().u8(ClientBound.Accept).vi(this.accessLevel).send();
@@ -323,10 +323,10 @@ export default class Client {
                 if ((flags & InputFlags.suicide) && (!player.deletionAnimation || !player.deletionAnimation) && !this.inputs.isPossessing) {
                     if (this.accessLevel >= config.AccessLevel.BetaAccess || (this.game.arena.arenaData.values.flags & ArenaFlags.canUseCheats)) {
                         this.setHasCheated(true);
-                        
-                        this.notify("You've killed " + (player.nameData.values.name === "" ? "an unnamed tank" : player.nameData.values.name));
-                        camera.cameraData.killedBy = player.nameData.values.name;
+
                         player.destroy();
+                        player.onKill(player);
+                        player.onDeath(player);
                     }
                 }
                 
@@ -334,32 +334,11 @@ export default class Client {
             }
             case ServerBound.Spawn: {
                 util.log("Client wants to spawn");
-
-                if ((this.game.arena.state >= ArenaState.CLOSING)) return;
-                if (Entity.exists(camera.cameraData.values.player)) return this.terminate();
-
-                camera.cameraData.values.statsAvailable = 0;
-                camera.cameraData.values.level = 1;
-
-                for (let i = 0; i < StatCount; ++i) {
-                    camera.cameraData.values.statLevels.values[i] = 0;
-                }
+                if (this.game.arena.arenaData.values.flags & ArenaFlags.noJoining) return;
+                if (Entity.exists(camera.cameraData.values.player)) return;
 
                 const name = r.stringNT().slice(0, 16);
-
-                const tank = camera.cameraData.player = camera.relationsData.owner = camera.relationsData.parent = new TankBody(this.game, camera, this.inputs);
-                tank.setTank(Tank.Basic);
-                this.game.arena.spawnPlayer(tank, this);
-                camera.setLevel(camera.cameraData.values.respawnLevel);
-                tank.nameData.values.name = name;
-
-                if (this.hasCheated()) this.setHasCheated(true);
-
-                // Force-send a creation to the client - Only if it is not new
-                camera.entityState = EntityStateFlags.needsCreate | EntityStateFlags.needsDelete;
-                camera.spectatee = null;
-                this.inputs.isPossessing = false;
-                this.inputs.movement.magnitude = 0;
+                this.game.clientsAwaitingSpawn.set(this, name);
 
                 return;
             }
@@ -529,7 +508,8 @@ export default class Client {
 
     /** Sends a notification packet to the client. */
     public notify(text: string, color = 0x000000, time = 4000, id = "") {
-        if (!this.ws) return; // Prevent server crash due to disconnected players
+        const ws = this.ws;
+        if(!ws) return; // Prevent server crash due to disconnected players
 
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
@@ -550,6 +530,34 @@ export default class Client {
         for (const client of this.game.clients) {
             if(client.ws?.getUserData().ipAddress === ws.getUserData().ipAddress) client.terminate();
         }
+    }
+    
+    public createAndSpawnPlayer(name: string) {
+        const camera = this.camera;
+        if (!Entity.exists(camera)) return;
+
+        camera.cameraData.values.statsAvailable = 0;
+        camera.cameraData.values.level = 1;
+
+        for (let i = 0; i < StatCount; ++i) {
+            camera.cameraData.values.statLevels.values[i] = 0;
+        }
+
+        const tank = camera.cameraData.player = camera.relationsData.owner = camera.relationsData.parent = new TankBody(this.game, camera, this.inputs);
+        tank.setTank(Tank.Basic);
+        this.game.arena.spawnPlayer(tank, this);
+        camera.setLevel(camera.cameraData.values.respawnLevel);
+        tank.nameData.values.name = name;
+
+        if (this.hasCheated()) this.setHasCheated(true);
+
+        // Force-send a creation to the client - Only if it is not new
+        camera.entityState = EntityStateFlags.needsCreate | EntityStateFlags.needsDelete;
+        camera.spectatee = null;
+        this.inputs.isPossessing = false;
+        this.inputs.movement.magnitude = 0;
+  
+        if (camera.cameraData.values.flags & CameraFlags.gameWaitingStart) camera.cameraData.values.flags &= ~CameraFlags.gameWaitingStart;
     }
 
     public tick(tick: number) {
@@ -579,7 +587,6 @@ export default class Client {
             } else continue;
             this.incomingCache[header] = [];
         }
-
         if (!this.camera) {
             if (tick === this.connectTick + 300) {
                 return this.terminate();
