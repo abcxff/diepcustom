@@ -35,7 +35,7 @@ import { CameraEntity } from "../../../Native/Camera";
     width: 50.4,
     delay: 0,
     reload: 1,
-    recoil: 1.35,
+    recoil: 1,
     isTrapezoid: false,
     trapezoidDirection: 0,
     addon: null,
