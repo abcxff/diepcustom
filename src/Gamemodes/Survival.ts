@@ -114,9 +114,12 @@ export default class SurvivalArena extends ArenaEntity {
 
         super.manageCountdown();
     }
-    
+
+    public onGameStarted() {
+        this.setSurvivalArenaSize(this.game.clientsAwaitingSpawn.size);
+    }
+
     public spawnPlayer(tank: TankBody, client: Client) {
-        this.setSurvivalArenaSize(this.game.clients.size);
         super.spawnPlayer(tank, client)
     }
 
