@@ -17,7 +17,7 @@
 */
 
 import GameServer from "../Game";
-import ArenaEntity from "../Native/Arena";
+import ArenaEntity, { ArenaState } from "../Native/Arena";
 
 import ShapeManager from "../Entity/Shape/Manager";
 import { ArenaFlags } from "../Const/Enums";
@@ -47,7 +47,7 @@ export default class SandboxArena extends ArenaEntity {
 
         this.updateBounds(2500, 2500);
         this.arenaData.values.flags |= ArenaFlags.canUseCheats;
-        this.arenaData.values.ticksUntilStart = 0; // Sandbox should start instantly
+        this.state = ArenaState.OPEN; // Sandbox should start instantly, no countdown
         // const w1 = new MazeWall(this.game, 0, 0, 500, 500);
     }
 
