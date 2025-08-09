@@ -190,6 +190,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
         if (this.state === ArenaState.COUNTDOWN && this.arenaData.values.ticksUntilStart <= 0) {
             this.state = ArenaState.OPEN;
+            this.onGameStarted();
         }
 
         for (const [client, name] of this.game.clientsAwaitingSpawn) {
@@ -281,6 +282,9 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
         saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
     }
+
+    /** This code will be executed once per game, when the countdown ends and players are spawned into the game. */
+    public onGameStarted() {}
 
     /** Spawns the boss into the arena */
     protected spawnBoss() {
