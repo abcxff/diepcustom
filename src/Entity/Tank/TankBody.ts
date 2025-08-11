@@ -150,7 +150,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         else if (this.positionData.flags & PositionFlags.canMoveThroughWalls) this.positionData.flags ^= PositionFlags.canMoveThroughWalls;
 
         camera.cameraData.tank = this._currentTank = id;
-        if (tank.upgradeMessage && camera instanceof ClientCamera) camera.client.notify(tank.upgradeMessage);
+        if (tank.upgradeMessage && camera instanceof ClientCamera) camera.client.notify(tank.upgradeMessage, 0x000000, 10000);
 
         // Build addons, then tanks, then addons.
         const preAddon = tank.preAddon;
