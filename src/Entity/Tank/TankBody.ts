@@ -26,14 +26,13 @@ import LivingEntity from "../Live";
 import ObjectEntity from "../Object";
 import Barrel from "./Barrel";
 
-import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, PhysicsFlags, PositionFlags, HealthFlags } from "../../Const/Enums";
+import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, PhysicsFlags, PositionFlags, NameFlags, HealthFlags } from "../../Const/Enums";
 import { Entity } from "../../Native/Entity";
 import { NameGroup, ScoreGroup } from "../../Native/FieldGroups";
 import { Addon, AddonById } from "./Addons";
 import { getTankById, TankDefinition } from "../../Const/TankDefinitions";
 import { DevTank } from "../../Const/DevTankDefinitions";
 import { Inputs } from "../AI";
-import AbstractBoss from "../Boss/AbstractBoss";
 import { ArenaState } from "../../Native/Arena";
 import { AccessLevel, maxPlayerLevel } from "../../config";
 
@@ -178,7 +177,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
     public onKill(entity: LivingEntity) {
         if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.scoreData.score = this.cameraEntity.cameraData.score += entity.scoreReward;
 
-        if (entity instanceof TankBody && entity.scoreReward || entity instanceof AbstractBoss) {
+        if ((entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName))) {
             if (this.cameraEntity instanceof ClientCamera) this.cameraEntity.client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
         }
 
