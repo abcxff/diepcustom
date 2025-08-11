@@ -310,14 +310,27 @@ export default class ObjectEntity extends Entity {
     public getWorldPosition(): Vector {
         let pos = new Vector(this.positionData.values.x, this.positionData.values.y);
 
+        const x = pos.x;
+        const y = pos.y;
+        
+        let px = 0;
+        let py = 0;
+        let par = 0;
+        
         let entity: ObjectEntity = this;
         while (entity.relationsData.values.parent instanceof ObjectEntity) {
-            
             if (!(entity.relationsData.values.parent.positionData.values.flags & PositionFlags.absoluteRotation)) pos.angle += entity.positionData.values.angle;
             entity = entity.relationsData.values.parent;
-            pos.x += entity.positionData.values.x;
-            pos.y += entity.positionData.values.y;
+            px += entity.positionData.values.x;
+            py += entity.positionData.values.y;
+            if (entity.positionData.values.flags & PositionFlags.absoluteRotation) par += entity.positionData.values.angle;
         }
+
+        const cos = Math.cos(par);
+        const sin = Math.sin(par);
+        
+        pos.x = px + x * cos - y * sin;
+        pos.y = py + x * sin + y * cos;
 
         return pos;
     }
