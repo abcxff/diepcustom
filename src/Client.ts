@@ -395,7 +395,7 @@ export default class Client {
             }
             case ServerBound.TakeTank: {
                 if (!Entity.exists(camera.cameraData.player)) return;
-                if (!this.game.entities.AIs.length) return this.notify("Someone has already taken that tank", 0x000000, 5000, "cant_claim_info");
+                if (!this.game.entities.AIs.length) return this.notify("Someone has already taken this tank", 0x000000, 5000, "cant_claim_info");
                 if (!this.inputs.isPossessing) {
                     const x = camera.cameraData.player.positionData?.values.x || 0;
                     const y = camera.cameraData.player.positionData?.values.y || 0;
@@ -410,7 +410,6 @@ export default class Client {
                     for (let i = 0; i < AIs.length; ++i) {
                         if ((AIs[i].state !== AIState.possessed) && ((AIs[i].owner.relationsData.values.team === camera.relationsData.values.team && AIs[i].isClaimable) || this.accessLevel === config.AccessLevel.FullAccess)) {
                             if(!this.possess(AIs[i])) continue;
-                            this.notify("Press H to surrender control of the tank", 0x000000, 10000);
                             return;
                         }
                     }
@@ -503,14 +502,14 @@ export default class Client {
         
         this.camera.cameraData.statsAvailable = 0;
         this.camera.cameraData.score = 0;
+        this.notify("Press H to surrender control of the tank", 0x000000, 15000);
         return true;
     }
 
     /** Sends a notification packet to the client. */
     public notify(text: string, color = 0x000000, time = 4000, id = "") {
         const ws = this.ws;
-        if(!ws) return; // Prevent server crash due to disconnected players
-
+        if(!ws) return; // Prevent server crash due to disconnected players    
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
 
