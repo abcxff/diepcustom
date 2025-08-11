@@ -252,7 +252,7 @@ export default class Client {
                 const mouseX = r.vf();
                 const mouseY = r.vf();
 
-                if (!isFinite(mouseX) || !isFinite(mouseY)) break; // Fix NaN recoil exploit
+                if (!Number.isFinite(mouseX) || !Number.isFinite(mouseY)) break; // Fix NaN recoil exploit
                 
                 this.inputs.mouse.x = util.constrain(mouseX, minX, maxX);
                 this.inputs.mouse.y = util.constrain(mouseY, minY, maxY);
