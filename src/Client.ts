@@ -410,7 +410,7 @@ export default class Client {
                     for (let i = 0; i < AIs.length; ++i) {
                         if ((AIs[i].state !== AIState.possessed) && ((AIs[i].owner.relationsData.values.team === camera.relationsData.values.team && AIs[i].isClaimable) || this.accessLevel === config.AccessLevel.FullAccess)) {
                             if(!this.possess(AIs[i])) continue;
-                            this.notify("Press H to surrender control of your tank", 0x000000, 5000);
+                            this.notify("Press H to surrender control of the tank", 0x000000, 10000);
                             return;
                         }
                     }
