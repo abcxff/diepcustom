@@ -272,8 +272,8 @@ export default class Client {
                             this.setHasCheated(true);
 
                             player.setInvulnerability(!player.isInvulnerable);
-                            
-                            this.notify(`God mode: ${player.isInvulnerable ? "ON" : "OFF"}`, 0x000000, 1000, 'godmode');
+
+                            this.notify(`God mode: ${player.isInvulnerable ? "ON" : "OFF"}`, 0x000000, 5000, "godmode_toggle");
                         }
                     }
                 }
@@ -507,7 +507,7 @@ export default class Client {
     }
 
     /** Sends a notification packet to the client. */
-    public notify(text: string, color = 0x000000, time = 4000, id = "") {
+    public notify(text: string, color = 0x000000, time = 5000, id = "") {
         const ws = this.ws;
         if(!ws) return; // Prevent server crash due to disconnected players    
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
