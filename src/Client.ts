@@ -252,10 +252,10 @@ export default class Client {
                 const mouseX = r.vf();
                 const mouseY = r.vf();
 
+                if (!isFinite(mouseX) || !isFinite(mouseY)) break; // Fix NaN recoil exploit
+                
                 this.inputs.mouse.x = util.constrain(mouseX, minX, maxX);
                 this.inputs.mouse.y = util.constrain(mouseY, minY, maxY);
-
-                if (!Vector.isFinite(this.inputs.mouse)) break;
 
                 const player = camera.cameraData.values.player;
                 if (!Entity.exists(player) || !(player instanceof TankBody)) return;
@@ -568,7 +568,6 @@ export default class Client {
         if (this.inputs.flags & InputFlags.down) movement.y += 1;
         if (this.inputs.flags & InputFlags.right) movement.x += 1;
         if (this.inputs.flags & InputFlags.left) movement.x -= 1;
-        
         if (movement.x || movement.y) {
             const angle = Math.atan2(movement.y, movement.x);
 
