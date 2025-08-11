@@ -91,7 +91,7 @@ export default class Defender extends AbstractBoss {
         this.relationsData.values.team = this.game.arena;
 
         this.ai.viewRange = 0;
-        this.ai.passiveRotation *= 1.5;
+        this.ai.passiveRotation *= 2;
 
         this.physicsData.values.sides = 3;
         this.physicsData.values.size = DEFENDER_SIZE * Math.SQRT1_2;
