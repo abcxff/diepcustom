@@ -62,8 +62,6 @@ export default class SurvivalArena extends ArenaEntity {
         this.setSurvivalArenaSize(aliveCount);
 
         if ((this.game.tick % scoreboardUpdateInterval) === 0) {
-            const players = this.getAlivePlayers();
-            // Sorts them too DONT FORGET
             this.updateScoreboard(players);
         }
 
@@ -107,16 +105,12 @@ export default class SurvivalArena extends ArenaEntity {
                 if (this.arenaData.flags & ArenaFlags.gameReadyStart) this.arenaData.flags &= ~ArenaFlags.gameReadyStart;
             }
         }
-
-        if (this.arenaData.values.ticksUntilStart <= 0) {
-            this.arenaData.flags = ArenaFlags.noJoining; // No joining once the game has started, and also no respawns
-        }
-
         super.manageCountdown();
     }
 
     public onGameStarted() {
         this.setSurvivalArenaSize(this.game.clientsAwaitingSpawn.size);
+        this.arenaData.flags |= ArenaFlags.noJoining; // No joining once the game has started, and also no respawns
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
