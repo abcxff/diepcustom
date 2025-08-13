@@ -102,7 +102,7 @@ export default class Defender extends AbstractBoss {
             // Add trap launcher
             this.trappers.push(new Barrel(this, {
                 ...TrapperDefinition,
-                angle: PI2 * ((i / count) - 1 / (count * 2))
+                angle: PI2 * ((i / 3) + 1 / 6)
             }));
 
             // TODO:
