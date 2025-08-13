@@ -205,7 +205,7 @@ export default class ObjectEntity extends Entity {
             }
             kbMagnitude /= 0.3;
         }
-        if (entity.physicsData.values.flags & PhysicsFlags.isSolidWall) {
+        if (entity.physicsData.values.sides === 2 && entity.physicsData.values.flags & PhysicsFlags.isSolidWall) {
             if (this.positionData.values.flags & PositionFlags.canMoveThroughWalls) {
                 kbMagnitude = 0;
             } else if ((!(entity.physicsData.values.flags & PhysicsFlags.isBase) || entity.physicsData.values.pushFactor !== 0) && this.relationsData.values.owner instanceof ObjectEntity && !(Entity.exists(this.relationsData.values.team) && this.relationsData.values.team === entity.relationsData.values.team)) {
