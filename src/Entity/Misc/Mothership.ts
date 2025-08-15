@@ -20,7 +20,7 @@ import { ClientInputs } from "../../Client";
 import { tps } from "../../config";
 import { Color, Tank, Stat, ColorsHexCode, ClientBound, TeamFlags } from "../../Const/Enums";
 import GameServer from "../../Game";
-import ArenaEntity from "../../Native/Arena";
+import ArenaEntity, { ArenaState } from "../../Native/Arena";
 import { CameraEntity } from "../../Native/Camera";
 import { AI, AIState, Inputs } from "../AI";
 import Live from "../Live";
@@ -76,6 +76,8 @@ export default class Mothership extends TankBody {
     }
 
     public onDeath(killer: Live): void {
+        if ((this.game.arena.state >= ArenaState.CLOSING)) return; // Do not send a defeat notification if the game has been won already
+
         const team = this.relationsData.values.team;
         const teamIsATeam = team instanceof TeamEntity;
 
