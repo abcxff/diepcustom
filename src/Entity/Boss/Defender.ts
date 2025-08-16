@@ -82,25 +82,27 @@ export default class Defender extends AbstractBoss {
     /** Defender's trap launchers */
     private trappers: Barrel[] = [];
     /** See AbstractBoss.movementSpeed */
-    public movementSpeed = 0.35;
+    public movementSpeed = 0.2;
 
     public constructor(game: GameServer) {
         super(game);
-        this.nameData.values.name = 'Defender';
+        this.nameData.values.name = "Defender";
         this.styleData.values.color = Color.EnemyTriangle;
         this.relationsData.values.team = this.game.arena;
-        this.physicsData.values.size = DEFENDER_SIZE * Math.SQRT1_2;
+
         this.ai.viewRange = 0;
+        this.ai.passiveRotation *= 2;
 
         this.physicsData.values.sides = 3;
+        this.physicsData.values.size = DEFENDER_SIZE * Math.SQRT1_2;
 
-	const count = this.physicsData.values.sides;
-        const offset = 60 / this.physicsData.values.size;
+        const count = this.physicsData.values.sides;
+        const offset = 60 / (DEFENDER_SIZE * Math.SQRT1_2);
         for (let i = 0; i < count; i++) {
             // Add trap launcher
             this.trappers.push(new Barrel(this, {
                 ...TrapperDefinition,
-                angle: PI2 * ((i / count) - 1 / (count * 2))
+                angle: PI2 * ((i / count) + 1 / (count * 2))
             }));
 
             // TODO:
@@ -133,7 +135,7 @@ export default class Defender extends AbstractBoss {
        super.tick(tick);
 
         if (this.ai.state !== AIState.possessed) {
-            this.positionData.angle += this.ai.passiveRotation * Math.PI * (2/3);
+            this.positionData.angle += this.ai.passiveRotation;
         }
     }
 }

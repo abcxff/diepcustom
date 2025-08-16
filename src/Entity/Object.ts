@@ -186,25 +186,6 @@ export default class ObjectEntity extends Entity {
 
         // don't accumulate acceleration across ticks
         this.accel.set(new Vector(0, 0));
-
-        // Keep things in the arena
-        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)) {
-            const arena = this.game.arena;
-            xPos: {
-                if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
-                else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
-                else break xPos;
-
-                this.velocity.position.x = this.positionData.values.x;
-            }
-            yPos: {
-                if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
-                else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
-                else break yPos;
-
-                this.velocity.position.y = this.positionData.values.y;
-            }
-        }
     }
 
     /** Applies knockback after hitting `entity` */
@@ -224,7 +205,7 @@ export default class ObjectEntity extends Entity {
             }
             kbMagnitude /= 0.3;
         }
-        if (entity.physicsData.values.sides === 2) {
+        if (entity.physicsData.values.sides === 2 && entity.physicsData.values.flags & PhysicsFlags.isSolidWall) {
             if (this.positionData.values.flags & PositionFlags.canMoveThroughWalls) {
                 kbMagnitude = 0;
             } else if ((!(entity.physicsData.values.flags & PhysicsFlags.isBase) || entity.physicsData.values.pushFactor !== 0) && this.relationsData.values.owner instanceof ObjectEntity && !(Entity.exists(this.relationsData.values.team) && this.relationsData.values.team === entity.relationsData.values.team)) {
@@ -290,18 +271,10 @@ export default class ObjectEntity extends Entity {
                 // in Diep.io source code, rectangles do not support collisions with other rectangles
                 // uncomment the following code to enable rect on rect collisions
                 /*
-                const rect1Left = this.positionData.values.x - this.physicsData.values.width / 2;
-                const rect1Right = this.positionData.values.x + this.physicsData.values.width / 2;
-                const rect1Top = this.positionData.values.y - this.physicsData.values.size / 2;
-                const rect1Bottom = this.positionData.values.y + this.physicsData.values.size / 2;
-                const rect2Left = entity.positionData.values.x - entity.physicsData.values.width / 2;
-                const rect2Right = entity.positionData.values.x + entity.physicsData.values.width / 2;
-                const rect2Top = entity.positionData.values.y - entity.physicsData.values.size / 2;
-                const rect2Bottom = entity.positionData.values.y + entity.physicsData.values.size / 2;
-                if (rect1Left <= rect2Right &&
-                        rect1Right >= rect2Left &&
-                        rect1Top <= rect2Bottom &&
-                        rect1Bottom >= rect2Top) this.cachedCollisions.push(entity);
+                if (
+                    Math.abs(entity.positionData.values.x - this.positionData.values.x) <= (entity.physicsData.values.size + this.physicsData.values.size) / 2 &&
+                    Math.abs(entity.positionData.values.y - this.positionData.values.y) <= (entity.physicsData.values.width +this.physicsData.values.width) / 2
+                   ) this.cachedCollisions.push(entity);
                 */
             } else if (this.physicsData.values.sides !== 2 && entity.physicsData.values.sides === 2) {
                 const dX = util.constrain(this.positionData.values.x, entity.positionData.values.x - entity.physicsData.values.size / 2, entity.positionData.values.x + entity.physicsData.values.size / 2) - this.positionData.values.x;
@@ -337,14 +310,27 @@ export default class ObjectEntity extends Entity {
     public getWorldPosition(): Vector {
         let pos = new Vector(this.positionData.values.x, this.positionData.values.y);
 
+        const x = pos.x;
+        const y = pos.y;
+        
+        let px = 0;
+        let py = 0;
+        let par = 0;
+        
         let entity: ObjectEntity = this;
         while (entity.relationsData.values.parent instanceof ObjectEntity) {
-            
             if (!(entity.relationsData.values.parent.positionData.values.flags & PositionFlags.absoluteRotation)) pos.angle += entity.positionData.values.angle;
             entity = entity.relationsData.values.parent;
-            pos.x += entity.positionData.values.x;
-            pos.y += entity.positionData.values.y;
+            px += entity.positionData.values.x;
+            py += entity.positionData.values.y;
+            if (entity.positionData.values.flags & PositionFlags.absoluteRotation) par += entity.positionData.values.angle;
         }
+
+        const cos = Math.cos(par);
+        const sin = Math.sin(par);
+        
+        pos.x = px + x * cos - y * sin;
+        pos.y = py + x * sin + y * cos;
 
         return pos;
     }
@@ -362,5 +348,24 @@ export default class ObjectEntity extends Entity {
         }
 
         if (this.isViewed) for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
+        
+        // Keep things in the arena
+        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)) {
+            const arena = this.game.arena;
+            xPos: {
+                if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
+                else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
+                else break xPos;
+
+                this.velocity.position.x = this.positionData.values.x;
+            }
+            yPos: {
+                if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
+                else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
+                else break yPos;
+
+                this.velocity.position.y = this.positionData.values.y;
+            }
+        }
     }
 }
