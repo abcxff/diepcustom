@@ -54,7 +54,7 @@ export default class SurvivalArena extends ArenaEntity {
         this.arenaData.values.flags &= ~ArenaFlags.gameReadyStart;
         this.arenaData.values.playersNeeded = minPlayers;
     }
-    
+
     public updateArenaState() {
         const players = this.getAlivePlayers();
         const aliveCount = players.length;
@@ -62,6 +62,7 @@ export default class SurvivalArena extends ArenaEntity {
         this.setSurvivalArenaSize(aliveCount);
 
         if ((this.game.tick % scoreboardUpdateInterval) === 0) {
+            // Sorts them too DONT FORGET
             this.updateScoreboard(players);
         }
 
@@ -89,19 +90,19 @@ export default class SurvivalArena extends ArenaEntity {
             return;
         }
     }
-    
+
     public setSurvivalArenaSize(playerCount: number) {
         const arenaSize = Math.floor(25 * Math.sqrt(Math.max(playerCount, 1))) * 100;
         this.updateBounds(arenaSize, arenaSize);
     }
-    
+
     public manageCountdown() {
         if (this.state === ArenaState.COUNTDOWN) {
             this.arenaData.playersNeeded = minPlayers - this.game.clientsAwaitingSpawn.size;
             if (this.arenaData.values.playersNeeded <= 0) {
                 this.arenaData.flags |= ArenaFlags.gameReadyStart;
             } else {
-                this.arenaData.values.ticksUntilStart = 10 * tps; // Reset countdown
+                this.arenaData.values.ticksUntilStart = this.COUNTDOWN_TICKS; // Reset countdown
                 if (this.arenaData.flags & ArenaFlags.gameReadyStart) this.arenaData.flags &= ~ArenaFlags.gameReadyStart;
             }
         }
