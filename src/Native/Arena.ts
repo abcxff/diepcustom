@@ -56,12 +56,16 @@ export const enum ArenaState {
 export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /** Always existant arena field group. Present in all arenas. */
     public arenaData: ArenaGroup = new ArenaGroup(this);
+
     /** Always existant team field group. Present in all (or maybe just ffa) arenas. */
     public teamData: TeamGroup = new TeamGroup(this);
+
     /** Cached width of the arena. Not sent to the client directly. */
     public width: number;
+
     /** Cached height of the arena. Not sent to the client directly. */
     public height: number;
+
     /** Whether or not the arena allows new players to spawn. */
     public state: ArenaState = ArenaState.COUNTDOWN;
 
@@ -80,7 +84,10 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     protected shapes = new ShapeManager(this);
 
     /** Padding between arena size and maximum movement border. */
-    public ARENA_PADDING = 200;
+    public ARENA_PADDING: number = 200;
+
+    /** How long the countdown should last until the game is started. By default it is 10 seconds. */
+    public COUNTDOWN_TICKS: number = 10 * tps;
 
     public constructor(game: GameServer) {
         super(game);
@@ -94,8 +101,8 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
         this.arenaData.values.flags = ArenaFlags.gameReadyStart;
         this.arenaData.values.playersNeeded = 0;
-        this.arenaData.values.ticksUntilStart = 10 * tps; // 10 seconds
-        
+        this.arenaData.values.ticksUntilStart = this.COUNTDOWN_TICKS;
+
         this.teamData.values.teamColor = Color.Neutral;
     }
 
