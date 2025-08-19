@@ -76,7 +76,7 @@ export default class Mothership extends TankBody {
     }
 
     public onDeath(killer: Live): void {
-        if ((this.game.arena.state >= ArenaState.CLOSING)) return; // Do not send a defeat notification if the game has been won already
+        if ((this.game.arena.state >= ArenaState.OVER)) return; // Do not send a defeat notification if the game has been won already
 
         const team = this.relationsData.values.team;
         const teamIsATeam = team instanceof TeamEntity;
