@@ -48,7 +48,7 @@ export default class Teams4Arena extends ArenaEntity {
     public constructor(game: GameServer) {
         super(game);
         this.updateBounds(arenaSize * 2, arenaSize * 2);
-        console.log(this.width)
+
         this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseSize / 2,  -arenaSize + baseSize / 2, baseSize, baseSize);
         this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, arenaSize - baseSize / 2, baseSize, baseSize);
         this.greenTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamGreen), -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
