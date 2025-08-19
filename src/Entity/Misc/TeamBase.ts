@@ -21,12 +21,13 @@ import GameServer from "../../Game";
 import { HealthFlags, PhysicsFlags, StyleFlags } from "../../Const/Enums";
 import { TeamGroupEntity } from "./TeamEntity";
 import LivingEntity from "../Live";
+import BaseDrones from "./BaseDrones";
 /**
  * Represents Team Bases in game.
  */
 export default class TeamBase extends LivingEntity {
 
-    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, painful: boolean=true) {
+    public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, shielded: boolean=true, droneSpawnerCount: number=1, droneCount: number=12) {
         super(game);
 
         this.relationsData.values.team = team;
@@ -39,27 +40,40 @@ export default class TeamBase extends LivingEntity {
         this.physicsData.values.sides = 2;
         this.physicsData.values.flags |= PhysicsFlags.showsOnMap | PhysicsFlags.noOwnTeamCollision | PhysicsFlags.isBase;
         this.physicsData.values.pushFactor = 2;
-        this.damagePerTick = 5;
-
-        if (!painful) {
-            this.physicsData.values.pushFactor = 0;
-            this.damagePerTick = 0;
-        }
-
-        this.damageReduction = 0;
         this.physicsData.values.absorbtionFactor = 0;
-
+        
         this.styleData.values.opacity = 0.1;
         this.styleData.values.borderWidth = 0;
         this.styleData.values.color = team.teamData.teamColor;
         this.styleData.values.flags |= StyleFlags.renderFirst | StyleFlags.hasNoDmgIndicator;
+        
+        this.damagePerTick = 1.25;
+        this.damageReduction = 0;
+        
+        if (!shielded) {
+            this.physicsData.values.pushFactor = 0;
+            this.damagePerTick = 0;
+        } else {
+            this.createDrones(droneSpawnerCount, droneCount);
+        }
 
         this.healthData.flags |= HealthFlags.hiddenHealthbar
         this.healthData.health = this.healthData.values.maxHealth = 0xABCFF; // ;)
     }
 
+    public createDrones(droneSpawnerCount: number, droneCount: number) {
+        for (let i = 0; i < droneSpawnerCount; ++i) {
+            const droneSpawner = new BaseDrones(this, droneCount);
+            droneSpawner.positionData.values.x = this.positionData.values.x;
+            // Don't spread drones around the base if it is a rectangle
+            droneSpawner.positionData.values.y = this.physicsData.values.width === this.physicsData.values.size ? this.positionData.values.y :
+                                                 this.physicsData.values.width * (i + 1) / (droneSpawnerCount + 1) - this.physicsData.values.width / 2;
+        }
+    }
+
     public tick(tick: number) {
         // No animation. No regen
+        this.healthData.health = this.healthData.values.maxHealth;
         this.lastDamageTick = tick;
     }
 }

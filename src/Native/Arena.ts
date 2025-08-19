@@ -25,7 +25,7 @@ import ClientCamera from "./Camera";
 import { VectorAbstract } from "../Physics/Vector";
 import { ArenaGroup, TeamGroup } from "./FieldGroups";
 import { Entity } from "./Entity";
-import { Color, ArenaFlags, ValidScoreboardIndex } from "../Const/Enums";
+import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
 import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 import Client from "../Client";
@@ -35,9 +35,11 @@ import Summoner from "../Entity/Boss/Summoner";
 import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
-import { bossSpawningInterval, scoreboardUpdateInterval } from "../config";
+import { tps, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
+    /** Countdown, waiting for players screen */
+    COUNTDOWN = -1,
     /** Alive, open */
     OPEN = 0,
     /** Game ended - someone won */
@@ -54,14 +56,18 @@ export const enum ArenaState {
 export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /** Always existant arena field group. Present in all arenas. */
     public arenaData: ArenaGroup = new ArenaGroup(this);
+
     /** Always existant team field group. Present in all (or maybe just ffa) arenas. */
     public teamData: TeamGroup = new TeamGroup(this);
+
     /** Cached width of the arena. Not sent to the client directly. */
     public width: number;
+
     /** Cached height of the arena. Not sent to the client directly. */
     public height: number;
+
     /** Whether or not the arena allows new players to spawn. */
-    public state: ArenaState = ArenaState.OPEN;
+    public state: ArenaState = ArenaState.COUNTDOWN;
 
     public shapeScoreRewardMultiplier: number = 1;
 
@@ -78,7 +84,10 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     protected shapes = new ShapeManager(this);
 
     /** Padding between arena size and maximum movement border. */
-    public ARENA_PADDING = 200;
+    public ARENA_PADDING: number = 200;
+
+    /** How long the countdown should last until the game is started. By default it is 10 seconds. */
+    public COUNTDOWN_TICKS: number = 10 * tps;
 
     public constructor(game: GameServer) {
         super(game);
@@ -91,6 +100,9 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.arenaData.values.rightX = this.width / 2;
 
         this.arenaData.values.flags = ArenaFlags.gameReadyStart;
+        this.arenaData.values.playersNeeded = 0;
+        this.arenaData.values.ticksUntilStart = this.COUNTDOWN_TICKS;
+
         this.teamData.values.teamColor = Color.Neutral;
     }
 
@@ -104,6 +116,11 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         }
 
         findSpawn: for (let i = 0; i < 20; ++i) {
+            if (!this.isValidSpawnLocation(pos.x, pos.y)) {
+                pos.x = ~~(Math.random() * this.width - this.width / 2);
+                pos.y = ~~(Math.random() * this.height - this.height / 2);
+                continue findSpawn;
+            }
             const entities = this.game.entities.collisionManager.retrieve(pos.x, pos.y, 1000, 1000);
 
             // Only spawn < 1000 units away from player, unless we can't find a place to spawn
@@ -120,6 +137,11 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         }
 
         return pos;
+    }
+    
+    public isValidSpawnLocation(x: number, y: number): boolean {
+        // Override in gamemode files
+        return true;
     }
 
     /**
@@ -168,6 +190,29 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
                 this.game.end();
             }, 10000);
             return;
+        }
+    }
+    
+    public manageCountdown() {
+        if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
+        if (this.state === ArenaState.COUNTDOWN && this.arenaData.values.ticksUntilStart <= 0) {
+            this.state = ArenaState.OPEN;
+            this.onGameStarted();
+        }
+
+        for (const [client, name] of this.game.clientsAwaitingSpawn) {
+            const camera = client.camera;
+            if (!Entity.exists(camera)) return;
+            if (this.state === ArenaState.COUNTDOWN) {
+                // If the game has not yet started, display countdown and keep this client in the waiting list
+                camera.cameraData.flags = CameraFlags.gameWaitingStart;
+                continue;
+            }
+            // Otherwise, proceed as usual
+            client.createAndSpawnPlayer(name);
+
+            // Remove this client from waiting list once this is done
+            this.game.clientsAwaitingSpawn.delete(client);
         }
     }
 
@@ -231,22 +276,22 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.state = ArenaState.CLOSING;
         this.arenaData.flags |= ArenaFlags.noJoining;
 
-        // This is a one-time, end of life event, so we just use setTimeout
-        setTimeout(() => {
-            const acCount = Math.floor(Math.sqrt(this.width) / 10);
-            const radius = this.width * Math.SQRT1_2 + 500;
-            for (let i = 0; i < acCount; ++i) {
-                const ac = new ArenaCloser(this.game);
+        const acCount = Math.floor(Math.sqrt(this.width) / 10);
+        const radius = this.width * Math.SQRT1_2 + 5000;
+        for (let i = 0; i < acCount; ++i) {
+            const ac = new ArenaCloser(this.game);
 
-                const angle = (i / acCount) * PI2;
-                ac.positionData.values.x = Math.cos(angle) * radius;
-                ac.positionData.values.y = Math.sin(angle) * radius;
-                ac.positionData.values.angle = angle + Math.PI;
-            }
+            const angle = (i / acCount) * PI2;
+            ac.positionData.values.x = Math.cos(angle) * radius;
+            ac.positionData.values.y = Math.sin(angle) * radius;
+            ac.positionData.values.angle = angle + Math.PI;
+        }
 
-            saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
-        }, 5000);
+        saveToLog("Arena Closing", "Arena running at `" + this.game.gamemode + "` is now closing.", 0xFFE869);
     }
+
+    /** This code will be executed once per game, when the countdown ends and players are spawned into the game. */
+    public onGameStarted() {}
 
     /** Spawns the boss into the arena */
     protected spawnBoss() {
@@ -259,6 +304,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     public tick(tick: number) {
         this.shapes.tick();
         this.updateArenaState();
+        this.manageCountdown();
 
         if (this.leader && this.arenaData.values.flags & ArenaFlags.showsLeaderArrow) {
             this.arenaData.leaderX = this.leader.positionData.values.x;

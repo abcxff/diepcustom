@@ -20,7 +20,7 @@ import { ClientInputs } from "../../Client";
 import { tps } from "../../config";
 import { Color, Tank, Stat, ColorsHexCode, ClientBound, TeamFlags } from "../../Const/Enums";
 import GameServer from "../../Game";
-import ArenaEntity from "../../Native/Arena";
+import ArenaEntity, { ArenaState } from "../../Native/Arena";
 import { CameraEntity } from "../../Native/Camera";
 import { AI, AIState, Inputs } from "../AI";
 import Live from "../Live";
@@ -76,6 +76,8 @@ export default class Mothership extends TankBody {
     }
 
     public onDeath(killer: Live): void {
+        if ((this.game.arena.state >= ArenaState.OVER)) return; // Do not send a defeat notification if the game has been won already
+
         const team = this.relationsData.values.team;
         const teamIsATeam = team instanceof TeamEntity;
 
@@ -96,7 +98,6 @@ export default class Mothership extends TankBody {
     public delete(): void {
         // No more mothership arrow - seems like in old diep this wasn't the case - we should probably keep though
         if (this.relationsData.values.team?.teamData) this.relationsData.values.team.teamData.flags  &= ~TeamFlags.hasMothership;
-        this.ai.inputs.deleted = true;
         super.delete();
     }
 
@@ -131,6 +132,12 @@ export default class Mothership extends TankBody {
                     this.inputs.client.notify("You only have 10 seconds left in control of the Mothership", ColorsHexCode[this.styleData.values.color], 5_000, "");
                 }
             }
+        }
+        const team = this.relationsData.values.team;
+        if (team?.teamData) {
+            team.teamData.mothershipX = this.positionData.values.x;
+            team.teamData.mothershipY = this.positionData.values.y;
+            team.teamData.flags |= TeamFlags.hasMothership;
         }
 
         super.tick(tick);

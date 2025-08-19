@@ -72,7 +72,7 @@ export default class MazeArena extends ArenaEntity {
         return values;
     }
     /** Builds the maze */
-    private _buildMaze() {
+    protected _buildMaze() {
         // Plant some seeds
         for (let i = 0; i < 10000; i++) {
             // Stop if we exceed our maximum seed amount
@@ -201,5 +201,24 @@ export default class MazeArena extends ArenaEntity {
         // Create the walls!
         for (let {x, y, width, height} of this.WALLS)
             this._buildWallFromGridCoord(x, y, width, height);
+    }
+
+    public isValidSpawnLocation(x: number, y: number): boolean {
+        // Should never spawn inside walls
+        for (let wall of this.WALLS) {
+            const wallX = wall.x * CELL_SIZE - ARENA_SIZE / 2;
+            const wallY = wall.y * CELL_SIZE - ARENA_SIZE / 2;
+            const wallW = wall.width * CELL_SIZE;
+            const wallH = wall.height * CELL_SIZE;
+            if (
+                x >= wallX &&
+                x <= wallX + wallW &&
+                y >= wallY &&
+                y <= wallY + wallH
+            ) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -19,7 +19,7 @@
 import GameServer from "../../Game";
 import Barrel from "../Tank/Barrel";
 
-import { ClientBound, Color, PositionFlags } from "../../Const/Enums";
+import { ClientBound, Color, PositionFlags, NameFlags } from "../../Const/Enums";
 import { VectorAbstract } from "../../Physics/Vector";
 import { AI, AIState, Inputs } from "../AI";
 import { NameGroup } from "../../Native/FieldGroups";
@@ -116,7 +116,7 @@ export default class AbstractBoss extends LivingEntity {
     public constructor(game: GameServer) {
         super(game);
 
-        const {x, y} = this.game.arena.findSpawnLocation()
+        const {x, y} = this.game.arena.findSpawnLocation();
         this.positionData.values.x = x;
         this.positionData.values.y = y;
         
@@ -160,7 +160,7 @@ export default class AbstractBoss extends LivingEntity {
         // Reset arena.boss
         if (this.game.arena.boss === this) this.game.arena.boss = null;
 
-        const killerName = (killer instanceof TankBody && killer.nameData.values.name) || "an unnamed tank"
+        const killerName = (killer.nameData && !(killer.nameData?.values.flags & NameFlags.hiddenName)) ? killer.nameData.values.name : "an unnamed tank" // in Diep.io, it should only show the name in notification if it is visible above the killer entity for whatever reason
         this.game.broadcast()
             .u8(ClientBound.Notification)
             .stringNT(`The ${this.altName || this.nameData.values.name} has been defeated by ${killerName}!`)
