@@ -204,6 +204,7 @@ export default class MazeArena extends ArenaEntity {
     }
 
     public isValidSpawnLocation(x: number, y: number): boolean {
+        // Should never spawn inside walls
         for (let wall of this.WALLS) {
             const wallX = wall.x * CELL_SIZE - ARENA_SIZE / 2;
             const wallY = wall.y * CELL_SIZE - ARENA_SIZE / 2;
@@ -215,9 +216,9 @@ export default class MazeArena extends ArenaEntity {
                 y >= wallY &&
                 y <= wallY + wallH
             ) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 }
