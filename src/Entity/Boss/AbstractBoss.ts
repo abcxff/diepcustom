@@ -160,7 +160,14 @@ export default class AbstractBoss extends LivingEntity {
         // Reset arena.boss
         if (this.game.arena.boss === this) this.game.arena.boss = null;
 
-        const killerName = (killer.nameData && !(killer.nameData?.values.flags & NameFlags.hiddenName)) ? killer.nameData.values.name : "an unnamed tank" // in Diep.io, it should only show the name in notification if it is visible above the killer entity for whatever reason
+        let killerName: string;
+
+        if ((killer.nameData && killer.nameData.values.name && !(killer.nameData.values.flags & NameFlags.hiddenName))) {
+            killerName = killer.nameData.values.name; // in Diep.io, it should only show the name in notification if it is visible above the killer entity for whatever reason
+        } else {
+            killerName = "an unnamed tank";
+        }
+
         this.game.broadcast()
             .u8(ClientBound.Notification)
             .stringNT(`The ${this.altName || this.nameData.values.name} has been defeated by ${killerName}!`)
