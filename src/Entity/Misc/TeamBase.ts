@@ -41,15 +41,17 @@ export default class TeamBase extends LivingEntity {
         this.physicsData.values.flags |= PhysicsFlags.showsOnMap | PhysicsFlags.noOwnTeamCollision | PhysicsFlags.isBase;
         this.physicsData.values.pushFactor = 2;
         this.physicsData.values.absorbtionFactor = 0;
-        
+
         this.styleData.values.opacity = 0.1;
         this.styleData.values.borderWidth = 0;
         this.styleData.values.color = team.teamData.teamColor;
         this.styleData.values.flags |= StyleFlags.renderFirst | StyleFlags.hasNoDmgIndicator;
-        
-        this.damagePerTick = 1.25;
+
+        this.damagePerTick = 5;
+        this.minDamageMultiplier = 1;
+        this.maxDamageMultiplier = 1;
+
         this.damageReduction = 0;
-        
         if (!shielded) {
             this.physicsData.values.pushFactor = 0;
             this.damagePerTick = 0;
