@@ -16,6 +16,7 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 import ArenaEntity, { ArenaState } from "../Native/Arena";
+import GameServer from "../Game";
 import MazeWall from "../Entity/Misc/MazeWall";
 import { VectorAbstract } from "../Physics/Vector";
 
@@ -24,9 +25,9 @@ const CELL_SIZE = 635;
 const GRID_SIZE = 40;
 const ARENA_SIZE = CELL_SIZE * GRID_SIZE;
 const SEED_AMOUNT = Math.floor(Math.random() * 30) + 30;
-const TURN_CHANCE = 0.15;
-const BRANCH_CHANCE = 0.1;
-const TERMINATION_CHANCE = 0.15;
+const TURN_CHANCE = 0.2;
+const BRANCH_CHANCE = 0.2;
+const TERMINATION_CHANCE = 0.2;
 
 /**
  * Maze Gamemode Arena
@@ -43,8 +44,8 @@ export default class MazeArena extends ArenaEntity {
     /** Rolled out matrix of the grid */
     private MAZE: Uint8Array = new Uint8Array(GRID_SIZE * GRID_SIZE);
 
-    public constructor(a: any) {
-        super(a);
+    public constructor(game: GameServer) {
+        super(game);
         this.updateBounds(ARENA_SIZE, ARENA_SIZE);
         this.allowBoss = false;
         this._buildMaze();
