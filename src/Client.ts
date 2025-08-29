@@ -502,6 +502,7 @@ export default class Client {
         
         this.camera.cameraData.statsAvailable = 0;
         this.camera.cameraData.score = 0;
+        this.camera.entityState = EntityStateFlags.needsCreate | EntityStateFlags.needsDelete;
         this.notify("Press H to surrender control of the tank", 0x000000, 15000);
         return true;
     }
