@@ -85,10 +85,10 @@ export default class Dominator extends TankBody {
         camera.cameraData.values.player = this;
 
         this.base = base;
-        
+
         this.damagePerTick = 10;
 
-        if (this.styleData.values.flags & StyleFlags.isFlashing) { 
+        if (this.styleData.values.flags & StyleFlags.isFlashing) { // Remove spawn shield
             this.styleData.values.flags ^= StyleFlags.isFlashing;
             this.damageReduction = 1.0;
         }
@@ -106,9 +106,11 @@ export default class Dominator extends TankBody {
                 .float(7500)
                 .stringNT("").send();
                 
-            const teamPlayers = this.game.arena.getTeamPlayers(killerTeam);
-            for (const player of teamPlayers) {
-               if (player.cameraEntity instanceof ClientCamera) player.cameraEntity.client.notify(`Press H to take control of the ${this.nameData.values.name}`, ColorsHexCode[killerTeam.teamData.values.teamColor])
+            for (const client of this.game.clients) {
+                const camera = client.camera;
+                if (!camera) continue;
+
+                if (camera.relationsData.values.team === this.relationsData.values.team) client.notify(`Press H to take control of the ${this.nameData.values.name}`, ColorsHexCode[killerTeam.teamData.values.teamColor])
             }
         } else {
             this.relationsData.team = this.game.arena
