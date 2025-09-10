@@ -52,6 +52,7 @@ class DeletionAnimation {
                 this.entity.styleData.opacity = 1 - (1 / 6);
             default:
                 this.entity.physicsData.size *= 1.1;
+                this.entity.physicsData.width *= 1.1;
                 this.entity.styleData.opacity -= 1 / 6;
                 if (this.entity.styleData.values.opacity < 0) this.entity.styleData.opacity = 0;
                 break;
