@@ -38,7 +38,7 @@ export const wssMaxMessageSize: number = 4096; // 4 kb
 export const writtenBufferChunkSize = Buffer.poolSize || 2048;
 
 /** Host id to be sent to client. */
-export const host: string = process.env.SERVER_INFO || (process.env.NODE_ENV === "development" ? "localhost" : "");
+export const host: string = process.env.SERVER_INFO || "unknown";
 
 /** Runtime mode. */
 export const mode: string = process.env.NODE_ENV || "development";
