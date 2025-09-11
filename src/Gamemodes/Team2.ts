@@ -26,10 +26,8 @@ import TankBody from "../Entity/Tank/TankBody";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
 
- const arenaSize = 11150;
- const baseWidth = 2007;
-// const arenaSize = 2000;
-// const baseWidth = 407;
+const arenaSize = 11150;
+const baseWidth = arenaSize / (3 + 1/3) * 0.6; // 2007
 
 /**
  * Teams2 Gamemode Arena

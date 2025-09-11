@@ -110,12 +110,10 @@ export default class SurvivalArena extends ArenaEntity {
     }
 
     public onGameStarted() {
+        super.onGameStarted();
+
         this.setSurvivalArenaSize(this.game.clientsAwaitingSpawn.size);
         this.arenaData.flags |= ArenaFlags.noJoining; // No joining once the game has started, and also no respawns
-    }
-
-    public spawnPlayer(tank: TankBody, client: Client) {
-        super.spawnPlayer(tank, client)
     }
 
     public tick(tick: number) {

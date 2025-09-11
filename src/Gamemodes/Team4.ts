@@ -27,7 +27,7 @@ import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
 
 const arenaSize = 11150;
-const baseSize = 3345;
+const baseSize = arenaSize / (3 + 1/3); // 3345
 
 /**
  * Teams4 Gamemode Arena

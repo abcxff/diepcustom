@@ -196,7 +196,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     public manageCountdown() {
         if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
         if (this.state === ArenaState.COUNTDOWN && this.arenaData.values.ticksUntilStart <= 0) {
-            this.state = ArenaState.OPEN;
             this.onGameStarted();
         }
 
@@ -291,7 +290,9 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     }
 
     /** This code will be executed once per game, when the countdown ends and players are spawned into the game. */
-    public onGameStarted() {}
+    public onGameStarted() {
+        this.state = ArenaState.OPEN;
+    }
 
     /** Spawns the boss into the arena */
     protected spawnBoss() {

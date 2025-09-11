@@ -199,7 +199,7 @@ export default class Barrel extends ObjectEntity {
             case 'wall': {
                 let w = new MazeWall(this.game, Math.round(this.tank.inputs.mouse.x / 50) * 50, Math.round(this.tank.inputs.mouse.y / 50) * 50, 250, 250);
                 setTimeout(() => {
-                    w.destroy();
+                    w.delete();
                 }, 60 * 1000);
                 break;
             }
@@ -212,7 +212,6 @@ export default class Barrel extends ObjectEntity {
         }
 
     }
-
 
     /** Resizes the barrel; when the tank gets bigger, the barrel must as well. */
     protected resize() {

@@ -40,4 +40,6 @@ export default class MazeWall extends ObjectEntity {
         this.styleData.values.borderWidth = 10;
         this.styleData.values.color = Color.Box;
     }
+
+    public tick(tick: number) {} // No need to tick walls
 }
