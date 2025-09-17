@@ -136,7 +136,12 @@ export default class ObjectEntity extends Entity {
                 child.delete();
             }
 
-            this.children = [];
+            this.children.length = 0;
+        }
+        
+        if (this.physicsData.values.flags & PhysicsFlags.showsOnMap) {
+            const globalEntities = this.game.entities.globalEntities;
+            util.removeFast(globalEntities, globalEntities.indexOf(this.id));
         }
 
         super.delete();
@@ -334,6 +339,12 @@ export default class ObjectEntity extends Entity {
         pos.y = py + x * sin + y * cos;
 
         return pos;
+    }
+    
+    public setGlobalEntity() {
+        this.physicsData.flags |= PhysicsFlags.showsOnMap;
+        
+        this.game.entities.globalEntities.push(this.id);
     }
 
     public tick(tick: number) {
