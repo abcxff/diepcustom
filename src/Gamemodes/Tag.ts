@@ -91,7 +91,6 @@ export default class TagArena extends ArenaEntity {
         const deathMixin = tank.onDeath.bind(tank); 
         tank.onDeath = (killer: LivingEntity) => {
             deathMixin(killer);
-            this.updateArenaState();
 
             if (this.game.clients.size < MIN_PLAYERS) return;
             const team = tank.relationsData.values.team;
@@ -133,6 +132,7 @@ export default class TagArena extends ArenaEntity {
 
         if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
     }
+
     public updateScoreboard() {
         const length = Math.min(10, this.teams.length);
         for (let i = 0; i < length; ++i) {
@@ -173,6 +173,7 @@ export default class TagArena extends ArenaEntity {
                 }
             }
         }
+
         if (arenaPlayerCount === 0 && this.state === ArenaState.CLOSING) {
             this.state = ArenaState.CLOSED;
 
