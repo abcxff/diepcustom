@@ -190,10 +190,10 @@ export default class ClientCamera extends CameraEntity {
                 }
         }
 
-        for (let id = 0; id <= this.game.entities.lastId; ++id) {
-            const entity = this.game.entities.inner[id];
+        for (let id = 0; id < this.game.entities.globalEntities.length; ++id) {
+            const entity = this.game.entities.inner[this.game.entities.globalEntities[id]] as ObjectEntity;
             
-            if (entity instanceof ObjectEntity && !entitiesInRange.includes(entity) && (entity.physicsData.values.flags & PhysicsFlags.showsOnMap)) entitiesInRange.push(entity);
+            if (!entitiesInRange.includes(entity)) entitiesInRange.push(entity);
         }
 
         if (Entity.exists(this.cameraData.values.player) && this.cameraData.values.player instanceof ObjectEntity) entitiesInRange.push(this.cameraData.values.player);
