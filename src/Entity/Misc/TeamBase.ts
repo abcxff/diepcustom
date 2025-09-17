@@ -30,6 +30,8 @@ export default class TeamBase extends LivingEntity {
     public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, shielded: boolean=true, droneSpawnerCount: number=1, droneCount: number=12) {
         super(game);
 
+        this.setGlobalEntity();
+
         this.relationsData.values.team = team;
 
         this.positionData.values.x = x;

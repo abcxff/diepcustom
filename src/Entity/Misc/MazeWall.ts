@@ -27,6 +27,8 @@ export default class MazeWall extends ObjectEntity {
     public constructor(game: GameServer, x: number, y: number, width: number, height: number) {
         super(game);
 
+        this.setGlobalEntity();
+
         this.positionData.values.x = x;
         this.positionData.values.y = y;
 
