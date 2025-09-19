@@ -56,7 +56,7 @@ import { CameraEntity } from "../../../Native/Camera";
  */
 export default class Minion extends Drone implements BarrelBase {
     /** Size of the focus the minions orbit. */
-    public static FOCUS_RADIUS = 850 ** 2;
+    public static FOCUS_RADIUS = 800 ** 2;
 
     /** The minion's barrel */
     private minionBarrel: Barrel;
