@@ -109,7 +109,7 @@ export default class Minion extends Drone implements BarrelBase {
 
             const dist = inputs.mouse.distanceToSQ(this.positionData.values);
 
-            if (dist < Minion.FOCUS_RADIUS / 4) { // Half
+            if (dist < Minion.FOCUS_RADIUS / 7) {
                 this.movementAngle = this.positionData.values.angle + Math.PI;
             } else if (dist < Minion.FOCUS_RADIUS) {
                 this.movementAngle = this.positionData.values.angle + Math.PI / 2;
