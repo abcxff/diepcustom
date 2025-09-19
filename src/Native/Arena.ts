@@ -28,13 +28,16 @@ import { Entity } from "./Entity";
 import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
 import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+
 import Client from "../Client";
+
 import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import Guardian from "../Entity/Boss/Guardian";
 import Summoner from "../Entity/Boss/Summoner";
 import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
+
 import { tps, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
@@ -197,18 +200,21 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /** Deals with countdown screen and game start logic. */
     public manageCountdown() {
         if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
+
         if (this.state === ArenaState.COUNTDOWN && this.arenaData.values.ticksUntilStart <= 0) {
             this.onGameStarted();
         }
 
         for (const [client, name] of this.game.clientsAwaitingSpawn) {
             const camera = client.camera;
-            if (!Entity.exists(camera)) return;
+            if (!Entity.exists(camera)) continue;
+
             if (this.state === ArenaState.COUNTDOWN) {
                 // If the game has not yet started, display countdown and keep this client in the waiting list
                 camera.cameraData.flags = CameraFlags.gameWaitingStart;
                 continue;
             }
+
             // Otherwise, proceed as usual
             client.createAndSpawnPlayer(name);
 
