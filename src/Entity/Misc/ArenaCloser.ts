@@ -51,12 +51,18 @@ export default class ArenaCloser extends TankBody {
         this.setTank(Tank.ArenaCloser);
 
         const def = (this.definition = Object.assign({}, this.definition));
-        def.maxHealth = 10000;
+        // 598 is what the normal health increase for stat/level would be, so we just subtract it.
+        def.maxHealth = 10000 - 598;
         // TODO(ABC):
         // Fix all the stats
         def.speed = this.ai.movementSpeed = this.cameraEntity.cameraData.values.movementSpeed = 80;
 
-        this.damagePerTick = 45;
+        Object.defineProperty(this, "damagePerTick", {
+            get() {
+                return 45;
+            },
+            set() {}
+        });
 
         this.nameData.values.name = "Arena Closer";
         this.styleData.values.color = Color.Neutral;
@@ -84,7 +90,6 @@ export default class ArenaCloser extends TankBody {
 
         super.tick(tick);
 
-        this.damagePerTick = 45;
         this.ai.movementSpeed = this.cameraEntity.cameraData.movementSpeed = 80;
     }
 }
