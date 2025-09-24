@@ -359,24 +359,26 @@ export default class ObjectEntity extends Entity {
             }
         }
 
-        if (this.isViewed) for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
+        if (this.isViewed) {
+            for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
         
-        // Keep things in the arena
-        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
-            const arena = this.game.arena;
-            xPos: {
-                if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
-                else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
-                else break xPos;
+            // Keep things in the arena
+            if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
+                const arena = this.game.arena;
+                xPos: {
+                    if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
+                    else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
+                    else break xPos;
 
-                this.velocity.position.x = this.positionData.values.x;
-            }
-            yPos: {
-                if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
-                else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
-                else break yPos;
+                    this.velocity.position.x = this.positionData.values.x;
+                }
+                yPos: {
+                    if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
+                    else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
+                    else break yPos;
 
-                this.velocity.position.y = this.positionData.values.y;
+                    this.velocity.position.y = this.positionData.values.y;
+                }
             }
         }
     }
