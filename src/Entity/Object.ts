@@ -362,7 +362,7 @@ export default class ObjectEntity extends Entity {
         if (this.isViewed) for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
         
         // Keep things in the arena
-        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)) {
+        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
             const arena = this.game.arena;
             xPos: {
                 if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
