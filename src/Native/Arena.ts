@@ -238,7 +238,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     }
 
     /** Returns all alive, player controlled tanks on the given team */
-    public getTeamPlayers(team: TeamEntity | ArenaEntity) {
+    public getTeamPlayers(team: TeamGroupEntity) {
         const players = this.getAlivePlayers();
         const teamPlayers: TankBody[] = [];
         for (let i = 0; i < players.length; ++i) {
