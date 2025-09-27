@@ -20,6 +20,20 @@ import GameServer from "../Game";
 import MazeWall from "../Entity/Misc/MazeWall";
 import { VectorAbstract } from "../Physics/Vector";
 
+import ShapeManager from "../Entity/Shape/Manager";
+
+/**
+ * Manage shape count
+ */
+export class MazeShapeManager extends ShapeManager {
+    protected get wantedShapes() {
+        const mult = 50 * 50;
+        const ratio = Math.ceil(Math.pow(this.game.arena.width / mult, 2));
+
+        return Math.floor(12.5 * ratio);
+    }
+}
+
 // constss.
 const CELL_SIZE = 635;
 const GRID_SIZE = 40;
@@ -37,6 +51,8 @@ const TERMINATION_CHANCE = 0.2;
  *  - Added into codebase on December 3rd 2022
  */
 export default class MazeArena extends ArenaEntity {
+     protected shapes: ShapeManager = new MazeShapeManager(this);
+
     /** Stores all the "seed"s */
     private SEEDS: VectorAbstract[] = [];
     /** Stores all the "wall"s, contains cell based coords */
