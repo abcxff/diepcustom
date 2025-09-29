@@ -30,6 +30,8 @@ export default class TeamBase extends LivingEntity {
     public constructor(game: GameServer, team: TeamGroupEntity, x: number, y: number, width: number, height: number, shielded: boolean=true, droneSpawnerCount: number=1, droneCount: number=12) {
         super(game);
 
+        this.setGlobalEntity();
+
         this.relationsData.values.team = team;
 
         this.positionData.values.x = x;
@@ -38,7 +40,7 @@ export default class TeamBase extends LivingEntity {
         this.physicsData.values.width = width;
         this.physicsData.values.size = height;
         this.physicsData.values.sides = 2;
-        this.physicsData.values.flags |= PhysicsFlags.showsOnMap | PhysicsFlags.noOwnTeamCollision | PhysicsFlags.isBase;
+        this.physicsData.values.flags |= PhysicsFlags.noOwnTeamCollision | PhysicsFlags.isBase;
         this.physicsData.values.pushFactor = 2;
         this.physicsData.values.absorbtionFactor = 0;
 

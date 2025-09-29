@@ -37,12 +37,7 @@ export default class ArenaCloser extends TankBody {
         const inputs = new Inputs();
         const camera = new CameraEntity(game);
 
-        const setLevel = camera.setLevel;
-        camera.setLevel = function(level) {
-            setLevel.call(this, level);
-
-            this.sizeFactor *= (ArenaCloser.BASE_SIZE / 50);
-        }
+        camera.setLevel(300);
         camera.sizeFactor = (ArenaCloser.BASE_SIZE / 50);
 
         super(game, camera, inputs);
@@ -56,12 +51,18 @@ export default class ArenaCloser extends TankBody {
         this.setTank(Tank.ArenaCloser);
 
         const def = (this.definition = Object.assign({}, this.definition));
-        def.maxHealth = 10000;
+        // 598 is what the normal health increase for stat/level would be, so we just subtract it.
+        def.maxHealth = 10000 - 598;
         // TODO(ABC):
         // Fix all the stats
-        def.speed = 1;
+        def.speed = this.ai.movementSpeed = this.cameraEntity.cameraData.values.movementSpeed = 80;
 
-        this.damagePerTick = 200;
+        Object.defineProperty(this, "damagePerTick", {
+            get() {
+                return 45;
+            },
+            set() {}
+        });
 
         this.nameData.values.name = "Arena Closer";
         this.styleData.values.color = Color.Neutral;
@@ -76,8 +77,6 @@ export default class ArenaCloser extends TankBody {
     }
 
     public tick(tick: number) {
-        this.ai.movementSpeed = this.cameraEntity.cameraData.values.movementSpeed * 10;
-
         this.inputs = this.ai.inputs;
 
         if (this.ai.state === AIState.idle) {
@@ -90,5 +89,7 @@ export default class ArenaCloser extends TankBody {
         }
 
         super.tick(tick);
+
+        this.ai.movementSpeed = this.cameraEntity.cameraData.movementSpeed = 80;
     }
 }

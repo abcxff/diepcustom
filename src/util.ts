@@ -16,7 +16,7 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import * as chalk from "chalk";
+import chalk from "chalk";
 import { inspect } from "util";
 import { doVerboseLogs } from "./config";
 
@@ -76,7 +76,8 @@ export const normalizeAngle = (angle: number) => {
  * Logs - Used to have a webhook log here
  */
 export const saveToLog = (title: string, description: string, color: number) => {
-    console.log("[!] " + title + " (#" + color.toString(16).padStart(6, "0") + ")\n :: " + description);
+    const hex = chalk.hex("#" + color.toString(16).padStart(6, "0"))
+    console.log(hex("[!] " + title + "\n :: " + description));
 }
 
 /**

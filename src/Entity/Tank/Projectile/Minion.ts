@@ -56,7 +56,7 @@ import { CameraEntity } from "../../../Native/Camera";
  */
 export default class Minion extends Drone implements BarrelBase {
     /** Size of the focus the minions orbit. */
-    public static FOCUS_RADIUS = 850 ** 2;
+    public static FOCUS_RADIUS = 800 ** 2;
 
     /** The minion's barrel */
     private minionBarrel: Barrel;
@@ -109,7 +109,7 @@ export default class Minion extends Drone implements BarrelBase {
 
             const dist = inputs.mouse.distanceToSQ(this.positionData.values);
 
-            if (dist < Minion.FOCUS_RADIUS / 4) { // Half
+            if (dist < Minion.FOCUS_RADIUS / 7) {
                 this.movementAngle = this.positionData.values.angle + Math.PI;
             } else if (dist < Minion.FOCUS_RADIUS) {
                 this.movementAngle = this.positionData.values.angle + Math.PI / 2;

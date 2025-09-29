@@ -45,6 +45,8 @@ export default class EntityManager {
     public cameras: number[] = [];
     /** List of all not ObjectEntitys */
     public otherEntities: number[] = [];
+    /** List of all global entities ids, such as maze walls and team bases. */
+    public globalEntities: number[] = [];
     /** List of all Entitys. */
     public inner: (Entity | null)[] = Array(16384);
     /** List of all AIs. */

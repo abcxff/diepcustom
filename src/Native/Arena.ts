@@ -28,13 +28,16 @@ import { Entity } from "./Entity";
 import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
 import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+
 import Client from "../Client";
+
 import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import Guardian from "../Entity/Boss/Guardian";
 import Summoner from "../Entity/Boss/Summoner";
 import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
+
 import { tps, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
@@ -139,6 +142,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         return pos;
     }
     
+    /** Checks if players or shapes can spawn at the given coordinates. */
     public isValidSpawnLocation(x: number, y: number): boolean {
         // Override in gamemode files
         return true;
@@ -192,21 +196,25 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             return;
         }
     }
-    
+
+    /** Deals with countdown screen and game start logic. */
     public manageCountdown() {
         if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
+
         if (this.state === ArenaState.COUNTDOWN && this.arenaData.values.ticksUntilStart <= 0) {
             this.onGameStarted();
         }
 
         for (const [client, name] of this.game.clientsAwaitingSpawn) {
             const camera = client.camera;
-            if (!Entity.exists(camera)) return;
+            if (!Entity.exists(camera)) continue;
+
             if (this.state === ArenaState.COUNTDOWN) {
                 // If the game has not yet started, display countdown and keep this client in the waiting list
                 camera.cameraData.flags = CameraFlags.gameWaitingStart;
                 continue;
             }
+
             // Otherwise, proceed as usual
             client.createAndSpawnPlayer(name);
 
@@ -215,25 +223,25 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         }
     }
 
+    /** Returns all alive, player controlled tanks. */
     public getAlivePlayers() {
         const players: TankBody[] = [];
-        for (let id = 0; id <= this.game.entities.lastId; ++id) {
-            const entity = this.game.entities.inner[id];
+        for (const client of this.game.clients) {
+            const entity = client.camera?.cameraData.values.player;
 
             if (
                 Entity.exists(entity) &&
-                entity instanceof TankBody &&
-                entity.cameraEntity instanceof ClientCamera &&
-                entity.cameraEntity.cameraData.values.player === entity
+                entity instanceof TankBody
             ) players.push(entity);
         }
         return players;
     }
 
-    public getTeamPlayers(team: TeamEntity) {
+    /** Returns all alive, player controlled tanks on the given team */
+    public getTeamPlayers(team: TeamGroupEntity) {
         const players = this.getAlivePlayers();
         const teamPlayers: TankBody[] = [];
-        for (let i = 0; i < players.length; i++) {
+        for (let i = 0; i < players.length; ++i) {
             const entity = players[i];
 
             if (entity.relationsData.values.team === team) teamPlayers.push(entity);

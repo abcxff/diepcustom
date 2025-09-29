@@ -27,13 +27,15 @@ export default class MazeWall extends ObjectEntity {
     public constructor(game: GameServer, x: number, y: number, width: number, height: number) {
         super(game);
 
+        this.setGlobalEntity();
+
         this.positionData.values.x = x;
         this.positionData.values.y = y;
 
         this.physicsData.values.width = width;
         this.physicsData.values.size = height;
         this.physicsData.values.sides = 2;
-        this.physicsData.values.flags |= PhysicsFlags.isSolidWall | PhysicsFlags.showsOnMap;
+        this.physicsData.values.flags |= PhysicsFlags.isSolidWall;
         this.physicsData.values.pushFactor = 2;
         this.physicsData.values.absorbtionFactor = 0;
 
