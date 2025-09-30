@@ -24,8 +24,8 @@ import Bullet from "../Entity/Tank/Projectile/Bullet";
 import TankBody from "../Entity/Tank/TankBody";
 import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
-import { Stat, StatCount, StyleFlags, Tank } from "./Enums";
-import { getTankByName } from "./TankDefinitions"
+import { ClientBound, Stat, StatCount, StyleFlags, Tank } from "./Enums";
+import { getTankByName } from "./TankDefinitions";
 
 const RELATIVE_POS_REGEX = new RegExp(/~(-?\d+)?/);
 
@@ -39,6 +39,7 @@ export const enum CommandID {
     gameTeleport = "game_teleport",
     gameClaim = "game_claim",
     gameGodmode = "game_godmode",
+    gameAnnounce = "game_announce",
     adminSummon = "admin_summon",
     adminKillAll = "admin_kill_all",
     adminKillEntity = "admin_kill_entity",
@@ -120,6 +121,13 @@ export const commandDefinitions = {
         description: "Set the godemode. Toggles if [value] is not specified",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
+    },
+    game_announce: {
+        id: CommandID.gameAnnounce,
+        usage: "[message] [?color] [?time] [?id]",
+        description: "Announce a message to the current game server. Example usage: 'Hello World' 0xFF0000 3000 msgId",
+        permissionLevel: AccessLevel.FullAccess,
+        isCheat: false
     },
     admin_summon: {
         id: CommandID.adminSummon,
@@ -243,6 +251,17 @@ export const commandCallbacks = {
 
         const godmodeState = player.isInvulnerable ? "ON" : "OFF";
         return `God mode: ${godmodeState}`;
+    },
+    game_announce: (client: Client, message: string = "", color: string = "0x000000", time: string = "15000", id: string = "") => {
+        const game = client.camera?.game
+        if (!game) return;
+
+        game.broadcast()
+        .u8(ClientBound.Notification)
+        .stringNT(message)
+        .u32(parseInt(color))
+        .float(parseInt(time))
+        .stringNT(id).send();
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;
