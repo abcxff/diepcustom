@@ -124,8 +124,8 @@ export const commandDefinitions = {
     },
     game_announce: {
         id: CommandID.gameAnnounce,
-        usage: "[message] [?color]",
-        description: "Announce a message to the current game server. Example usage: 'Hello World' 0xFF0000",
+        usage: "[message] [?color] [?time]",
+        description: "Announce a message to the current game server. Example usage: 'Hello World' 0xFF0000 3000",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
@@ -252,7 +252,7 @@ export const commandCallbacks = {
         const godmodeState = player.isInvulnerable ? "ON" : "OFF";
         return `God mode: ${godmodeState}`;
     },
-    game_announce: (client: Client, message: string, color: string = "0x000000") => {
+    game_announce: (client: Client, message: string = "", color: string = "0x000000", time: string = "15000") => {
         const game = client.camera?.game
         if (!game) return;
 
@@ -260,7 +260,7 @@ export const commandCallbacks = {
         .u8(ClientBound.Notification)
         .stringNT(message)
         .u32(parseInt(color))
-        .float(15000)
+        .float(parseInt(time))
         .stringNT("").send();
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
