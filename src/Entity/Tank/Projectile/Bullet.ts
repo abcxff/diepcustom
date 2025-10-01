@@ -71,7 +71,7 @@ export default class Bullet extends LivingEntity {
         this.relationsData.values.team = barrel.relationsData.values.team;
         this.relationsData.values.owner = tank;
 
-        this.physicsData.values.sides = bulletDefinition.sides ?? 1;
+        this.physicsData.values.sides = 1;
         this.physicsData.values.flags |= PhysicsFlags.noOwnTeamCollision | PhysicsFlags.canEscapeArena;
         if (tank.positionData.values.flags & PositionFlags.canMoveThroughWalls || this.relationsData.values.team === this.game.arena) this.positionData.values.flags |= PositionFlags.canMoveThroughWalls
         this.physicsData.values.size = (barrel.physicsData.values.width / 2) * bulletDefinition.sizeRatio;
