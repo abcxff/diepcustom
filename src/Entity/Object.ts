@@ -206,6 +206,14 @@ export default class ObjectEntity extends Entity {
 
         if ((entity.physicsData.values.flags & PhysicsFlags.isSolidWall || entity.physicsData.values.flags & PhysicsFlags.isBase) && !(this.positionData.values.flags & PositionFlags.canMoveThroughWalls))  {
             if (entity.physicsData.values.flags & PhysicsFlags.isSolidWall) {
+                if (this.relationsData.values.owner instanceof ObjectEntity && !(Entity.exists(this.relationsData.values.team) && this.relationsData.values.team === entity.relationsData.values.team)) {
+                    // this is a bit off still. k
+                    this.velocity.setPosition(this.positionData.values);
+                    this.setVelocity(0, 0);
+                    this.destroy(true) // Kills off bullets etc
+                    return;
+                }
+
                 this.accel.magnitude *= 0.3;
                 this.velocity.magnitude *= 0.3;
             }
@@ -214,12 +222,6 @@ export default class ObjectEntity extends Entity {
         if (entity.physicsData.values.sides === 2) {
             if (this.positionData.values.flags & PositionFlags.canMoveThroughWalls) {
                 kbMagnitude = 0;
-            } else if (entity.physicsData.values.flags & PhysicsFlags.isSolidWall && this.relationsData.values.owner instanceof ObjectEntity && !(Entity.exists(this.relationsData.values.team) && this.relationsData.values.team === entity.relationsData.values.team)) {
-                // this is a bit off still. k
-                this.velocity.setPosition(this.positionData.values);
-                this.setVelocity(0, 0);
-                this.destroy(true) // Kills off bullets etc
-                return;
             } else {
                 const relA = Math.cos(kbAngle + entity.positionData.values.angle) / entity.physicsData.values.size;
                 const relB = Math.sin(kbAngle + entity.positionData.values.angle) / entity.physicsData.values.width;
