@@ -75,7 +75,7 @@ export default class Bullet extends LivingEntity {
         this.physicsData.values.flags |= PhysicsFlags.noOwnTeamCollision | PhysicsFlags.canEscapeArena;
         if (tank.positionData.values.flags & PositionFlags.canMoveThroughWalls || this.relationsData.values.team === this.game.arena) this.positionData.values.flags |= PositionFlags.canMoveThroughWalls
         this.physicsData.values.size = (barrel.physicsData.values.width / 2) * bulletDefinition.sizeRatio;
-        this.styleData.values.color = bulletDefinition.color || tank.rootParent.styleData.values.color;
+        this.styleData.values.color = tank.rootParent.styleData.values.color;
         this.styleData.values.flags |= StyleFlags.hasNoDmgIndicator;
         this.healthData.values.flags = HealthFlags.hiddenHealthbar;
 
