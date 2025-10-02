@@ -212,7 +212,11 @@ export default class Barrel extends ObjectEntity {
                 break;
         }
 
-        if (projectile && this.definition.bullet.sides) projectile.physicsData.values.sides = this.definition.bullet.sides;
+        if (projectile) { 
+            if (this.definition.bullet.sides) projectile.physicsData.values.sides = this.definition.bullet.sides;
+
+            if (this.definition.bullet.color) projectile.styleData.values.color = this.definition.bullet.color;
+        }
     }
 
     /** Resizes the barrel; when the tank gets bigger, the barrel must as well. */
