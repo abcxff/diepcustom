@@ -39,6 +39,8 @@ export default class MazeWall extends ObjectEntity {
         this.physicsData.values.pushFactor = 2;
         this.physicsData.values.absorbtionFactor = 0;
 
+        this.relationsData.values.team = this.game.arena;
+
         this.styleData.values.borderWidth = 10;
         this.styleData.values.color = Color.Box;
     }
