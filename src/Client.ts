@@ -416,6 +416,7 @@ export default class Client {
 
                     this.notify("Someone has already taken that tank", 0x000000, 5000, "cant_claim_info");
                 } else {
+                    camera.cameraData.FOV = 0.35;
                     this.inputs.deleted = true;
                 }
 
