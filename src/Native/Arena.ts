@@ -112,14 +112,15 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /**
      * Finds a spawnable location on the map.
      */
-     public findSpawnLocation(): VectorAbstract {
+     public findSpawnLocation(isPlayer: boolean=false): VectorAbstract {
         const pos = {
             x: ~~(Math.random() * this.width - this.width / 2),
             y: ~~(Math.random() * this.height - this.height / 2),
         }
 
         findSpawn: for (let i = 0; i < 20; ++i) {
-            if (!this.isValidSpawnLocation(pos.x, pos.y)) {
+            if (!this.isValidSpawnLocation(pos.x, pos.y) ||
+                isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 5 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 5) {
                 pos.x = ~~(Math.random() * this.width - this.width / 2);
                 pos.y = ~~(Math.random() * this.height - this.height / 2);
                 continue findSpawn;
@@ -229,10 +230,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         for (const client of this.game.clients) {
             const entity = client.camera?.cameraData.values.player;
 
-            if (
-                Entity.exists(entity) &&
-                entity instanceof TankBody
-            ) players.push(entity);
+            if (Entity.exists(entity) && entity instanceof TankBody) players.push(entity);
         }
         return players;
     }
@@ -266,7 +264,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
      * Allows the arena to decide how players are spawned into the game.
      */
     public spawnPlayer(tank: TankBody, client: Client) {
-        const { x, y } = this.findSpawnLocation();
+        const { x, y } = this.findSpawnLocation(true);
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
