@@ -206,7 +206,7 @@ export default class ObjectEntity extends Entity {
 
         if ((entity.physicsData.values.flags & PhysicsFlags.isSolidWall || entity.physicsData.values.flags & PhysicsFlags.isBase) && !(this.positionData.values.flags & PositionFlags.canMoveThroughWalls))  {
             if (entity.physicsData.values.flags & PhysicsFlags.isSolidWall) {
-                if (this.relationsData.values.owner instanceof ObjectEntity && !(Entity.exists(this.relationsData.values.team) && this.relationsData.values.team === entity.relationsData.values.team)) {
+                if (this.relationsData.values.owner?.positionData && this.relationsData.values.team !== entity.relationsData.values.team) {
                     // this is a bit off still. k
                     this.velocity.setPosition(this.positionData.values);
                     this.setVelocity(0, 0);
