@@ -22,6 +22,7 @@ import Triangle from "../Entity/Shape/Triangle";
 import AutoTurret from "../Entity/Tank/AutoTurret";
 import Bullet from "../Entity/Tank/Projectile/Bullet";
 import TankBody from "../Entity/Tank/TankBody";
+import { AIState } from "../Entity/AI";
 import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
 import { ClientBound, Stat, StatCount, StyleFlags, Tank } from "./Enums";
@@ -219,6 +220,7 @@ export const commandCallbacks = {
         const TEntity = new Map([
           ["ArenaCloser", ArenaCloser],
           ["Dominator", Dominator],
+          ["Mothership", Mothership],
           ["Shape", AbstractShape],
           ["Boss", AbstractBoss],
           ["AutoTurret", AutoTurret]
@@ -228,7 +230,7 @@ export const commandCallbacks = {
 
         const AIs = Array.from(client.camera.game.entities.AIs);
         for (let i = 0; i < AIs.length; ++i) {
-            if (!(AIs[i].owner instanceof TEntity)) continue;
+            if (!(AIs[i].owner instanceof TEntity) || AIs[i].state === AIState.possessed) continue;
             client.possess(AIs[i]);
             return;
         }
@@ -350,6 +352,6 @@ export const executeCommand = (client: Client, cmd: string, args: string[]) => {
 
     const response = commandCallbacks[cmd as CommandID](client, ...args);
     if (response) {
-        client.notify(response, 0x00ff00, 5000, `cmd-callback${commandDefinition.id}`);
+        client.notify(response, 0x00FFA0, 5000, `cmd-callback${commandDefinition.id}`);
     }
 }
