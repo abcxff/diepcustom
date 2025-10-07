@@ -41,6 +41,7 @@ export const enum CommandID {
     gameClaim = "game_claim",
     gameGodmode = "game_godmode",
     gameAnnounce = "game_announce",
+    gameGoldenName = "game_golden_name",
     adminSummon = "admin_summon",
     adminKillAll = "admin_kill_all",
     adminKillEntity = "admin_kill_entity",
@@ -127,6 +128,12 @@ export const commandDefinitions = {
         id: CommandID.gameAnnounce,
         usage: "[message] [?color] [?time] [?id]",
         description: "Announce a message to the current game server. Example usage: 'Hello World' 0xFF0000 3000 msgId",
+        permissionLevel: AccessLevel.FullAccess,
+        isCheat: false
+    },
+    game_golden_name: {
+        id: CommandID.gameGoldenName,
+        description: "Toggles the golden nickname color that appears upon using cheats.",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
@@ -264,6 +271,9 @@ export const commandCallbacks = {
         .u32(parseInt(color))
         .float(parseInt(time))
         .stringNT(id).send();
+    },
+    game_golden_name: (client: Client, activeArg?: string) => {
+        client.setHasCheated(!client.hasCheated());
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;
