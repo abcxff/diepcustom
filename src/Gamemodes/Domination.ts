@@ -31,6 +31,8 @@ const arenaSize = 11150;
 const baseSize = arenaSize / (3 + 1/3); // 3345, must scale with arena size
 const domBaseSize = baseSize / 2;
 
+const enableScoreboard = false;
+
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed]; // Only supports up to 4 teams
 
 /**
@@ -105,8 +107,6 @@ export default class DominationArena extends ArenaEntity {
     }
     
     public updateScoreboard() {
-        // Uncomment to enable scoreboard from latest version of the game (2025)
-        /*
         this.dominators.sort((d1, d2) => d2.healthData.values.health - d1.healthData.values.health);
 
         const length = Math.min(10, this.dominators.length);
@@ -118,17 +118,18 @@ export default class DominationArena extends ArenaEntity {
             else this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = dom.styleData.values.color;
             this.arenaData.values.scoreboardNames[i as ValidScoreboardIndex] = dom.prefix || dom.nameData.values.name;
             // TODO: Change id
-            this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = dom['_currentTank'];
+            // this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = dom['_currentTank'];
+            this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = -1
             this.arenaData.values.scoreboardScores[i as ValidScoreboardIndex] = dom.healthData.values.health;
             this.arenaData.values.scoreboardSuffixes[i as ValidScoreboardIndex] = " HP";
         }
        
         this.arenaData.scoreboardAmount = length;
-        */
     }
     
     public updateArenaState() {
-        this.updateScoreboard();
+        if (enableScoreboard) this.updateScoreboard();
+
         const dominatorCount = this.dominators.length; // Only count alive players for win condition
         for (const team of this.teams) {
             if (this.getTeamDominatorCount(team) === dominatorCount) { // If all dominators are on the same team, the game is over
@@ -147,6 +148,7 @@ export default class DominationArena extends ArenaEntity {
                 }
             }
         }
+
         for (let i = this.dominators.length; i --> 0;) {
             const dom = this.dominators[i];
             if (!Entity.exists(dom)) {
@@ -154,6 +156,7 @@ export default class DominationArena extends ArenaEntity {
                 if (pop && i < this.dominators.length) this.dominators[i] = pop;
             }
         }
+
         if (this.state === ArenaState.CLOSING && this.getAlivePlayers().length === 0) {
             this.state = ArenaState.CLOSED;
 

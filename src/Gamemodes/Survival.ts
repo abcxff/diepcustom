@@ -33,8 +33,7 @@ const MIN_PLAYERS = 4;
  */
 export class SurvivalShapeManager extends ShapeManager {
     protected get wantedShapes() {
-        const mult = 50 * 50;
-        const ratio = Math.ceil(Math.pow(this.game.arena.width / mult, 2));
+        const ratio = Math.ceil(Math.pow(this.game.arena.width / 2500, 2));
         return Math.floor(12.5 * ratio);
     }
 }
