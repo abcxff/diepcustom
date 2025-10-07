@@ -201,7 +201,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
         if (isReady) this.arenaData.ticksUntilStart--;
 
-        if (this.state === ArenaState.COUNTDOWN && isReady && this.arenaData.values.ticksUntilStart <= 0) {
+        if (this.state === ArenaState.COUNTDOWN && isReady && this.arenaData.values.ticksUntilStart < 0) {
             this.onGameStarted();
         }
 
