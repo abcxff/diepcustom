@@ -24,9 +24,9 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import ShapeManager from "../Entity/Shape/Manager";
 import { ArenaFlags, ClientBound } from "../Const/Enums";
-import { tps, scoreboardUpdateInterval } from "../config";
+import { tps, countdownTicks, scoreboardUpdateInterval } from "../config";
 
-const minPlayers = 4;
+const MIN_PLAYERS = 4;
 
 /**
  * Manage shape count
@@ -52,7 +52,7 @@ export default class SurvivalArena extends ArenaEntity {
 
         this.updateBounds(2500, 2500);
         this.arenaData.values.flags &= ~ArenaFlags.gameReadyStart;
-        this.arenaData.values.playersNeeded = minPlayers;
+        this.arenaData.values.playersNeeded = MIN_PLAYERS;
     }
 
     public updateArenaState() {
@@ -98,11 +98,11 @@ export default class SurvivalArena extends ArenaEntity {
 
     public manageCountdown() {
         if (this.state === ArenaState.COUNTDOWN) {
-            this.arenaData.playersNeeded = minPlayers - this.game.clientsAwaitingSpawn.size;
+            this.arenaData.playersNeeded = MIN_PLAYERS - this.game.clientsAwaitingSpawn.size;
             if (this.arenaData.values.playersNeeded <= 0) {
                 this.arenaData.flags |= ArenaFlags.gameReadyStart;
             } else {
-                this.arenaData.values.ticksUntilStart = this.COUNTDOWN_TICKS; // Reset countdown
+                this.arenaData.ticksUntilStart = countdownTicks; // Reset countdown
                 if (this.arenaData.flags & ArenaFlags.gameReadyStart) this.arenaData.flags &= ~ArenaFlags.gameReadyStart;
             }
         }
