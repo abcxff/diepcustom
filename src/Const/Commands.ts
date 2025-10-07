@@ -71,35 +71,35 @@ export const commandDefinitions = {
     game_set_level: {
         id: CommandID.gameSetLevel,
         usage: "[level]",
-        description: "Changes your level to the given whole number",
+        description: "Changes your level to the given integer",
         permissionLevel: AccessLevel.BetaAccess,
         isCheat: true
     },
     game_set_score: {
         id: CommandID.gameSetScore,
         usage: "[score]",
-        description: "Changes your score to the given whole number",
+        description: "Changes your score to the given integer",
         permissionLevel: AccessLevel.BetaAccess,
         isCheat: true
     },
     game_set_stat: {
         id: CommandID.gameSetStat,
         usage: "[stat num] [points]",
-        description: "Set the value of one of your statuses. Values can be greater than the capacity. [stat num] is equivalent to the number that appears in the UI",
+        description: "Set the value of the given attribute. Values can be greater than the maximum capacity. [stat num] is equivalent to the number that appears in the UI",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
     game_set_stat_max: {
         id: CommandID.gameSetStatMax,
         usage: "[stat num] [max]",
-        description: "Set the max value of one of your statuses. [stat num] is equivalent to the number that appears in the UI",
+        description: "Sets the max value of the given attribute. [stat num] is equivalent to the number that appears in the UI",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
     game_add_upgrade_points: {
         id: CommandID.gameAddUpgradePoints,
         usage: "[points]",
-        description: "Add upgrade points",
+        description: "Adds upgrade points",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
@@ -120,7 +120,7 @@ export const commandDefinitions = {
     game_godmode: {
         id: CommandID.gameGodmode,
         usage: "[?value]",
-        description: "Set the godemode. Toggles if [value] is not specified",
+        description: "Toggles godmode.",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
@@ -133,20 +133,20 @@ export const commandDefinitions = {
     },
     game_golden_name: {
         id: CommandID.gameGoldenName,
-        description: "Toggles the golden nickname color that appears upon using cheats.",
+        description: "Toggles the golden nickname color that appears upon using cheats",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
     admin_summon: {
         id: CommandID.adminSummon,
         usage: "[entityName] [?count] [?x] [?y]",
-        description: "Spawns entities at a certain location",
+        description: "Spawns entities at the given coordinates",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
     admin_kill_all: {
         id: CommandID.adminKillAll,
-        description: "Kills all entities in the arena",
+        description: "Kills all living entities in the arena",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
