@@ -320,7 +320,7 @@ export default class Client {
                     }
                 }
 
-                if ((flags & InputFlags.suicide) && (!player.deletionAnimation || !player.deletionAnimation) && !this.inputs.isPossessing) {
+                if ((flags & InputFlags.suicide) && (!player.deletionAnimation)) {
                     if (this.accessLevel >= config.AccessLevel.BetaAccess || (this.game.arena.arenaData.values.flags & ArenaFlags.canUseCheats)) {
                         this.setHasCheated(true);
 
@@ -347,8 +347,6 @@ export default class Client {
 
                 const player = camera.cameraData.values.player;
                 if (!Entity.exists(player) || !(player instanceof TankBody)) return;
-                // No AI
-                if (this.inputs.isPossessing) return;
 
                 const definition = getTankById(player.currentTank);
                 if (!definition || !definition.stats.length) return;
@@ -368,8 +366,6 @@ export default class Client {
             }
             case ServerBound.TankUpgrade: {
                 const player = camera.cameraData.values.player;
-                // No AI
-                if (this.inputs.isPossessing) return;
                 if (!Entity.exists(player) || !(player instanceof TankBody)) return;
 
                 const definition = getTankById(player.currentTank);
