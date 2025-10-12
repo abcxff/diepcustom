@@ -66,7 +66,7 @@ Module.textInputContainer = document.getElementById("textInputContainer");
 Module.permissionLevel = -1;
 
 // (polling) intervals, can be a number (ms), -1 aka never or -2 aka whenever a new connection is initiated  
-Module.reloadServersInterval = 60000;
+Module.reloadServersInterval = -2;
 Module.reloadTanksInterval = -2;
 Module.reloadCommandsInterval = -2;
 Module.reloadColorsInterval = -2;
