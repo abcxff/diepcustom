@@ -79,6 +79,5 @@ export default class TeamBase extends LivingEntity {
         // No animation. No regen
         this.healthData.health = this.healthData.values.maxHealth;
         this.lastDamageTick = tick;
-        this.deletionAnimation = null; // Prevent teambases from getting destroyed by admin commands
     }
 }
