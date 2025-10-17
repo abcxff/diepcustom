@@ -116,8 +116,10 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         }
 
         findSpawn: for (let i = 0; i < 20; ++i) {
-            if (!this.isValidSpawnLocation(pos.x, pos.y) ||
-                isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 5 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 5) {
+            if (
+                !this.isValidSpawnLocation(pos.x, pos.y) ||
+                isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 2 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 2
+               ) {
                 pos.x = ~~(Math.random() * this.width - this.width / 2);
                 pos.y = ~~(Math.random() * this.height - this.height / 2);
                 continue findSpawn;
