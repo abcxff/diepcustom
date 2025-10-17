@@ -40,6 +40,8 @@ const SHRINK_AMOUNT = 100;
 const SHRINK_INTERVAL = 15 * tps;
 const MIN_SIZE = 6600;
 
+const ENABLE_DOMINATOR = false;
+
 shuffleArray(TEAM_COLORS); // Randomize leading team
 
 /**
@@ -47,8 +49,7 @@ shuffleArray(TEAM_COLORS); // Randomize leading team
  */
 export class TagShapeManager extends ShapeManager {
     protected get wantedShapes() {
-        const mult = 50 * 50;
-        const ratio = Math.ceil(Math.pow(this.game.arena.width / mult, 2));
+        const ratio = Math.ceil(Math.pow(this.game.arena.width / 2500, 2));
 
         return Math.floor(12.5 * ratio);
     }
@@ -76,12 +77,11 @@ export default class TagArena extends ArenaEntity {
             const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
         }
-        
-        // Uncomment to enable a single dominator in the pentagon nest (was removed from the game in an old version)
-        /*
-        const domBaseSize = 3345 / 2
-        new Dominator(this, new TeamBase(game, this, 0, 0, domBaseSize, domBaseSize, false));
-        */
+
+        if (ENABLE_DOMINATOR) {
+            const domBaseSize = 3345 / 2
+            new Dominator(this, new TeamBase(game, this, 0, 0, domBaseSize, domBaseSize, false));
+        }
 
         this.updateBounds(arenaSize * 2, arenaSize * 2);
     }

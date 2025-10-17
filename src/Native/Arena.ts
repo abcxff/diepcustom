@@ -38,7 +38,7 @@ import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
 
-import { tps, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
+import { tps, countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
     /** Countdown, waiting for players screen */
@@ -89,9 +89,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /** Padding between arena size and maximum movement border. */
     public ARENA_PADDING: number = 200;
 
-    /** How long the countdown should last until the game is started. By default it is 10 seconds. */
-    public COUNTDOWN_TICKS: number = 10 * tps;
-
     public constructor(game: GameServer) {
         super(game);
 
@@ -104,7 +101,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
         this.arenaData.values.flags = ArenaFlags.gameReadyStart;
         this.arenaData.values.playersNeeded = 0;
-        this.arenaData.values.ticksUntilStart = this.COUNTDOWN_TICKS;
+        this.arenaData.values.ticksUntilStart = countdownTicks;
 
         this.teamData.values.teamColor = Color.Neutral;
     }
@@ -112,14 +109,17 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     /**
      * Finds a spawnable location on the map.
      */
-     public findSpawnLocation(): VectorAbstract {
+     public findSpawnLocation(isPlayer: boolean=false): VectorAbstract {
         const pos = {
             x: ~~(Math.random() * this.width - this.width / 2),
             y: ~~(Math.random() * this.height - this.height / 2),
         }
 
         findSpawn: for (let i = 0; i < 20; ++i) {
-            if (!this.isValidSpawnLocation(pos.x, pos.y)) {
+            if (
+                !this.isValidSpawnLocation(pos.x, pos.y) ||
+                isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 2 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 2
+               ) {
                 pos.x = ~~(Math.random() * this.width - this.width / 2);
                 pos.y = ~~(Math.random() * this.height - this.height / 2);
                 continue findSpawn;
@@ -199,9 +199,11 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
     /** Deals with countdown screen and game start logic. */
     public manageCountdown() {
-        if (this.arenaData.values.playersNeeded <= 0) this.arenaData.ticksUntilStart--;
+        const isReady = this.arenaData.values.flags & ArenaFlags.gameReadyStart;
 
-        if (this.state === ArenaState.COUNTDOWN && this.arenaData.values.ticksUntilStart <= 0) {
+        if (isReady) this.arenaData.ticksUntilStart--;
+
+        if (this.state === ArenaState.COUNTDOWN && isReady && this.arenaData.values.ticksUntilStart < 0) {
             this.onGameStarted();
         }
 
@@ -229,10 +231,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         for (const client of this.game.clients) {
             const entity = client.camera?.cameraData.values.player;
 
-            if (
-                Entity.exists(entity) &&
-                entity instanceof TankBody
-            ) players.push(entity);
+            if (Entity.exists(entity) && entity instanceof TankBody) players.push(entity);
         }
         return players;
     }
@@ -266,7 +265,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
      * Allows the arena to decide how players are spawned into the game.
      */
     public spawnPlayer(tank: TankBody, client: Client) {
-        const { x, y } = this.findSpawnLocation();
+        const { x, y } = this.findSpawnLocation(true);
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
