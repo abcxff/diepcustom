@@ -323,7 +323,12 @@ export const commandCallbacks = {
         if(!game) return;
         for (let id = 0; id <= game.entities.lastId; ++id) {
             const entity = game.entities.inner[id];
-            if (Entity.exists(entity) && entity instanceof LivingEntity && entity !== client.camera?.cameraData.player) entity.healthData.health = 0;
+            if (
+                Entity.exists(entity) &&
+                entity instanceof LivingEntity &&
+                entity !== client.camera?.cameraData.player && 
+                !(entity.physicsData.values.flags & PhysicsFlags.showsOnMap)
+            ) entity.destroy();
         }
     },
     admin_close_arena: (client: Client) => {
@@ -343,7 +348,7 @@ export const commandCallbacks = {
 
         for (let id = 0; id <= game.entities.lastId; ++id) {
             const entity = game.entities.inner[id];
-            if (Entity.exists(entity) && entity instanceof TEntity) entity.healthData.health = 0;
+            if (Entity.exists(entity) && entity instanceof TEntity) entity.destroy();
         }
     }
 } as Record<CommandID, CommandCallback>
