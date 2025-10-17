@@ -23,4 +23,4 @@ jobs:
       run: npm ci
     
     - name: Run TypeScript check
-      run: npx tsc --noEmit
+      run: npm run check

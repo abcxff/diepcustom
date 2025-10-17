@@ -14,6 +14,7 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "build": "npx tsc",
+    "check": "npx tsc --noEmit",
     "start": "node index",
     "server": "npm run build && npm run start",
     "docker:build": "docker build --tag diepcustom .",
