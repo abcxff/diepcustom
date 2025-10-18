@@ -25,7 +25,7 @@ import TankBody from "../Entity/Tank/TankBody";
 import { AIState } from "../Entity/AI";
 import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
-import { ClientBound, Stat, StatCount, StyleFlags, Tank } from "./Enums";
+import { ClientBound, Stat, StatCount, PhysicsFlags, StyleFlags, Tank } from "./Enums";
 import { getTankByName } from "./TankDefinitions";
 
 const RELATIVE_POS_REGEX = new RegExp(/~(-?\d+)?/);
