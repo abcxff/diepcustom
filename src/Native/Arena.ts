@@ -20,14 +20,13 @@ import GameServer from "../Game";
 import ShapeManager from "../Entity/Shape/Manager";
 import TankBody from "../Entity/Tank/TankBody";
 import ArenaCloser from "../Entity/Misc/ArenaCloser";
-import ClientCamera from "./Camera";
 
 import { VectorAbstract } from "../Physics/Vector";
 import { ArenaGroup, TeamGroup } from "./FieldGroups";
 import { Entity } from "./Entity";
 import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
-import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+import { TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 
 import Client from "../Client";
 
@@ -38,7 +37,7 @@ import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
 
-import { tps, countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
+import { countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
     /** Countdown, waiting for players screen */
@@ -57,6 +56,9 @@ export const enum ArenaState {
  * The Arena Entity, sent to the client and also used for internal calculations.
  */
 export default class ArenaEntity extends Entity implements TeamGroupEntity {
+    /** Gamemode id to be used for gamemode listing */
+    public static GAMEMODE_ID: string | null = null;
+
     /** Always existant arena field group. Present in all arenas. */
     public arenaData: ArenaGroup = new ArenaGroup(this);
 
@@ -106,6 +108,31 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.teamData.values.teamColor = Color.Neutral;
     }
 
+    /** Returns if the arena is open */
+    public isOpen(): boolean {
+        return this.state === ArenaState.OPEN;
+    }
+
+    /** Returns if the arena is counting down to open */
+    public isCountingDown(): boolean {
+        return this.state === ArenaState.COUNTDOWN;
+    }
+
+    /** Returns if the arena game is over */
+    public isGameOver(): boolean {
+        return this.state === ArenaState.OVER;
+    }
+
+    /** Returns if the arena is closing */
+    public isClosing(): boolean {
+        return this.state === ArenaState.CLOSING;
+    }
+
+    /** Returns if the arena is closed */
+    public isClosed(): boolean {
+        return this.state === ArenaState.CLOSED;
+    }
+
     /**
      * Finds a spawnable location on the map.
      */
@@ -115,25 +142,30 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             y: ~~(Math.random() * this.height - this.height / 2),
         }
 
-        findSpawn: for (let i = 0; i < 20; ++i) {
+        for (let i = 0; i < 20; ++i) {
             if (
                 !this.isValidSpawnLocation(pos.x, pos.y) ||
                 isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 2 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 2
-               ) {
+            ) {
                 pos.x = ~~(Math.random() * this.width - this.width / 2);
                 pos.y = ~~(Math.random() * this.height - this.height / 2);
-                continue findSpawn;
+                continue;
             }
-            const entities = this.game.entities.collisionManager.retrieve(pos.x, pos.y, 1000, 1000);
 
-            // Only spawn < 1000 units away from player, unless we can't find a place to spawn
-            for (let len = entities.length; --len >= 0;) {
-                if (entities[len] instanceof TankBody && (entities[len].positionData.values.x - pos.x) ** 2 + (entities[len].positionData.values.y - pos.y) ** 2 < 1_000_000) { // 1000^2
-                    pos.x = ~~(Math.random() * this.width - this.width / 2);
-                    pos.y = ~~(Math.random() * this.height - this.height / 2);
+            // If there is any tank within 1000 units, find a new position
+            const entity = this.game.entities.collisionManager.getFirstMatch(pos.x, pos.y, 1000, 1000, (entity) => {
+                if (!(entity instanceof TankBody)) return false;
 
-                    continue findSpawn;
-                }
+                const dX = entity.positionData.values.x - pos.x;
+                const dY = entity.positionData.values.y - pos.y;
+
+                return (dX * dX + dY * dY) < 1_000_000; // 1000^2
+            });
+
+            if (entity) {
+                pos.x = ~~(Math.random() * this.width - this.width / 2);
+                pos.y = ~~(Math.random() * this.height - this.height / 2);
+                continue;
             }
 
             break;

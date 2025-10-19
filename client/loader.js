@@ -669,6 +669,26 @@ Module.todo.push([() => {
 }, false]);
 
 
+const PING_PACKET = new Uint8Array([5]);
+function sendThrottledPing(socket) {
+    const now = performance.now();
+    const socketPtr = Module.HEAPU32[SOCKET_PTR >> 2];
+    const lastPingTimePtr = socketPtr + LAST_PING_TIME_OFFSET;
+
+    const timeSinceLastPing = now - Module.HEAPF64[lastPingTimePtr >> 3];
+    if (timeSinceLastPing >= PING_THROTTLE_MS) {
+        return socket.send(PING_PACKET);
+    }
+
+    // This is okay as this function won't be called again until
+    // after the pong is received from the server.
+    setTimeout(() => requestAnimationFrame(() => {
+        if (socket.readyState !== WebSocket.OPEN) return;
+        Module.HEAPF64[lastPingTimePtr >> 3] = Module.HEAPF64[TIME_NOW_PTR >> 3];
+        socket.send(PING_PACKET);
+    }), PING_THROTTLE_MS - timeSinceLastPing);
+}
+
 // Part of the original emscripten bootstrap
 class ASMConsts {
     static createCanvasCtxWithAlpha(canvasId, alpha) {
@@ -703,6 +723,11 @@ class ASMConsts {
     static websocketSend(socketId, packetStart, packetLength) {
         const socket = Module.cp5.sockets[socketId];
         if(!socket || socket.readyState !== 1) return 0;
+        const packetId = Module.HEAPU8[packetStart];
+        if (packetId === 5) {
+            sendThrottledPing(socket);
+            return 1;
+        }
         try {
             socket.send(Module.HEAP8.subarray(packetStart, packetStart + packetLength));
         } catch(e) {}

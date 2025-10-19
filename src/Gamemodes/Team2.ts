@@ -33,6 +33,8 @@ const baseWidth = arenaSize / (3 + 1/3) * 0.6; // 2007
  * Teams2 Gamemode Arena
  */
 export default class Teams2Arena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "teams";
+
     /** Blue Team entity */
     public blueTeamBase: TeamBase;
     /** Red Team entity */

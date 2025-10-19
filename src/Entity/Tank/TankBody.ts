@@ -18,10 +18,11 @@
 
 import * as util from "../../util";
 
+import type GameServer from "../../Game";
+import type { CameraEntity } from "../../Native/Camera";
+
 import Square from "../Shape/Square";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
-import GameServer from "../../Game";
-import ClientCamera, { CameraEntity } from "../../Native/Camera";
 import LivingEntity from "../Live";
 import ObjectEntity from "../Object";
 import Barrel from "./Barrel";
@@ -30,7 +31,7 @@ import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, Phys
 import { Entity } from "../../Native/Entity";
 import { NameGroup, ScoreGroup } from "../../Native/FieldGroups";
 import { Addon, AddonById } from "./Addons";
-import { getTankById, TankDefinition } from "../../Const/TankDefinitions";
+import { getTankById, TankDefinition, visibilityRateDamage } from "../../Const/TankDefinitions";
 import { DevTank } from "../../Const/DevTankDefinitions";
 import { Inputs } from "../AI";
 import { ArenaState } from "../../Native/Arena";
@@ -150,7 +151,10 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         else if (this.positionData.flags & PositionFlags.canMoveThroughWalls) this.positionData.flags ^= PositionFlags.canMoveThroughWalls;
 
         camera.cameraData.tank = this._currentTank = id;
-        if (tank.upgradeMessage && camera instanceof ClientCamera) camera.client.notify(tank.upgradeMessage, 0x000000, 10000);
+        const client = camera.getClient();
+        if (client && tank.upgradeMessage) {
+            client.notify(tank.upgradeMessage, 0x000000, 10000);
+        }
 
         // Build addons, then tanks, then addons.
         const preAddon = tank.preAddon;
@@ -178,7 +182,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.scoreData.score = this.cameraEntity.cameraData.score += entity.scoreReward;
 
         if ((entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName))) {
-            if (this.cameraEntity instanceof ClientCamera) this.cameraEntity.client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
+            const client = this.cameraEntity.getClient();
+            if (client) client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
         }
 
         // TODO(ABC):
@@ -221,9 +226,24 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.isInvulnerable = invulnerable;
     }
 
+    /** See LivingEntity.receiveDamage */
+    public receiveDamage(source: LivingEntity, amount: number): void {
+        if (amount > 0 && this.damageReduction !== 0) {
+            if (this.game.tick !== this.lastDamageTick && this.styleData.values.opacity < 1) {
+                this.styleData.opacity += visibilityRateDamage;
+            }
+
+            if (this.styleData.values.opacity > 1) this.styleData.opacity = 1;
+        }
+
+        super.receiveDamage(source, amount);
+
+    }
+
     /** See LivingEntity.onDeath */
-   public onDeath(killer: LivingEntity) {
-        if (!(this.cameraEntity instanceof ClientCamera)) return this.cameraEntity.delete();
+    public onDeath(killer: LivingEntity) {
+        const client = this.cameraEntity.getClient();
+        if (!client) return this.cameraEntity.delete();
         if (!(this.cameraEntity.cameraData.player === this)) return;
         this.cameraEntity.spectatee = killer;
         this.cameraEntity.cameraData.killedBy = (killer.nameData && killer.nameData.values.name) || "";
@@ -254,9 +274,10 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.positionData.angle = Math.atan2(this.inputs.mouse.y - this.positionData.values.y, this.inputs.mouse.x - this.positionData.values.x);
 
         if (this.isInvulnerable) {
-            if (this.game.clients.size !== 1 || this.game.arena.state !== ArenaState.OPEN) {
+            if (this.game.clients.size !== 1 || this.game.arena.isOpen() === false) {
                 // not for ACs
-                if (this.cameraEntity instanceof ClientCamera && this.cameraEntity.client.accessLevel < AccessLevel.FullAccess) this.setInvulnerability(false);
+                const client = this.cameraEntity.getClient();
+                if (client && client.accessLevel < AccessLevel.FullAccess) this.setInvulnerability(false);
             }
         }
         if (!this.deletionAnimation && !this.inputs.deleted) this.physicsData.size = this.baseSize * this.cameraEntity.sizeFactor;

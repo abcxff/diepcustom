@@ -16,7 +16,7 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import GameServer from "../Game";
+import type GameServer from "../Game";
 import {  /* <template> auto-generated */ RelationsGroup, BarrelGroup, PhysicsGroup, HealthGroup, ArenaGroup, NameGroup, CameraGroup, PositionGroup, StyleGroup, ScoreGroup, TeamGroup } from "./FieldGroups";
 
 

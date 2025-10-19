@@ -92,9 +92,6 @@ export default class ObjectEntity extends Entity {
     /** Used to determine the parent of all parents. */
     public rootParent: ObjectEntity = this;
 
-    /** Whether or not the entity is near a camera. */
-    public isViewed: boolean = false;
-
     /** Velocity used for physics. */
     public velocity = new Vector();
 
@@ -110,6 +107,87 @@ export default class ObjectEntity extends Entity {
         super(game);
 
         this.styleData.zIndex = game.entities.zIndex++;
+    }
+
+    /** Receives collision pairs from CollisionManager and applies kb */
+    public static handleCollision(objA: ObjectEntity, objB: ObjectEntity) {
+        objA.receiveKnockback(objB);
+        objB.receiveKnockback(objA);
+    }
+
+    /** Whether or not two objects are touching */
+    public static isColliding(objA: ObjectEntity, objB: ObjectEntity): boolean {
+        if (objA === objB) return false;
+        if (!objA.isPhysical || !objB.isPhysical) return false;
+        const physicsA = objA.physicsData.values;
+        const physicsB = objB.physicsData.values;
+        const relationsA = objA.relationsData.values;
+        const relationsB = objB.relationsData.values;
+        const positionA = objA.positionData.values;
+        const positionB = objB.positionData.values;
+
+        // Entities with 0 sides do not collide
+        if (physicsA.sides === 0) return false;
+        if (physicsB.sides === 0) return false;
+
+        // Entities that are actively deleting do not collide
+        if (objA.deletionAnimation) return false;
+        if (objB.deletionAnimation) return false;
+
+        // Team and owner based collision rules
+        if (relationsA.team === relationsB.team) {
+            if (
+                (physicsA.flags & PhysicsFlags.noOwnTeamCollision) ||
+                (physicsB.flags & PhysicsFlags.noOwnTeamCollision)
+            ) {
+                return false;
+            }
+
+            if (relationsA.owner !== relationsB.owner) {
+                if (
+                    (physicsA.flags & PhysicsFlags.onlySameOwnerCollision) ||
+                    (physicsB.flags & PhysicsFlags.onlySameOwnerCollision)
+                )  {
+                    return false;
+                }
+            }
+        }
+        
+        // Bases do not collide with shapes and etc
+        if (
+            relationsB.team === objB.game.arena &&
+            (physicsA.flags & PhysicsFlags.isBase)
+        ) {
+            return false;
+        }
+
+        const isARect = physicsA.sides === 2;
+        const isBRect = physicsB.sides === 2;
+
+        if (isARect && isBRect) {
+            // in Diep.io source code, rectangles do not support collisions with other rectangles
+            // uncomment the following code to enable rect on rect collisions
+            // TODO: Implement this properly for all rectangles
+            return false;
+        } else if (isARect && !isBRect) {
+            // TODO: Check if this supports rotated rectangles properly
+            const dX = util.constrain(positionB.x, positionA.x - physicsA.size / 2, positionA.x + physicsA.size / 2) - positionB.x;
+            const dY = util.constrain(positionB.y, positionA.y - physicsA.width / 2, positionA.y + physicsA.width / 2) - positionB.y;
+
+            return dX*dX + dY*dY <= physicsB.size*physicsB.size
+        } else if (physicsB.sides === 2 && physicsA.sides !== 2) {
+            // TODO: Check if this supports rotated rectangles properly
+            const dX = util.constrain(positionA.x, positionB.x - physicsB.size / 2, positionB.x + physicsB.size / 2) - positionA.x;
+            const dY = util.constrain(positionA.y, positionB.y - physicsB.width / 2, positionB.y + physicsB.width / 2) - positionA.y;
+
+            return dX*dX + dY*dY <= physicsA.size*physicsA.size;
+        } else {
+            const dX = positionA.x - positionB.x;
+            const dY = positionA.y - positionB.y;
+            const rSum = physicsA.size + physicsB.size;
+
+            return dX*dX + dY*dY <= rSum*rSum;
+        }
     }
 
     /** Calls the deletion animation, unless animate is set to false, in that case it instantly deletes. */
@@ -166,10 +244,6 @@ export default class ObjectEntity extends Entity {
 
     /** Internal physics method used for calculating the current position of the object. */
     public applyPhysics() {
-        if (!this.isViewed) {
-            return;
-        }
-
         if (this.velocity.magnitude < 0.01) this.velocity.magnitude = 0;
         // when being deleted, entities slow down half speed
         else if (this.deletionAnimation) this.velocity.magnitude /= 2;
@@ -227,66 +301,6 @@ export default class ObjectEntity extends Entity {
         }
     }
 
-    /** Detects collisions. */
-    protected findCollisions() {
-        if (this.cachedTick === this.game.tick) return this.cachedCollisions;
-        
-        this.cachedTick = this.game.tick;
-        this.cachedCollisions = [];
-
-        // Lets just let the game deal with this next tick.
-        if (this.hash === 0) return [];
-        if (this.physicsData.values.sides === 0) return [];
-
-        // TODO(speed):
-        // and the for loop
-        const entities = this.game.entities.collisionManager.retrieveEntitiesByEntity(this);
-        for (let i = 0; i < entities.length; ++i) {
-            const entity = entities[i];
-            if (entity === this) continue;
-            if (entity.deletionAnimation) continue;
-            if (entity.relationsData.values.team === this.relationsData.values.team) {
-                if ((entity.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) ||
-                    (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision)) continue;
-
-                if (entity.relationsData.values.owner !== this.relationsData.values.owner) {
-                    if ((entity.physicsData.values.flags & PhysicsFlags.onlySameOwnerCollision) ||
-                        (this.physicsData.values.flags & PhysicsFlags.onlySameOwnerCollision)) continue;
-                }
-            }
-            
-            if (this.relationsData.values.team === this.game.arena && (entity.physicsData.values.flags & PhysicsFlags.isBase)) continue;
-
-            if (entity.physicsData.values.sides === 0) continue;
-            if (entity.physicsData.values.sides === 2 && this.physicsData.values.sides === 2) {
-                // in Diep.io source code, rectangles do not support collisions with other rectangles
-                // uncomment the following code to enable rect on rect collisions
-                /*
-                if (
-                    Math.abs(entity.positionData.values.x - this.positionData.values.x) <= (entity.physicsData.values.size + this.physicsData.values.size) / 2 &&
-                    Math.abs(entity.positionData.values.y - this.positionData.values.y) <= (entity.physicsData.values.width +this.physicsData.values.width) / 2
-                   ) this.cachedCollisions.push(entity);
-                */
-            } else if (this.physicsData.values.sides !== 2 && entity.physicsData.values.sides === 2) {
-                const dX = util.constrain(this.positionData.values.x, entity.positionData.values.x - entity.physicsData.values.size / 2, entity.positionData.values.x + entity.physicsData.values.size / 2) - this.positionData.values.x;
-                const dY = util.constrain(this.positionData.values.y, entity.positionData.values.y - entity.physicsData.values.width / 2, entity.positionData.values.y + entity.physicsData.values.width / 2) - this.positionData.values.y;
-
-                if (dX ** 2 + dY ** 2 <= this.physicsData.size ** 2) this.cachedCollisions.push(entity);
-            } else if (this.physicsData.values.sides === 2 && entity.physicsData.values.sides !== 2) {
-                const dX = util.constrain(entity.positionData.values.x, this.positionData.values.x - this.physicsData.values.size / 2, this.positionData.values.x + this.physicsData.values.size / 2) - entity.positionData.values.x;
-                const dY = util.constrain(entity.positionData.values.y, this.positionData.values.y - this.physicsData.values.width / 2, this.positionData.values.y + this.physicsData.values.width / 2) - entity.positionData.values.y;
-
-                if (dX ** 2 + dY ** 2 <= entity.physicsData.size ** 2) this.cachedCollisions.push(entity);
-            } else {
-                if ((entity.positionData.values.x - this.positionData.values.x) ** 2 + (entity.positionData.values.y - this.positionData.values.y) ** 2 <= (entity.physicsData.values.size + this.physicsData.values.size) ** 2) {
-                    this.cachedCollisions.push(entity);
-                }
-            }
-        }
-
-        return this.cachedCollisions;
-    }
-
     /** Sets the parent in align with everything else. */
     public setParent(parent: ObjectEntity) {
         this.relationsData.parent = parent;
@@ -335,30 +349,20 @@ export default class ObjectEntity extends Entity {
     public tick(tick: number) {
         this.deletionAnimation?.tick();
 
-        if (this.isPhysical && !(this.deletionAnimation)) {
-            const collidedEntities = this.findCollisions();
-
-            for (let i = 0; i < collidedEntities.length; ++i) {
-                this.receiveKnockback(collidedEntities[i]);
+        for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
+    
+        // Keep things in the arena
+        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
+            const arena = this.game.arena;
+            xPos: {
+                if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
+                else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
+                else break xPos;
             }
-        }
-
-        if (this.isViewed) {
-            for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
-        
-            // Keep things in the arena
-            if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
-                const arena = this.game.arena;
-                xPos: {
-                    if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
-                    else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
-                    else break xPos;
-                }
-                yPos: {
-                    if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
-                    else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
-                    else break yPos;
-                }
+            yPos: {
+                if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
+                else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
+                else break yPos;
             }
         }
     }

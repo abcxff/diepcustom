@@ -39,6 +39,8 @@ export class SandboxShapeManager extends ShapeManager {
  * Sandbox Gamemode Arena
  */
 export default class SandboxArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "sandbox";
+
     /** Limits shape count to floor(12.5 * player count) */
     protected shapes: ShapeManager = new SandboxShapeManager(this);
 

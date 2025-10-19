@@ -39,6 +39,8 @@ const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed]; // Only supports up to 4 te
  * Domination Gamemode Arena
  */
 export default class DominationArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "dom";
+
     /** All dominators in game */
     public dominators: Dominator[] = [];
     

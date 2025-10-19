@@ -26,6 +26,9 @@ import TankDefinitions from "./Const/TankDefinitions";
 import { commandDefinitions } from "./Const/Commands";
 import { ColorsHexCode } from "./Const/Enums";
 
+import FFAArena from "./Gamemodes/FFA";
+import SandboxArena from "./Gamemodes/Sandbox";
+
 const PORT = config.serverPort;
 const ENABLE_API = config.enableApi && config.apiLocation;
 const ENABLE_CLIENT = config.enableClient && config.clientLocation && fs.existsSync(config.clientLocation);
@@ -152,8 +155,8 @@ app.listen(PORT, (success) => {
     // RULES(0): No two game servers should share the same endpoint
     //
     // NOTES(0): As of now, both servers run on the same process (and thread) here
-    const ffa = new GameServer("ffa", "FFA");
-    const sbx = new GameServer("sandbox", "Sandbox");
+    const ffa = new GameServer(FFAArena, "FFA");
+    const sbx = new GameServer(SandboxArena, "Sandbox");
     
     games.push(ffa, sbx);
 

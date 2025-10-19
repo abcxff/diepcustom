@@ -16,11 +16,23 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import ArenaEntity from "../Native/Arena";
+import ShapeManager from "../../Entity/Shape/Manager";
+import GameServer from "../../Game";
+import ArenaEntity, { ArenaState } from "../../Native/Arena";
 
-/**
- * FFA Gamemode Arena
- */
-export default class FFAArena extends ArenaEntity {
-    static override GAMEMODE_ID: string = "ffa";
+class ManyShapeManager extends ShapeManager {
+    protected get wantedShapes() {
+        return 10000;
+    }
+}
+
+export default class HugeMapArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "hugemap";
+
+    public constructor(game: GameServer) {
+        super(game);
+        this.state = ArenaState.OPEN;
+        this.updateBounds(50_000, 50_000);
+        this.shapes = new ManyShapeManager(this);
+    }
 }

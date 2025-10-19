@@ -42,6 +42,8 @@ export class SurvivalShapeManager extends ShapeManager {
  * Survival Gamemode Arena
  */
 export default class SurvivalArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "survival";
+    
     /** Limits shape count to floor(12.5 * player count) */
     protected shapes: ShapeManager = new SurvivalShapeManager(this);
 

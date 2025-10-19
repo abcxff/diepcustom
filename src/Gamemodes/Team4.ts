@@ -33,6 +33,8 @@ const baseSize = arenaSize / (3 + 1/3); // 3345
  * Teams4 Gamemode Arena
  */
 export default class Teams4Arena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "4teams";
+
     /** Blue TeamBASEentity */
     public blueTeamBase: TeamBase;
     /** Red TeamBASE entity */

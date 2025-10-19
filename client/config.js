@@ -27,6 +27,9 @@ const CHANGELOG = [
     "Join our Discord server: discord.gg/SyxWdxgHnT :)"
 ];
 
+// Only send pings every 500ms
+const PING_THROTTLE_MS = 500;
+
 const ASM_CONSTS = {
     1024: "createCanvasCtxWithAlpha",
     3781: "createImage",
@@ -483,6 +486,10 @@ const WASM_PAGE_SIZE = 65536; // A WebAssembly page has a constant size of 65,53
 
 const DYNAMIC_BASE = 5426112; // start of dynmic memory
 const DYNAMIC_TOP_PTR = 183072; // points to start of dynamic memory
+
+const SOCKET_PTR = 104440; // points to the socket struct in memory
+const LAST_PING_TIME_OFFSET = 8; // offset containing the last ping time in the socket struct
+const TIME_NOW_PTR = 113208; // points to the current time value in memory
 
 const WASM_MEMORY = {
     "initial": INITIAL_MEMORY / WASM_PAGE_SIZE,

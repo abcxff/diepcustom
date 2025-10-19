@@ -268,7 +268,7 @@ export default class Client {
                         this.setHasCheated(true);
                         player.setTank(player.currentTank < 0 ? Tank.Basic : DevTank.Developer);
                     } else if (this.game.arena.arenaData.values.flags & ArenaFlags.canUseCheats) {
-                        if (this.game.clients.size === 1 && this.game.arena.state === ArenaState.OPEN) {
+                        if (this.game.clients.size === 1 && this.game.arena.isOpen()) {
                             this.setHasCheated(true);
 
                             player.setInvulnerability(!player.isInvulnerable);
