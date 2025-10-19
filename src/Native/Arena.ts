@@ -142,25 +142,30 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             y: ~~(Math.random() * this.height - this.height / 2),
         }
 
-        findSpawn: for (let i = 0; i < 20; ++i) {
+        for (let i = 0; i < 20; ++i) {
             if (
                 !this.isValidSpawnLocation(pos.x, pos.y) ||
                 isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 2 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 2
-               ) {
+            ) {
                 pos.x = ~~(Math.random() * this.width - this.width / 2);
                 pos.y = ~~(Math.random() * this.height - this.height / 2);
-                continue findSpawn;
+                continue;
             }
-            const entities = this.game.entities.collisionManager.retrieve(pos.x, pos.y, 1000, 1000);
 
-            // Only spawn < 1000 units away from player, unless we can't find a place to spawn
-            for (let len = entities.length; --len >= 0;) {
-                if (entities[len] instanceof TankBody && (entities[len].positionData.values.x - pos.x) ** 2 + (entities[len].positionData.values.y - pos.y) ** 2 < 1_000_000) { // 1000^2
-                    pos.x = ~~(Math.random() * this.width - this.width / 2);
-                    pos.y = ~~(Math.random() * this.height - this.height / 2);
+            // If there is any tank within 1000 units, find a new position
+            const entity = this.game.entities.collisionManager.getFirstMatch(pos.x, pos.y, 1000, 1000, (entity) => {
+                if (!(entity instanceof TankBody)) return false;
 
-                    continue findSpawn;
-                }
+                const dX = entity.positionData.values.x - pos.x;
+                const dY = entity.positionData.values.y - pos.y;
+
+                return (dX * dX + dY * dY) < 1_000_000; // 1000^2
+            });
+
+            if (entity) {
+                pos.x = ~~(Math.random() * this.width - this.width / 2);
+                pos.y = ~~(Math.random() * this.height - this.height / 2);
+                continue;
             }
 
             break;

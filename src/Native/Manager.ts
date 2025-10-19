@@ -16,18 +16,17 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import * as config from "../config";
 import GameServer from "../Game";
 import ObjectEntity from "../Entity/Object";
 
 import CollisionManager from "../Physics/CollisionManager";
-import SpatialHashing from "../Physics/SpatialHashing";
-import DiepQuadTree from "../Physics/QuadTree";
+import HashGrid from "../Physics/HashGrid";
 
 import { CameraEntity } from "./Camera";
 import { Entity } from "./Entity";
 import { AI } from "../Entity/AI";
 import { removeFast } from "../util";
+import LivingEntity from "../Entity/Live";
 
 /**
  * Manages all entities in the game.
@@ -59,7 +58,7 @@ export default class EntityManager {
 
     public constructor(game: GameServer) {
         this.game = game;
-        this.collisionManager = config.spatialHashingCellSize ? new SpatialHashing(config.spatialHashingCellSize) : new DiepQuadTree(0, 0);
+        this.collisionManager = new HashGrid(game);
     }
 
     /** Adds an entity to the system. */
@@ -106,7 +105,7 @@ export default class EntityManager {
     /** Wipes all entities from the game. */
     public clear() {
         this.lastId = -1;
-        this.collisionManager.reset(0, 0);
+        this.collisionManager.postTick(this.game.tick);
         this.hashTable.fill(0);
         this.AIs.length = 0;
         this.otherEntities.length = 0;
@@ -121,9 +120,22 @@ export default class EntityManager {
         }
     }
 
+    private handleCollision = function handleCollision(entityA: ObjectEntity, entityB: ObjectEntity) {
+        if (!ObjectEntity.isColliding(entityA, entityB)) return;
+        
+        ObjectEntity.handleCollision(entityA, entityB);
+
+        if (
+            entityA instanceof LivingEntity &&
+            entityB instanceof LivingEntity
+        ) {
+            LivingEntity.handleCollision(entityA, entityB);
+        }
+    }.bind(this);
+
     /** Ticks all entities in the game. */
     public tick(tick: number) {
-        this.collisionManager.reset(this.game.arena.arenaData.values.rightX, this.game.arena.arenaData.values.bottomY);
+        this.collisionManager.preTick(this.game.tick);
 
         while (!this.inner[this.lastId] && this.lastId >= 0) {
             this.lastId -= 1;
@@ -134,26 +146,12 @@ export default class EntityManager {
 
             if (!Entity.exists(entity)) continue;
 
-            if (entity instanceof ObjectEntity && !entity.isChild) {
-                // This loop keeps entities far away from cameras to not be calculated collision for.
-                // if (config.usingSpatialHashGrid) {
-                //     entity.isViewed = true;
-                //     this.collisionManager.insertEntity(entity);
-                //     continue;
-                // }
-                // For quadtree only because its not c++ :(
-                // for (let i = 0; i < this.cameras.length; ++i) {
-                //     const camera = this.inner[this.cameras[i]] as CameraEntity;// small trick
-                //     if ((camera.camera.values.cameraX - entity.position.values.x) ** 2 + (camera.camera.values.cameraY - entity.position.values.y) ** 2 < (4500 + entity.physics.values.size + entity.physics.values.width) ** 2) {
-                //         this.collisionManager.insertEntity(entity);
-                //         entity.isViewed = true;
-                //         continue scanner;
-                //     }
-                // }
-                this.collisionManager.insertEntity(entity);
-                entity.isViewed = true;
+            if (entity instanceof ObjectEntity && entity.isPhysical) {
+                this.collisionManager.insert(entity);
             }
         }
+
+        this.collisionManager.forEachCollisionPair(this.handleCollision)
 
         for (let id = 0; id <= this.lastId; ++id) {
             const entity = this.inner[id];
@@ -192,5 +190,7 @@ export default class EntityManager {
                 entity.wipeState();
             }
         }
+
+        this.collisionManager.postTick(this.game.tick);
     }
 }

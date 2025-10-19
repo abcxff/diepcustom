@@ -23,6 +23,7 @@ import ObjectEntity from "./Object";
 import { InputFlags, PhysicsFlags } from "../Const/Enums";
 import { Entity } from "../Native/Entity";
 import { PhysicsGroup, PositionGroup, RelationsGroup } from "../Native/FieldGroups";
+import PackedEntitySet from "../Physics/PackedEntitySet";
 
 // Beware
 // The logic in this file is somewhat messed up
@@ -100,15 +101,16 @@ export class AI {
     /** Target filter letting owner classes filter what can't be a target by position - false = not valid target */
     public targetFilter: (possibleTargetPos: VectorAbstract) => boolean;
 
-    /** Stores the creation of the AI, used to optimize ticking */
-    private _creationTick: number;
+    /** Stores a per-AI hash used to optimize ticking */
+    private _aiHash: number;
+    private static _aiHashCounter = 0;
 
     private _findTargetInterval: number = 2;
 
     public constructor(owner: ObjectEntity, claimable?: boolean) {
         this.owner = owner;
         this.game = owner.game;
-        this._creationTick = this.game.tick;
+        this._aiHash = (AI._aiHashCounter++) % 16384;
 
         this.inputs.mouse.set({
             x: 20,
@@ -124,7 +126,7 @@ export class AI {
     /* Finds the closest entity in a different team */
     public findTarget(tick: number) {
         // If there's a target interval, wait a cycle till looking for new target
-        if (this._findTargetInterval !== 0 && ((tick + this._creationTick) % this._findTargetInterval) !== 1) {
+        if (this._findTargetInterval !== 0 && ((tick + this._aiHash) % this._findTargetInterval) !== 1) {
             return Entity.exists(this.target) ? this.target : (this.target = null);
         }
 
@@ -147,35 +149,51 @@ export class AI {
 
         // const entities = this.game.entities.inner.slice(0, this.game.entities.lastId);
         const root = (this.owner.rootParent === this.owner && (this.owner.relationsData.values.owner as ObjectEntity)?.positionData) ? this.owner.relationsData.values.owner as ObjectEntity : this.owner.rootParent;
-        const entities = this.viewRange === Infinity ? this.game.entities.inner.slice(0, this.game.entities.lastId) : this.game.entities.collisionManager.retrieve(root.positionData.values.x, root.positionData.values.y, this.viewRange, this.viewRange);
+        const entities = this.viewRange === Infinity
+            ? PackedEntitySet.FULL_SET
+            : this.game.entities.collisionManager.retrieve(
+                root.positionData.values.x, root.positionData.values.y,
+                this.viewRange, this.viewRange
+            );
 
         let closestEntity = null;
         let closestDistSq = this.viewRange ** 2;
 
-        for (let i = 0; i < entities.length; ++i) {
-            const entity = entities[i];
-            
-            if (!entity) continue;
+        for (let i = 0; i < entities.data.length; ++i) {
+            let chunk = entities.data[i];
 
-            if (!entity.positionData || !entity.relationsData || !entity.physicsData) continue;
-            
-            if (this.targetFilterNonLiving && !entity.healthData) continue; // Check if the target is living
+            while (chunk) {
+                const bitValue = chunk & -chunk;
+                const bitIdx = 31 - Math.clz32(bitValue);
+                chunk ^= bitValue;
+                const id = 32 * i + bitIdx;
 
-            if (entity.physicsData.values.flags & PhysicsFlags.isBase) continue; // Check if the target is a base
+                const entity = this.game.entities.inner[id] as ObjectEntity;
+                if (!entity || entity.hash === 0) continue;
+                if (!entity.positionData || !entity.relationsData || !entity.physicsData) continue;
 
-            if (entity.relationsData.values.owner !== null && entity.relationsData.values.owner.positionData) continue; // Don't target entities who have an object owner
+                if (!entity.isPhysical) continue;
+                // Check if the target is living
+                if (this.targetFilterNonLiving && !entity.healthData) continue;
+                // Check if the target is a base
+                if (entity.physicsData.values.flags & PhysicsFlags.isBase) continue;
+                // Don't target entities who have an object owner
+                if (entity.relationsData.values.owner !== null && entity.relationsData.values.owner.positionData) continue;
+                // Check if target is own team
+                if (entity.relationsData.values.team === team) continue;
+                // Check if target has a collider
+                if (entity.physicsData.values.sides === 0) continue;
+                // Custom check
+                if (!this.targetFilter(entity.positionData.values)) continue;
 
-            if (entity.relationsData.values.team === team) continue; // Check if target is own team
+                const dX = entity.positionData.values.x - rootPos.x;
+                const dY = entity.positionData.values.y - rootPos.y;
+                const distSq = dX * dX + dY * dY;
 
-            if (entity.physicsData.values.sides === 0) continue; // Check if target has a collider
-
-            if (!this.targetFilter(entity.positionData.values)) continue; // Custom check
-
-            const distSq = (entity.positionData.values.x - rootPos.x) ** 2 + (entity.positionData.values.y - rootPos.y) ** 2;
-
-            if (distSq < closestDistSq) {
-                closestEntity = entity;
-                closestDistSq = distSq;
+                if (distSq < closestDistSq) {
+                    closestEntity = entity;
+                    closestDistSq = distSq;
+                }
             }
         }
 

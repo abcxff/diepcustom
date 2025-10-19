@@ -59,7 +59,9 @@ export default class LivingEntity extends ObjectEntity {
     }
 
     /** Applies damage to two entity after colliding with eachother. */
-    protected static onCollision(entity1: LivingEntity, entity2: LivingEntity) {
+    public static handleCollision(entity1: LivingEntity, entity2: LivingEntity) {
+        if (entity1.relationsData.values.team && entity1.relationsData.values.team === entity2.relationsData.values.team) return;
+
         if (entity1.healthData.values.health <= 0 || entity2.healthData.values.health <= 0) return;
         if (entity1.damagedEntities.includes(entity2) || entity2.damagedEntities.includes(entity1)) return;
         if (entity1.damageReduction === 0 && entity2.damageReduction === 0) return;
@@ -147,16 +149,5 @@ export default class LivingEntity extends ObjectEntity {
 
     public tick(tick: number) {
         super.tick(tick);
-
-        // It's cached
-        const collidedEntities = this.findCollisions();
-
-        for (let i = 0; i < collidedEntities.length; ++i) {
-            if (!(collidedEntities[i] instanceof LivingEntity)) continue;
-
-            if (collidedEntities[i].relationsData.values.team !== this.relationsData.values.team) {
-                LivingEntity.onCollision(collidedEntities[i] as LivingEntity, this);
-            }
-        }
     }
 }

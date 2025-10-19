@@ -73,8 +73,8 @@ export const magicNum = (function magicNum(build: string) {
     return res >>> 0; // unsigned
 })(buildHash);
 
-/** Spatial Hashing CellSize for physics. Zero = quadtree. */
-export const spatialHashingCellSize: number = 7;
+/** Spatial Hash Grid Cell Size for physics */
+export const hashGridCellSize: number = 7;
 
 /** Amount of TICKs before the next boss spawn attempt */
 export const bossSpawningInterval = 45 * 60 * tps;

@@ -186,19 +186,29 @@ export default class ClientCamera extends CameraEntity {
         const r = this.cameraData.values.cameraX + width;
         const t = this.cameraData.values.cameraY - height;
         const b = this.cameraData.values.cameraY + height;
-        for (let i = 0; i < entitiesNearRange.length; ++i) {
-            const entity = entitiesNearRange[i];
-            const width = entity.physicsData.values.sides === 2 ? entity.physicsData.values.size / 2 : entity.physicsData.values.size;
-            const size = entity.physicsData.values.sides === 2 ? entity.physicsData.values.width / 2 : entity.physicsData.values.size;
-                     
-            if (entity.positionData.values.x - width < r &&
-                entity.positionData.values.y + size > t &&
-                entity.positionData.values.x + width > l &&
-                entity.positionData.values.y - size < b) {
+        for (let i = 0; i < entitiesNearRange.data.length; ++i) {
+            let chunk = entitiesNearRange.data[i];
+
+            while (chunk) {
+                const bitValue = chunk & -chunk;
+                const bitIdx = 31 - Math.clz32(bitValue);
+                chunk ^= bitValue;
+                const id = 32 * i + bitIdx;
+
+                const entity = this.game.entities.inner[id] as ObjectEntity;
+                const width = entity.physicsData.values.sides === 2 ? entity.physicsData.values.size / 2 : entity.physicsData.values.size;
+                const size = entity.physicsData.values.sides === 2 ? entity.physicsData.values.width / 2 : entity.physicsData.values.size;
+                        
+                if (entity.positionData.values.x - width < r &&
+                    entity.positionData.values.y + size > t &&
+                    entity.positionData.values.x + width > l &&
+                    entity.positionData.values.y - size < b
+                ) {
                     if (entity !== this.cameraData.values.player &&!(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) {
                         entitiesInRange.push(entity);
                     }
                 }
+            }
         }
 
         for (let id = 0; id < this.game.entities.globalEntities.length; ++id) {

@@ -17,10 +17,28 @@
 */
 
 import ObjectEntity from "../Entity/Object";
+import PackedEntitySet from "./PackedEntitySet";
 
 export default interface CollisionManager {
-    reset(bottomY: number, rightX: number): void;
-    insertEntity(entity: ObjectEntity): void;
-    retrieve(x: number, y: number, radiW: number, radiH: number): ObjectEntity[];
-    retrieveEntitiesByEntity(entity: ObjectEntity): ObjectEntity[];
+    preTick(tick: number): void;
+    postTick(tick: number): void;
+    
+    insert(entity: ObjectEntity): void;
+    getFirstMatch(
+        centerX: number,
+        centerY: number,
+        halfWidth: number,
+        halfHeight: number,
+        predicate: (entity: ObjectEntity) => boolean
+    ): ObjectEntity | null;
+    retrieve(
+        centerX: number,
+        centerY: number,
+        halfWidth: number,
+        halfHeight: number
+    ): PackedEntitySet
+    retrieveEntitiesByEntity(entity: ObjectEntity): PackedEntitySet;
+    forEachCollisionPair(
+        callback: (entityA: ObjectEntity, entityB: ObjectEntity) => void
+    ): void;
 }
