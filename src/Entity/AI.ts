@@ -157,7 +157,7 @@ export class AI {
             
             if (!entity) continue;
 
-            if (!entity.positionData || !entity.relationsData || !entity.physicsData || !(entity as ObjectEntity).velocity) continue;
+            if (!entity.positionData || !entity.relationsData || !entity.physicsData) continue;
             
             if (this.targetFilterNonLiving && !entity.healthData) continue; // Check if the target is living
 

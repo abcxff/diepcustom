@@ -65,12 +65,6 @@ export default class Vector implements VectorAbstract {
         return (vector.x - this.x) ** 2 + (vector.y - this.y) ** 2;
     } 
 
-    public angleComponent(angle: number) {
-        // if angle is 0, it will get the x component
-        // if angle is pi/2, it will get the y component
-        return Math.cos(this.angle - angle) * this.magnitude;
-    }
-    
     public set angle(angle: number) {
         const currentMag = this.magnitude;
 

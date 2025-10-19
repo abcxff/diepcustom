@@ -70,7 +70,7 @@ export default class Crasher extends AbstractShape {
         } else {
             this.doIdleRotate = false;
             this.positionData.angle = Math.atan2(this.ai.inputs.mouse.y - this.positionData.values.y, this.ai.inputs.mouse.x - this.positionData.values.x);
-            this.accel.add({
+            this.velocity.add({
                 x: this.ai.inputs.movement.x * this.targettingSpeed,
                 y: this.ai.inputs.movement.y * this.targettingSpeed
             });
