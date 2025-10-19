@@ -13,7 +13,8 @@
   ],
   "license": "AGPL-3.0-only",
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx tsup",
+    "dev": "npx tsup --watch --onSuccess \"node lib/index.js\"",
     "check": "npx tsc --noEmit",
     "start": "node index",
     "server": "npm run build && npm run start",
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/node": "^16.4.0",
+    "tsup": "^8.5.0",
     "typescript": "^4.8.2"
   }
 }

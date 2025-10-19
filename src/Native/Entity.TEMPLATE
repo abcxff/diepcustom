@@ -16,7 +16,7 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import GameServer from "../Game";
+import type GameServer from "../Game";
 # for every group, import that group
 import { ^<<EXISTANT_FIELD_GROUPS.map(e => e[0] + 'Group').join(', ')>>^ } from "./FieldGroups";
 

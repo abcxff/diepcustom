@@ -20,14 +20,13 @@ import GameServer from "../Game";
 import ShapeManager from "../Entity/Shape/Manager";
 import TankBody from "../Entity/Tank/TankBody";
 import ArenaCloser from "../Entity/Misc/ArenaCloser";
-import ClientCamera from "./Camera";
 
 import { VectorAbstract } from "../Physics/Vector";
 import { ArenaGroup, TeamGroup } from "./FieldGroups";
 import { Entity } from "./Entity";
 import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
-import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+import { TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 
 import Client from "../Client";
 
@@ -38,7 +37,7 @@ import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
 
-import { tps, countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
+import { countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
     /** Countdown, waiting for players screen */
@@ -107,6 +106,31 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.arenaData.values.ticksUntilStart = countdownTicks;
 
         this.teamData.values.teamColor = Color.Neutral;
+    }
+
+    /** Returns if the arena is open */
+    public isOpen(): boolean {
+        return this.state === ArenaState.OPEN;
+    }
+
+    /** Returns if the arena is counting down to open */
+    public isCountingDown(): boolean {
+        return this.state === ArenaState.COUNTDOWN;
+    }
+
+    /** Returns if the arena game is over */
+    public isGameOver(): boolean {
+        return this.state === ArenaState.OVER;
+    }
+
+    /** Returns if the arena is closing */
+    public isClosing(): boolean {
+        return this.state === ArenaState.CLOSING;
+    }
+
+    /** Returns if the arena is closed */
+    public isClosed(): boolean {
+        return this.state === ArenaState.CLOSED;
     }
 
     /**

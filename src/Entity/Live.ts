@@ -16,12 +16,8 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import * as util from "../util";
-
 import ObjectEntity from "./Object";
-import TankBody from "./Tank/TankBody";
 
-import { visibilityRateDamage } from "../Const/TankDefinitions";
 import { StyleFlags } from "../Const/Enums";
 import { HealthGroup } from "../Native/FieldGroups";
 
@@ -50,6 +46,8 @@ export default class LivingEntity extends ObjectEntity {
     public minDamageMultiplier = 1.0;
     /** Extra damage multipliers, needed for proper bullet damage logic. */
     public maxDamageMultiplier = 4.0;
+    /** Opacity gained on damage */
+    public opacityGainOnDamage = 0.0;
 
     /** Extends ObjectEntity.destroy() - diminishes health as well. */
     public destroy(animate=true) {
@@ -61,77 +59,55 @@ export default class LivingEntity extends ObjectEntity {
     }
 
     /** Applies damage to two entity after colliding with eachother. */
-    protected static applyDamage(entity1: LivingEntity, entity2: LivingEntity) {
+    protected static onCollision(entity1: LivingEntity, entity2: LivingEntity) {
         if (entity1.healthData.values.health <= 0 || entity2.healthData.values.health <= 0) return;
         if (entity1.damagedEntities.includes(entity2) || entity2.damagedEntities.includes(entity1)) return;
         if (entity1.damageReduction === 0 && entity2.damageReduction === 0) return;
         if (entity1.damagePerTick === 0 && entity1.physicsData.values.pushFactor === 0 || entity2.damagePerTick === 0 && entity2.physicsData.values.pushFactor === 0) return;
 
-        const game = entity1.game;
-
-        // entity2.lastDamageTick = entity1.lastDamageTick = entity1.game.tick;
-
         let common = Math.max(entity2.minDamageMultiplier, entity1.minDamageMultiplier);
         common *= Math.min(entity2.maxDamageMultiplier, entity1.maxDamageMultiplier);
-        let dF1 = (entity1.damagePerTick * common) * entity2.damageReduction;
-        let dF2 = (entity2.damagePerTick * common) * entity1.damageReduction;
+        const dF1 = (entity1.damagePerTick * common) * entity2.damageReduction;
+        const dF2 = (entity2.damagePerTick * common) * entity1.damageReduction;
 
         // Damage can't be more than enough to kill health
         const ratio = Math.max(1 - entity1.healthData.values.health / dF2, 1 - entity2.healthData.values.health / dF1)
-        if (ratio > 0) { // Or >=, but minor optimizations
-            dF1 *= 1 - ratio;
-            dF2 *= 1 - ratio;
-        }
+        const damage1to2 = dF1 * Math.min(1, 1 - ratio);
+        const damage2to1 = dF2 * Math.min(1, 1 - ratio);
 
+        entity1.receiveDamage(entity2, damage2to1);
+        entity2.receiveDamage(entity1, damage1to2);
+    }
+
+    /** Called when the entity receives damage from another . */
+    public receiveDamage(source: LivingEntity, amount: number) {
+        // If we are already dead, don't apply more damage
+        if (this.healthData.values.health <= 0) return;
+        
+        this.damagedEntities.push(source);
 
         // Plays the animation damage for entity 2
-        if (entity2.lastDamageAnimationTick !== game.tick && !(entity2.styleData.values.flags & StyleFlags.hasNoDmgIndicator)) {
-            entity2.styleData.flags ^= StyleFlags.hasBeenDamaged;
-            entity2.lastDamageAnimationTick = game.tick;
-        }
-        
-        if (dF1 !== 0) {
-            if (entity2.lastDamageTick !== game.tick && entity2 instanceof TankBody && entity2.definition.flags.invisibility && entity2.styleData.values.opacity < visibilityRateDamage) entity2.styleData.opacity += visibilityRateDamage;
-            entity2.lastDamageTick = game.tick;
-            entity2.healthData.health -= dF1;
-        }
-        
-        // Plays the animation damage for entity 1
-        if (entity1.lastDamageAnimationTick !== game.tick && !(entity1.styleData.values.flags & StyleFlags.hasNoDmgIndicator)) {
-            entity1.styleData.flags ^= StyleFlags.hasBeenDamaged;
-            entity1.lastDamageAnimationTick = game.tick;
-        }
-        
-        if (dF2 !== 0) {
-            if (entity1.lastDamageTick !== game.tick && entity1 instanceof TankBody && entity1.definition.flags.invisibility && entity1.styleData.values.opacity < visibilityRateDamage) entity1.styleData.opacity += visibilityRateDamage;
-            entity1.lastDamageTick = game.tick;
-            entity1.healthData.health -= dF2;
-        }
-        entity1.damagedEntities.push(entity2)
-        entity2.damagedEntities.push(entity1)
-
-        if (entity1.healthData.values.health < -0.0001) {
-            util.warn("Health is below 0. Something in damage messed up]: ", entity1.healthData.health, entity2.healthData.health, ratio, dF1, dF2);
-        }
-        if (entity2.healthData.values.health < -0.0001) {
-            util.warn("Health is below 0. Something in damage messed up]: ", entity1.healthData.health, entity2.healthData.health, ratio, dF1, dF2);
+        if (this.lastDamageAnimationTick !== this.game.tick && !(this.styleData.values.flags & StyleFlags.hasNoDmgIndicator)) {
+            this.styleData.flags ^= StyleFlags.hasBeenDamaged;
+            this.lastDamageAnimationTick = this.game.tick;
         }
 
-        if (entity1.healthData.values.health < 0.0001) entity1.healthData.health = 0;
-        if (entity2.healthData.values.health < 0.0001) entity2.healthData.health = 0;
+        this.lastDamageTick = this.game.tick;
+        this.healthData.health -= amount;
 
-        if (entity1.healthData.values.health === 0) {
-            let killer: ObjectEntity = entity2;
-            while (killer.relationsData.values.owner instanceof ObjectEntity && killer.relationsData.values.owner.hash !== 0) killer = killer.relationsData.values.owner;
-            if (killer instanceof LivingEntity) entity1.onDeath(killer);
-            entity2.onKill(entity1);
-        }
-        if (entity2.healthData.values.health === 0) {
-            let killer: ObjectEntity = entity1;
-            while (killer.relationsData.values.owner instanceof ObjectEntity && killer.relationsData.values.owner.hash !== 0) killer = killer.relationsData.values.owner;
+        if (this.healthData.health <= 0.0) {
+            this.healthData.health = 0;
 
-            if (killer instanceof LivingEntity) entity2.onDeath(killer);
-            entity1.onKill(entity2);
+            let killer: ObjectEntity = source;
+            while (killer.relationsData.values.owner instanceof ObjectEntity && killer.relationsData.values.owner.hash !== 0) {
+                killer = killer.relationsData.values.owner;
+            }
+
+            if (killer instanceof LivingEntity) {
+                this.onDeath(killer);
+            }
+
+            source.onKill(this);
         }
     }
 
@@ -179,7 +155,7 @@ export default class LivingEntity extends ObjectEntity {
             if (!(collidedEntities[i] instanceof LivingEntity)) continue;
 
             if (collidedEntities[i].relationsData.values.team !== this.relationsData.values.team) {
-                LivingEntity.applyDamage(collidedEntities[i] as LivingEntity, this);
+                LivingEntity.onCollision(collidedEntities[i] as LivingEntity, this);
             }
         }
     }

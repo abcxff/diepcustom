@@ -16,8 +16,8 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import GameServer from "../Game";
-import Client from "../Client";
+import type GameServer from "../Game";
+import type Client from "../Client";
 import Writer from "../Coder/Writer";
 import TankBody from "../Entity/Tank/TankBody";
 import ObjectEntity from "../Entity/Object";
@@ -41,6 +41,9 @@ export class CameraEntity extends Entity {
     /** The current size of the tank the camera is in charge of. Calculated with level stuff */
     public sizeFactor: number = 1;
 
+    /** Entity being spectated if any (deathscreen). */
+    public spectatee: ObjectEntity | null = null;
+
     /** Used to set the current camera's level. Should be the only way used to set level. */
     public setLevel(level: number) {
         const previousLevel = this.cameraData.values.level;
@@ -62,6 +65,11 @@ export class CameraEntity extends Entity {
         this.cameraData.statsAvailable += statIncrease;
 
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor || 1);
+    }
+
+    /** Returns the camera's client if it exists */
+    public getClient(): Client | null {
+        return null;
     }
 
     /** Sets the current FOV by field factor. */
@@ -116,8 +124,6 @@ export default class ClientCamera extends CameraEntity {
 
     /** Always existant relations field group. Present in all GUI/camera entities. */
     public relationsData: RelationsGroup = new RelationsGroup(this);
-    /** Entity being spectated if any (deathscreen). */
-    public spectatee: ObjectEntity | null = null;
 
     /** Calculates the amount of stats available at a specific level. */
     public static calculateStatCount(level: number) {
@@ -136,6 +142,11 @@ export default class ClientCamera extends CameraEntity {
 
         this.cameraData.values.FOV = .35;
         this.relationsData.values.team = this;
+    }
+    
+    /** Returns the camera's client. */
+    public override getClient(): Client {
+        return this.client;
     }
 
     /** Adds an entity the camera's current view. */
