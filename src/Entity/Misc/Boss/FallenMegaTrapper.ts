@@ -52,7 +52,7 @@ export default class FallenMegaTrapper extends AbstractBoss {
     protected moveAroundMap() {
         if (this.ai.state === AIState.idle) {
             this.positionData.angle += this.ai.passiveRotation;
-            this.accel.set({x: 0, y: 0});
+            this.setVelocity(0, 0);
         } else {
             const x = this.positionData.values.x,
                   y = this.positionData.values.y;

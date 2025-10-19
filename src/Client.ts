@@ -31,7 +31,7 @@ import DevTankDefinitions, { DevTank } from "./Const/DevTankDefinitions";
 import TankBody from "./Entity/Tank/TankBody";
 import Vector, { VectorAbstract } from "./Physics/Vector";
 import { Entity, EntityStateFlags } from "./Native/Entity";
-import { CameraFlags, ClientBound, ArenaFlags, InputFlags, NameFlags, ServerBound, Stat, StatCount, Tank } from "./Const/Enums";
+import { CameraFlags, ClientBound, ArenaFlags, InputFlags, NameFlags, ServerBound, Stat, StatCount, Tank, Color } from "./Const/Enums";
 import { AI, AIState, Inputs } from "./Entity/AI";
 import AbstractBoss from "./Entity/Boss/AbstractBoss";
 import { executeCommand } from "./Const/Commands";
@@ -462,13 +462,13 @@ export default class Client {
         // Silly workaround to change color of player when needed
         if (this.camera?.cameraData.values.player instanceof ObjectEntity) {
             const color = this.camera.cameraData.values.player.styleData.values.color;
-            this.camera.cameraData.values.player.styleData.values.color = -1;
+            this.camera.cameraData.values.player.styleData.values.color = -1 as Color;
             this.camera.cameraData.values.player.styleData.color = color;
         }
 
         this.camera.cameraData.tankOverride = ai.owner.nameData?.values.name || "";
         
-        this.camera.cameraData.tank = 53;
+        this.camera.cameraData.tank = 53 as Tank;
         
         // AI stats, confirmed by Mounted Turret videos
         for (let i = 0; i < StatCount; ++i) this.camera.cameraData.statLevels[i as Stat] = 0;

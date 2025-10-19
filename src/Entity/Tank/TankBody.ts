@@ -336,7 +336,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             if (this.definition.flags.displayAsTrapezoid === true) this.physicsData.flags |= PhysicsFlags.isTrapezoid;
         } else if (this.definition.flags.displayAsStar === true) this.styleData.flags |= StyleFlags.isStar;
 
-        this.accel.add({
+        this.velocity.add({
             x: this.inputs.movement.x * this.cameraEntity.cameraData.values.movementSpeed,
             y: this.inputs.movement.y * this.cameraEntity.cameraData.values.movementSpeed
         });

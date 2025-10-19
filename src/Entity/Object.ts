@@ -18,7 +18,6 @@
 
 import * as util from "../util";
 import GameServer from "../Game";
-import Velocity from "../Physics/Velocity";
 import Vector from "../Physics/Vector";
 
 import { PhysicsGroup, PositionGroup, RelationsGroup, StyleGroup } from "../Native/FieldGroups";
@@ -97,9 +96,7 @@ export default class ObjectEntity extends Entity {
     public isViewed: boolean = false;
 
     /** Velocity used for physics. */
-    public velocity = new Velocity();
-    /** Acceleration used for physics. */
-    public accel = new Vector();
+    public velocity = new Vector();
 
     /** For internal spatial hash grid */
     private _queryId: number = -1;
@@ -147,42 +144,31 @@ export default class ObjectEntity extends Entity {
         super.delete();
     }
 
-    /** Applies acceleration to the object. */
-    public addAcceleration(angle: number, acceleration: number, negateFriction = false) {
-        if (negateFriction) {
-            const frictionComponent = this.velocity.angleComponent(angle) * .1;
+    /** @deprecated Applies acceleration to the object. */
+    public addAcceleration(angle: number, acceleration: number) {
+        this.addVelocity(angle, acceleration);
+    }
 
-            acceleration += frictionComponent;
-        }
-
-        this.accel.add(Vector.fromPolar(angle, acceleration));
+    public addVelocity(angle: number, magnitude: number) {
+        this.velocity.add(Vector.fromPolar(angle, magnitude));
     }
 
     /** Sets the velocity of the object. */
     public setVelocity(angle: number, magnitude: number) {
-        // this.a.set(Vector.fromPolar(angle, acceleration));
-        this.velocity.setPosition(this.positionData.values);
         this.velocity.set(Vector.fromPolar(angle, magnitude));
     }
 
     /** Updates the acceleration. */
     public maintainVelocity(angle: number, maxSpeed: number) {
         // acceleration * 10 = max speed. this relationship is caused by friction
-        this.accel.add(Vector.fromPolar(angle, maxSpeed * 0.1));
+        this.addVelocity(angle, maxSpeed * 0.1);
     }
 
     /** Internal physics method used for calculating the current position of the object. */
     public applyPhysics() {
         if (!this.isViewed) {
-            this.accel.set(new Vector(0, 0));
             return;
         }
-
-        // apply friction opposite of current velocity
-        this.addAcceleration(this.velocity.angle, this.velocity.magnitude * -0.1);
-
-        // delta velocity
-        this.velocity.add(this.accel);
 
         if (this.velocity.magnitude < 0.01) this.velocity.magnitude = 0;
         // when being deleted, entities slow down half speed
@@ -190,8 +176,8 @@ export default class ObjectEntity extends Entity {
         this.positionData.x += this.velocity.x;
         this.positionData.y += this.velocity.y;
 
-        // don't accumulate acceleration across ticks
-        this.accel.set(new Vector(0, 0));
+        // apply friction opposite of current velocity
+        this.addVelocity(this.velocity.angle, this.velocity.magnitude * -0.1);
     }
 
     /** Applies knockback after hitting `entity` */
@@ -207,14 +193,11 @@ export default class ObjectEntity extends Entity {
         if ((entity.physicsData.values.flags & PhysicsFlags.isSolidWall || entity.physicsData.values.flags & PhysicsFlags.isBase) && !(this.positionData.values.flags & PositionFlags.canMoveThroughWalls))  {
             if (entity.physicsData.values.flags & PhysicsFlags.isSolidWall) {
                 if (this.relationsData.values.owner?.positionData && this.relationsData.values.team !== entity.relationsData.values.team) {
-                    // this is a bit off still. k
-                    this.velocity.setPosition(this.positionData.values);
                     this.setVelocity(0, 0);
                     this.destroy(true) // Kills off bullets etc
                     return;
                 }
 
-                this.accel.magnitude *= 0.3;
                 this.velocity.magnitude *= 0.3;
             }
             kbMagnitude /= 0.3;
@@ -350,7 +333,6 @@ export default class ObjectEntity extends Entity {
     }
 
     public tick(tick: number) {
-        this.velocity.setPosition(this.positionData.values);
         this.deletionAnimation?.tick();
 
         if (this.isPhysical && !(this.deletionAnimation)) {
@@ -371,15 +353,11 @@ export default class ObjectEntity extends Entity {
                     if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
                     else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
                     else break xPos;
-
-                    this.velocity.position.x = this.positionData.values.x;
                 }
                 yPos: {
                     if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
                     else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
                     else break yPos;
-
-                    this.velocity.position.y = this.positionData.values.y;
                 }
             }
         }

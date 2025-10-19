@@ -189,7 +189,7 @@ export default class AbstractBoss extends LivingEntity {
 
             this.positionData.angle = Math.atan2(this.ai.inputs.mouse.y - y, this.ai.inputs.mouse.x - x);
         }
-        this.accel.add({
+        this.velocity.add({
             x: this.inputs.movement.x * this.movementSpeed,
             y: this.inputs.movement.y * this.movementSpeed,
         });
