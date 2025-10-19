@@ -84,7 +84,9 @@ export default class LivingEntity extends ObjectEntity {
     /** Called when the entity receives damage from another . */
     public receiveDamage(source: LivingEntity, amount: number) {
         // If we are already dead, don't apply more damage
-        if (this.healthData.values.health <= 0) return;
+        if (this.healthData.values.health <= 0.0001) {
+            this.healthData.health = 0;
+        }
         
         this.damagedEntities.push(source);
 
