@@ -21,4 +21,6 @@ import ArenaEntity from "../Native/Arena";
 /**
  * FFA Gamemode Arena
  */
-export default class FFAArena extends ArenaEntity {}
+export default class FFAArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "ffa";
+}

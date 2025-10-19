@@ -55,7 +55,9 @@ const TERMINATION_CHANCE = 0.2;
  *  - Added into codebase on December 3rd 2022
  */
 export default class MazeArena extends ArenaEntity {
-     protected shapes: ShapeManager = new MazeShapeManager(this);
+    static override GAMEMODE_ID: string = "maze";
+
+    protected shapes: ShapeManager = new MazeShapeManager(this);
 
     /** Stores all the "seed"s */
     private SEEDS: VectorAbstract[] = [];

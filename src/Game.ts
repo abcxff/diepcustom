@@ -59,25 +59,19 @@ class WSSWriterStream extends Writer {
     }
 }
 
-type DiepGamemodeID = "ffa" | "sandbox" | "teams" | "4teams" | "mot" | "dom" | "maze" | "tag" | "survival" | "testing" | "spike" | "domtest" | "jungle" | "factest" | "ball";
 
-const GamemodeToArenaClass: Record<DiepGamemodeID, (typeof ArenaEntity) | null> & { "*": typeof ArenaEntity }= {
+/** @deprecated */
+type DiepGamemodeID = "ffa" | "sandbox" | "teams" | "4teams" | "mot" | "dom" | "maze" | "tag" | "survival";
+const GamemodeToArenaClass: Record<DiepGamemodeID, (typeof ArenaEntity) | null> = {
     "ffa": FFAArena,
     "teams": Teams2Arena,
     "4teams": Teams4Arena,
     "sandbox": SandboxArena,
-    "*": SandboxArena,
     "dom": DominationArena,
     "survival": SurvivalArena,
     "tag": TagArena,
     "mot": MothershipArena,
-    "maze": MazeArena,
-    "testing": TestingArena,
-    "spike": SpikeboxArena,
-    "domtest": DominationTestingArena,
-    "jungle": JungleArena,
-    "factest": FactoryTestArena,
-    "ball": BallArena
+    "maze": MazeArena
 }
 
 /**
@@ -89,7 +83,7 @@ export default class GameServer {
     /** Whether or not the game server is running. */
     public running = true;
     /** The gamemode the game is running. */
-    public gamemode: DiepGamemodeID;
+    public gamemode: string;
     /** The arena's display name. */
     public name: string;
     /** Whether or not to put players on the map. */
@@ -106,9 +100,21 @@ export default class GameServer {
     public arena: ArenaEntity;
     /** The interval timer of the tick loop. */
     private _tickInterval: NodeJS.Timeout;
+    /** The Arena instantiator */
+    private _arenaClass: typeof ArenaEntity;
 
-    public constructor(gamemode: DiepGamemodeID, name: string | "*") {
-        this.gamemode = gamemode;
+    public constructor(ArenaClass: DiepGamemodeID | typeof ArenaEntity, name: string) {
+        if (typeof ArenaClass === "string") {
+            this.gamemode = ArenaClass;
+            ArenaClass = GamemodeToArenaClass[ArenaClass] ?? SandboxArena;
+        } else if (!ArenaClass.GAMEMODE_ID) {
+            const defaultArenaId = ArenaClass.name.toLowerCase().replace("arena", "");
+            util.warn(`Missing gamemode ID for arena class, defaulting to '${defaultArenaId}'`);
+            this.gamemode = defaultArenaId;
+        } else {
+            this.gamemode = ArenaClass.GAMEMODE_ID;
+        }
+
         this.name = name;
 
         this.clients = new Set();
@@ -143,7 +149,8 @@ export default class GameServer {
         this.entities = new EntityManager(this);
         this.tick = 0;
 
-        this.arena = new (GamemodeToArenaClass[this.gamemode] || GamemodeToArenaClass["*"])(this);
+        this._arenaClass = ArenaClass;
+        this.arena = new ArenaClass(this);
 
         this._tickInterval = setInterval(() => {
             if (this.clients.size) this.tickLoop();
@@ -197,7 +204,8 @@ export default class GameServer {
         this.entities = new EntityManager(this);
         this.tick = 0;
 
-        this.arena = new (GamemodeToArenaClass[this.gamemode] || GamemodeToArenaClass["*"])(this);
+        const ArenaClass = this._arenaClass;
+        this.arena = new ArenaClass(this);
 
         for (const client of this.clients) {
             client.acceptClient();

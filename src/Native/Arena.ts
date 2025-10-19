@@ -57,6 +57,9 @@ export const enum ArenaState {
  * The Arena Entity, sent to the client and also used for internal calculations.
  */
 export default class ArenaEntity extends Entity implements TeamGroupEntity {
+    /** Gamemode id to be used for gamemode listing */
+    public static GAMEMODE_ID: string | null = null;
+
     /** Always existant arena field group. Present in all arenas. */
     public arenaData: ArenaGroup = new ArenaGroup(this);
 

@@ -33,6 +33,8 @@ const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed];
  * Mothership Gamemode Arena
  */
 export default class MothershipArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "mot";
+
     /** All team entities in game */
     public teams: TeamEntity[] = [];
     /** Motherships in game */

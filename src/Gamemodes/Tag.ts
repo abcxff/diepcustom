@@ -59,6 +59,8 @@ export class TagShapeManager extends ShapeManager {
  * Tag Gamemode Arena
  */
 export default class TagArena extends ArenaEntity {
+    static override GAMEMODE_ID: string = "tag";
+
     protected shapes: ShapeManager = new TagShapeManager(this);
 	
     /** All team entities in game */
