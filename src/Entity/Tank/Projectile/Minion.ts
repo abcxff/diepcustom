@@ -77,7 +77,7 @@ export default class Minion extends Drone implements BarrelBase {
         this.ai.viewRange = 900;
         this.usePosAngle = false;
 
-        this.physicsData.values.sides = bulletDefinition.sides ?? 1;
+        this.physicsData.values.sides = 1;
         this.physicsData.values.size *= 1.2;
         
         if (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) this.physicsData.values.flags ^= PhysicsFlags.noOwnTeamCollision;

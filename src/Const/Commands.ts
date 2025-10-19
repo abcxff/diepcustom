@@ -22,9 +22,10 @@ import Triangle from "../Entity/Shape/Triangle";
 import AutoTurret from "../Entity/Tank/AutoTurret";
 import Bullet from "../Entity/Tank/Projectile/Bullet";
 import TankBody from "../Entity/Tank/TankBody";
+import { AIState } from "../Entity/AI";
 import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
-import { ClientBound, Stat, StatCount, StyleFlags, Tank } from "./Enums";
+import { ClientBound, Stat, StatCount, PhysicsFlags, StyleFlags, Tank } from "./Enums";
 import { getTankByName } from "./TankDefinitions";
 
 const RELATIVE_POS_REGEX = new RegExp(/~(-?\d+)?/);
@@ -40,6 +41,7 @@ export const enum CommandID {
     gameClaim = "game_claim",
     gameGodmode = "game_godmode",
     gameAnnounce = "game_announce",
+    gameGoldenName = "game_golden_name",
     adminSummon = "admin_summon",
     adminKillAll = "admin_kill_all",
     adminKillEntity = "admin_kill_entity",
@@ -69,35 +71,35 @@ export const commandDefinitions = {
     game_set_level: {
         id: CommandID.gameSetLevel,
         usage: "[level]",
-        description: "Changes your level to the given whole number",
+        description: "Changes your level to the given integer",
         permissionLevel: AccessLevel.BetaAccess,
         isCheat: true
     },
     game_set_score: {
         id: CommandID.gameSetScore,
         usage: "[score]",
-        description: "Changes your score to the given whole number",
+        description: "Changes your score to the given integer",
         permissionLevel: AccessLevel.BetaAccess,
         isCheat: true
     },
     game_set_stat: {
         id: CommandID.gameSetStat,
         usage: "[stat num] [points]",
-        description: "Set the value of one of your statuses. Values can be greater than the capacity. [stat num] is equivalent to the number that appears in the UI",
+        description: "Set the value of the given attribute. Values can be greater than the maximum capacity. [stat num] is equivalent to the number that appears in the UI",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
     game_set_stat_max: {
         id: CommandID.gameSetStatMax,
         usage: "[stat num] [max]",
-        description: "Set the max value of one of your statuses. [stat num] is equivalent to the number that appears in the UI",
+        description: "Sets the max value of the given attribute. [stat num] is equivalent to the number that appears in the UI",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
     game_add_upgrade_points: {
         id: CommandID.gameAddUpgradePoints,
         usage: "[points]",
-        description: "Add upgrade points",
+        description: "Adds upgrade points",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
@@ -118,7 +120,7 @@ export const commandDefinitions = {
     game_godmode: {
         id: CommandID.gameGodmode,
         usage: "[?value]",
-        description: "Set the godemode. Toggles if [value] is not specified",
+        description: "Toggles godmode.",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: true
     },
@@ -129,16 +131,22 @@ export const commandDefinitions = {
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
+    game_golden_name: {
+        id: CommandID.gameGoldenName,
+        description: "Toggles the golden nickname color that appears upon using cheats",
+        permissionLevel: AccessLevel.FullAccess,
+        isCheat: false
+    },
     admin_summon: {
         id: CommandID.adminSummon,
         usage: "[entityName] [?count] [?x] [?y]",
-        description: "Spawns entities at a certain location",
+        description: "Spawns entities at the given coordinates",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
     admin_kill_all: {
         id: CommandID.adminKillAll,
-        description: "Kills all entities in the arena",
+        description: "Kills all living entities in the arena",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
@@ -219,6 +227,7 @@ export const commandCallbacks = {
         const TEntity = new Map([
           ["ArenaCloser", ArenaCloser],
           ["Dominator", Dominator],
+          ["Mothership", Mothership],
           ["Shape", AbstractShape],
           ["Boss", AbstractBoss],
           ["AutoTurret", AutoTurret]
@@ -228,7 +237,7 @@ export const commandCallbacks = {
 
         const AIs = Array.from(client.camera.game.entities.AIs);
         for (let i = 0; i < AIs.length; ++i) {
-            if (!(AIs[i].owner instanceof TEntity)) continue;
+            if (!(AIs[i].owner instanceof TEntity) || AIs[i].state === AIState.possessed) continue;
             client.possess(AIs[i]);
             return;
         }
@@ -262,6 +271,9 @@ export const commandCallbacks = {
         .u32(parseInt(color))
         .float(parseInt(time))
         .stringNT(id).send();
+    },
+    game_golden_name: (client: Client, activeArg?: string) => {
+        client.setHasCheated(!client.hasCheated());
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;
@@ -311,7 +323,12 @@ export const commandCallbacks = {
         if(!game) return;
         for (let id = 0; id <= game.entities.lastId; ++id) {
             const entity = game.entities.inner[id];
-            if (Entity.exists(entity) && entity instanceof LivingEntity && entity !== client.camera?.cameraData.player) entity.healthData.health = 0;
+            if (
+                Entity.exists(entity) &&
+                entity instanceof LivingEntity &&
+                entity !== client.camera?.cameraData.player && 
+                !(entity.physicsData.values.flags & PhysicsFlags.showsOnMap)
+            ) entity.destroy();
         }
     },
     admin_close_arena: (client: Client) => {
@@ -331,7 +348,7 @@ export const commandCallbacks = {
 
         for (let id = 0; id <= game.entities.lastId; ++id) {
             const entity = game.entities.inner[id];
-            if (Entity.exists(entity) && entity instanceof TEntity) entity.healthData.health = 0;
+            if (Entity.exists(entity) && entity instanceof TEntity) entity.destroy();
         }
     }
 } as Record<CommandID, CommandCallback>
@@ -350,6 +367,6 @@ export const executeCommand = (client: Client, cmd: string, args: string[]) => {
 
     const response = commandCallbacks[cmd as CommandID](client, ...args);
     if (response) {
-        client.notify(response, 0x00ff00, 5000, `cmd-callback${commandDefinition.id}`);
+        client.notify(response, 0x00FFA0, 5000, `cmd-callback${commandDefinition.id}`);
     }
 }

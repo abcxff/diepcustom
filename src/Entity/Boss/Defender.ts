@@ -98,7 +98,7 @@ export default class Defender extends AbstractBoss {
 
         const count = this.physicsData.values.sides;
         const offset = 60 / (DEFENDER_SIZE * Math.SQRT1_2);
-        for (let i = 0; i < count; i++) {
+        for (let i = 0; i < count; ++i) {
             // Add trap launcher
             this.trappers.push(new Barrel(this, {
                 ...TrapperDefinition,

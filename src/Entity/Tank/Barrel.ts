@@ -164,53 +164,59 @@ export default class Barrel extends ObjectEntity {
 
         if (this.rootParent instanceof TankBody) tankDefinition = this.rootParent.definition;
 
+        let projectile: ObjectEntity | null = null;
 
         switch (this.definition.bullet.type) {
             case "skimmer":
-                new Skimmer(this, this.tank, tankDefinition, angle, this.tank.inputs.attemptingRepel() ? -Skimmer.BASE_ROTATION : Skimmer.BASE_ROTATION);
+                projectile = new Skimmer(this, this.tank, tankDefinition, angle, this.tank.inputs.attemptingRepel() ? -Skimmer.BASE_ROTATION : Skimmer.BASE_ROTATION);
                 break;
             case "rocket":
                 new Rocket(this, this.tank, tankDefinition, angle);
                 break;
             case 'bullet': {
-                const bullet = new Bullet(this, this.tank, tankDefinition, angle);
+                projectile = new Bullet(this, this.tank, tankDefinition, angle);
 
-                if (tankDefinition && (tankDefinition.id === Tank.ArenaCloser || tankDefinition.id === DevTank.Squirrel)) bullet.positionData.flags |= PositionFlags.canMoveThroughWalls;
+                if (tankDefinition && (tankDefinition.id === Tank.ArenaCloser || tankDefinition.id === DevTank.Squirrel)) projectile.positionData.flags |= PositionFlags.canMoveThroughWalls;
                 break;
             }
             case 'trap':
-                new Trap(this, this.tank, tankDefinition, angle);
+                projectile = new Trap(this, this.tank, tankDefinition, angle);
                 break;
             case 'drone':
-                new Drone(this, this.tank, tankDefinition, angle);
+                projectile = new Drone(this, this.tank, tankDefinition, angle);
                 break;
             case 'necrodrone':
-                new NecromancerSquare(this, this.tank, tankDefinition, angle);
+                projectile = new NecromancerSquare(this, this.tank, tankDefinition, angle);
                 break;
             case 'swarm':
-                new Swarm(this, this.tank, tankDefinition, angle);
+                projectile = new Swarm(this, this.tank, tankDefinition, angle);
                 break;
             case 'minion':
-                new Minion(this, this.tank, tankDefinition, angle);
+                projectile = new Minion(this, this.tank, tankDefinition, angle);
                 break;
             case 'flame':
-                new Flame(this, this.tank, tankDefinition, angle);
+                projectile = new Flame(this, this.tank, tankDefinition, angle);
                 break;
             case 'wall': {
-                let w = new MazeWall(this.game, Math.round(this.tank.inputs.mouse.x / 50) * 50, Math.round(this.tank.inputs.mouse.y / 50) * 50, 250, 250);
+                const w = projectile = new MazeWall(this.game, Math.round(this.tank.inputs.mouse.x / 50) * 50, Math.round(this.tank.inputs.mouse.y / 50) * 50, 250, 250);
                 setTimeout(() => {
                     w.delete();
                 }, 60 * 1000);
                 break;
             }
             case "croc": 
-                new CrocSkimmer(this, this.tank, tankDefinition, angle);
+                projectile = new CrocSkimmer(this, this.tank, tankDefinition, angle);
                 break;
             default:
                 util.log('Ignoring attempt to spawn projectile of type ' + this.definition.bullet.type);
                 break;
         }
 
+        if (projectile) { 
+            if (this.definition.bullet.sides) projectile.physicsData.values.sides = this.definition.bullet.sides;
+
+            if (this.definition.bullet.color) projectile.styleData.values.color = this.definition.bullet.color;
+        }
     }
 
     /** Resizes the barrel; when the tank gets bigger, the barrel must as well. */
