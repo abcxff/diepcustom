@@ -86,6 +86,7 @@ export default class LivingEntity extends ObjectEntity {
         // If we are already dead, don't apply more damage
         if (this.healthData.values.health <= 0.0001) {
             this.healthData.health = 0;
+            return;
         }
         
         this.damagedEntities.push(source);
@@ -99,7 +100,7 @@ export default class LivingEntity extends ObjectEntity {
         this.lastDamageTick = this.game.tick;
         this.healthData.health -= amount;
 
-        if (this.healthData.health <= 0.0) {
+        if (this.healthData.health <= 0.0001) {
             this.healthData.health = 0;
 
             let killer: ObjectEntity = source;
