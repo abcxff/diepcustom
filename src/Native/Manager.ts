@@ -188,7 +188,5 @@ export default class EntityManager {
                 entity.wipeState();
             }
         }
-
-        this.collisionManager.postTick(this.game.tick);
     }
 }
