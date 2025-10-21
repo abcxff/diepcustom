@@ -58,7 +58,7 @@ export class ShootCycle {
         const reloadTime = this.barrelEntity.tank.reloadTime * this.barrelEntity.definition.reload;
         if (reloadTime !== this.reloadTime) {
             this.pos *= reloadTime / this.reloadTime;
-            this.reloadTime = reloadTime;
+            this.reloadTime = this.barrelEntity.barrelData.reloadTime = reloadTime;
         }
 
         const alwaysShoot = (this.barrelEntity.definition.forceFire) || (this.barrelEntity.definition.bullet.type === 'drone') || (this.barrelEntity.definition.bullet.type === 'minion');
