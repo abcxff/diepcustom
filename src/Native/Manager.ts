@@ -135,8 +135,6 @@ export default class EntityManager {
 
     /** Ticks all entities in the game. */
     public tick(tick: number) {
-        this.collisionManager.preTick(this.game.tick);
-
         while (!this.inner[this.lastId] && this.lastId >= 0) {
             this.lastId -= 1;
         }
@@ -190,7 +188,5 @@ export default class EntityManager {
                 entity.wipeState();
             }
         }
-
-        this.collisionManager.postTick(this.game.tick);
     }
 }

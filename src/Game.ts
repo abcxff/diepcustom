@@ -218,12 +218,15 @@ export default class GameServer {
 
     /** Ticks the game. */
     private tickLoop() {
-        
         this.tick += 1;
+
+        this.entities.collisionManager.preTick(this.tick);
 
         // process inputs before ticking entities for lower input latency
         for (const client of this.clients) client.tick(this.tick);
-        
+
         this.entities.tick(this.tick);
+
+        this.entities.collisionManager.postTick(this.tick);
     }
 }
