@@ -339,6 +339,10 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             [~~(Math.random() * 5)];
         
         this.boss = new TBoss(this.game);
+
+        const { x, y } = this.game.arena.findSpawnLocation();
+        this.boss.positionData.values.x = x;
+        this.boss.positionData.values.y = y;
     }
 
     public tick(tick: number) {
