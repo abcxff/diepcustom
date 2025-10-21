@@ -116,10 +116,6 @@ export default class AbstractBoss extends LivingEntity {
     public constructor(game: GameServer) {
         super(game);
 
-        const {x, y} = this.game.arena.findSpawnLocation();
-        this.positionData.values.x = x;
-        this.positionData.values.y = y;
-        
         this.relationsData.values.team = this.cameraEntity;
 
         this.physicsData.values.absorbtionFactor = 0.05;
@@ -132,7 +128,7 @@ export default class AbstractBoss extends LivingEntity {
         this.ai['_findTargetInterval'] = 0;
         this.inputs = this.ai.inputs;
 
-        // default ehColor
+        // Default color
         this.styleData.values.color = Color.Fallen;
 
         this.physicsData.values.sides = 1;
@@ -189,10 +185,12 @@ export default class AbstractBoss extends LivingEntity {
 
             this.positionData.angle = Math.atan2(this.ai.inputs.mouse.y - y, this.ai.inputs.mouse.x - x);
         }
+
         this.velocity.add({
             x: this.inputs.movement.x * this.movementSpeed,
             y: this.inputs.movement.y * this.movementSpeed,
         });
+
         this.inputs.movement.set({
             x: 0,
             y: 0
