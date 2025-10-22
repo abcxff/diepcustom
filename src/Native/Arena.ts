@@ -252,6 +252,10 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             // Otherwise, proceed as usual
             client.createAndSpawnPlayer(name);
 
+            if (camera.cameraData.values.flags & CameraFlags.gameWaitingStart) { // Hide countdown screen
+                camera.cameraData.values.flags &= ~CameraFlags.gameWaitingStart;
+            }
+
             // Remove this client from waiting list once this is done
             this.game.clientsAwaitingSpawn.delete(client);
         }
