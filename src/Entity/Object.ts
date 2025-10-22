@@ -353,24 +353,35 @@ export default class ObjectEntity extends Entity {
         this.game.entities.globalEntities.push(this.id);
     }
 
+    /** Keeps the object within the arena bounds. */
+    protected keepInArena() {
+        const arena = this.game.arena.arenaData;
+        const padding = this.game.arena.ARENA_PADDING;
+
+        if (this.positionData.values.x < arena.values.leftX - padding) {
+            this.positionData.x = arena.values.leftX - padding;
+        } else if (this.positionData.values.x > arena.values.rightX + padding) {
+            this.positionData.x = arena.values.rightX + padding;
+        }
+        
+        if (this.positionData.values.y < arena.values.topY - padding) {
+            this.positionData.y = arena.values.topY - padding;
+        } else if (this.positionData.values.y > arena.values.bottomY + padding) {
+            this.positionData.y = arena.values.bottomY + padding;
+        }
+    }
+
     public tick(tick: number) {
         this.deletionAnimation?.tick();
 
         for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
     
         // Keep things in the arena
-        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
-            const arena = this.game.arena;
-            xPos: {
-                if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
-                else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
-                else break xPos;
-            }
-            yPos: {
-                if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
-                else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
-                else break yPos;
-            }
+        if (
+            this.isPhysical
+            && !(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)
+        ) {
+            this.keepInArena();
         }
     }
 }
