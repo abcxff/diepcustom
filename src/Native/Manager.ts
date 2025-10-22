@@ -132,14 +132,15 @@ export default class EntityManager {
             LivingEntity.handleCollision(entityA, entityB);
         }
     }.bind(this);
+    
+    public preTick(tick: number) {
+        this.collisionManager.preTick(tick);
 
-    /** Ticks all entities in the game. */
-    public tick(tick: number) {
         while (!this.inner[this.lastId] && this.lastId >= 0) {
             this.lastId -= 1;
         }
 
-        scanner: for (let id = 0; id <= this.lastId; ++id) {
+        for (let id = 0; id <= this.lastId; ++id) {
             const entity = this.inner[id];
 
             if (!Entity.exists(entity)) continue;
@@ -148,7 +149,22 @@ export default class EntityManager {
                 this.collisionManager.insert(entity);
             }
         }
+    }
 
+    public postTick(tick: number) {
+        this.collisionManager.postTick(tick);
+
+        for (let id = 0; id <= this.lastId; ++id) {
+            const entity = this.inner[id];
+
+            if (entity) {
+                entity.wipeState();
+            }
+        }
+    }
+
+    /** Ticks all entities in the game. */
+    public tick(tick: number) {
         this.collisionManager.forEachCollisionPair(this.handleCollision)
 
         for (let id = 0; id <= this.lastId; ++id) {
@@ -179,14 +195,6 @@ export default class EntityManager {
 
         for (let i = 0; i < this.cameras.length; ++i) {
             (this.inner[this.cameras[i]] as CameraEntity).tick(tick);
-        }
-
-        for (let id = 0; id <= this.lastId; ++id) {
-            const entity = this.inner[id];
-
-            if (entity) {
-                entity.wipeState();
-            }
         }
     }
 }
