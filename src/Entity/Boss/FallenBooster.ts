@@ -34,7 +34,7 @@ export default class FallenBooster extends AbstractBoss {
     public constructor(game: GameServer) {
         super(game);
 
-        this.nameData.values.name = "Fallen Booster;
+        this.nameData.values.name = "Fallen Booster";
         for (const barrelDefinition of TankDefinitions[Tank.Booster].barrels) {
 
             const def = Object.assign({}, barrelDefinition, {});
