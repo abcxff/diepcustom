@@ -23,21 +23,15 @@ import EntityManager from "./Native/Manager";
 import Client from "./Client";
 import ArenaEntity from "./Native/Arena";
 import FFAArena from "./Gamemodes/FFA";
+import SurvivalArena from "./Gamemodes/Survival";
 import Teams2Arena from "./Gamemodes/Team2";
-import SandboxArena from "./Gamemodes/Sandbox";
-import { ClientBound } from "./Const/Enums";
 import Teams4Arena from "./Gamemodes/Team4";
 import DominationArena from "./Gamemodes/Domination";
-import MothershipArena from "./Gamemodes/Mothership";
-import TestingArena from "./Gamemodes/Misc/Testing";
-import SpikeboxArena from "./Gamemodes/Misc/Spikebox";
-import DominationTestingArena from "./Gamemodes/Misc/DomTest";
-import JungleArena from "./Gamemodes/Misc/Jungle";
-import FactoryTestArena from "./Gamemodes/Misc/FactoryTest";
-import BallArena from "./Gamemodes/Misc/Ball";
-import MazeArena from "./Gamemodes/Maze";
 import TagArena from "./Gamemodes/Tag";
-import SurvivalArena from "./Gamemodes/Survival";
+import MothershipArena from "./Gamemodes/Mothership";
+import MazeArena from "./Gamemodes/Maze";
+import SandboxArena from "./Gamemodes/Sandbox";
+import { ClientBound } from "./Const/Enums";
 
 /**
  * WriterStream that broadcasts to all of the game's WebSockets.
@@ -61,17 +55,17 @@ class WSSWriterStream extends Writer {
 
 
 /** @deprecated */
-type DiepGamemodeID = "ffa" | "sandbox" | "teams" | "4teams" | "mot" | "dom" | "maze" | "tag" | "survival";
+type DiepGamemodeID = "ffa" | "survival" | "teams" | "4teams" | "dom" | "tag" | "mot" | "maze" | "sandbox";
 const GamemodeToArenaClass: Record<DiepGamemodeID, (typeof ArenaEntity) | null> = {
     "ffa": FFAArena,
+    "survival": SurvivalArena,
     "teams": Teams2Arena,
     "4teams": Teams4Arena,
-    "sandbox": SandboxArena,
     "dom": DominationArena,
-    "survival": SurvivalArena,
     "tag": TagArena,
     "mot": MothershipArena,
-    "maze": MazeArena
+    "maze": MazeArena,
+    "sandbox": SandboxArena
 }
 
 /**
