@@ -222,11 +222,18 @@ export default class ObjectEntity extends Entity {
         super.delete();
     }
 
-    /** @deprecated Applies acceleration to the object. */
+    /**
+     * DEPRECATED:
+     * Please switch to calling `addVelocity()` instead.
+     * 
+     * > Applies acceleration to the object
+     * @deprecated
+     */
     public addAcceleration(angle: number, acceleration: number) {
         this.addVelocity(angle, acceleration);
     }
 
+    /** Adds to the velocity of the object. */
     public addVelocity(angle: number, magnitude: number) {
         this.velocity.add(Vector.fromPolar(angle, magnitude));
     }
@@ -284,20 +291,20 @@ export default class ObjectEntity extends Entity {
                 const relB = Math.sin(kbAngle + entity.positionData.values.angle) / entity.physicsData.values.width;
                 if (Math.abs(relA) <= Math.abs(relB)) {
                     if (relB < 0) {
-                        this.addAcceleration(Math.PI * 3 / 2, kbMagnitude);
+                        this.addVelocity(Math.PI * 3 / 2, kbMagnitude);
                     } else {
-                        this.addAcceleration(Math.PI * 1 / 2, kbMagnitude);
+                        this.addVelocity(Math.PI * 1 / 2, kbMagnitude);
                     }
                 } else {
                     if (relA < 0) {
-                        this.addAcceleration(Math.PI, kbMagnitude);
+                        this.addVelocity(Math.PI, kbMagnitude);
                     } else {
-                        this.addAcceleration(0, kbMagnitude);
+                        this.addVelocity(0, kbMagnitude);
                     }
                 }
             }
         } else {
-            this.addAcceleration(kbAngle, kbMagnitude);
+            this.addVelocity(kbAngle, kbMagnitude);
         }
     }
 

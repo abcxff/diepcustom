@@ -154,7 +154,7 @@ export default class Barrel extends ObjectEntity {
         const scatterAngle = (Math.PI / 180) * this.definition.bullet.scatterRate * (Math.random() - .5) * 10;
         let angle = this.definition.angle + scatterAngle + this.tank.positionData.values.angle;
 
-        this.rootParent.addAcceleration(angle + Math.PI, this.definition.recoil * 2);
+        this.rootParent.addVelocity(angle + Math.PI, this.definition.recoil * 2);
 
         let tankDefinition: TankDefinition | null = null;
 

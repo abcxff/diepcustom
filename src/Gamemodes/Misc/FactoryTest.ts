@@ -77,7 +77,7 @@ export default class FactoryTestArena extends ArenaEntity {
 
         tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size * 0.5) - Math.sin(shootAngle) * barrel.definition.offset * this.nimdac.sizeFactor;
         tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size * 0.5) + Math.cos(shootAngle) * barrel.definition.offset * this.nimdac.sizeFactor;
-        tank.addAcceleration(shootAngle, 40);
+        tank.addVelocity(shootAngle, 40);
     }
 
     public tick(tick: number) {
