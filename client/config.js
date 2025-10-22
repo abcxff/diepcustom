@@ -20,6 +20,8 @@ const BUILD = "6f59094d60f98fafc14371671d3ff31ef4d75d9e";
 const CDN = "https://static.diep.io/";
 const API_URL = `${window.location.href}api/`;
 
+const DYNAMICALLY_LOAD_TANKS = true;
+
 const CHANGELOG = [
     "Updated recently",
     "",
@@ -245,6 +247,7 @@ const MOD_CONFIG = {
         "loadTankDefinitions": 277,
         "getTankDefinition": 101,
         "findCommand": 496,
+        "decodePacket": 405,
         "decodeComponentList": 221,
         "createEntityAtIndex": 114
     },
@@ -256,7 +259,12 @@ const MOD_CONFIG = {
         "tankDefinitions": 166572,
         "tankDefinitionsCount": 166576,
         "commandList": 53064,
-        "netColorTable": 49584
+        "netColorTable": 49584,
+        "simulation": 54776,
+        "socket": 104440,
+        "timeNow": 113208,
+        "entityManager": 54824,
+        
     },
     "wasmFunctionHookOffset": {
         "gamemodeButtons": 33,
@@ -284,7 +292,7 @@ const CUSTOM_ADDONS = {
     "tutorial": entity => {
         // This if statement isnt totally necessary but might help your IDE recognize the type of "entity" which simplifies development later. It can be removed.
         if(!(entity instanceof $Entity)) return;
-        
+
         /*
         We are currently on the root level meaning we can only access the "entity" the addon is placed upon. This means that "entity" is either a barrel or a tank.
         It is possible to change its data even at the root level.
@@ -486,10 +494,6 @@ const WASM_PAGE_SIZE = 65536; // A WebAssembly page has a constant size of 65,53
 
 const DYNAMIC_BASE = 5426112; // start of dynmic memory
 const DYNAMIC_TOP_PTR = 183072; // points to start of dynamic memory
-
-const SOCKET_PTR = 104440; // points to the socket struct in memory
-const LAST_PING_TIME_OFFSET = 8; // offset containing the last ping time in the socket struct
-const TIME_NOW_PTR = 113208; // points to the current time value in memory
 
 const WASM_MEMORY = {
     "initial": INITIAL_MEMORY / WASM_PAGE_SIZE,

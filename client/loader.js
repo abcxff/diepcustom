@@ -234,8 +234,14 @@ Module.loadTankDefinitions = () => {
     // TODO Rewrite with new $LinkedList datastructure
     Module.tankDefinitionsTable = new Array(Module.tankDefinitions.length).fill(0); // clear memory
     let lastPtr = MOD_CONFIG.memory.tankDefinitions;
+    let idx = -1;
     for(const tank of Module.tankDefinitions) {
+        idx += 1;
         if(!tank) continue;
+        if (DYNAMICALLY_LOAD_TANKS) {
+            // Make sure the postAddon is overrided
+            tank.postAddon = "_tank_dynload_" + idx;
+        }
         const ptr = Module.exports.malloc(244); // length of a tankdef
         Module.HEAPU8.subarray(ptr, ptr + 244).fill(0);
         $(lastPtr).i32 = ptr;
@@ -267,7 +273,63 @@ Module.executeCommand = execCtx => {
 
     // [id, ...args], we only need args
     Module.executionCallbackMap[tokens[0]](tokens.slice(1));
-};
+}
+
+Module.applyDynamicTankDefinition = ($entity, dynamicDefinition) => {
+    const $sim = $entity[0x10][0x20].$;
+    if (!$sim) {
+        console.warn("Entity has no simulation");
+        return;
+    }
+
+    // Load replication packet to memory
+    const serialized = dynamicDefinition.serialized;
+    const packet = new Uint8Array(atob(serialized).split("").map(c => c.charCodeAt(0)));
+    const ptr = Module.exports.malloc(packet.byteLength);
+    if (!ptr) {
+        throw new Error("Failed to allocate memory for dynamic tank definition");
+    }
+    Module.HEAPU8.set(packet, ptr);
+
+    const $oldSimulation = $(MOD_CONFIG.memory.simulation).$;
+    // Swap in entity simulation data
+    const SIZE = 16384 * 5;
+    const oldSimulationData = Module.HEAPU8.slice(
+        $oldSimulation.at, $oldSimulation.at + SIZE
+    );
+    const newSimulationData = Module.HEAPU8.slice(
+        $sim.at, $sim.at + SIZE
+    );
+    Module.HEAPU8.set(newSimulationData, $oldSimulation.at);
+    // $oldSimulation[0x2a0].u32 = $oldSimulation.at;
+    const ptrs = [];
+    let i = -1;
+    while (true){
+        i = Module.HEAPU32.indexOf($sim.at, i + 1);
+        if (i === -1) break;
+        ptrs.push(i << 2);
+    }
+    for (const p of ptrs) {
+        Module.HEAPU32[p >> 2] = $oldSimulation.at;
+    }
+    // Apply packet
+    try {
+        Module.rawExports.decodePacket(ptr, packet.byteLength)
+    } catch (e) {
+        console.error("Failed to decode dynamic tank definition packet:", e);
+    }
+    for (const p of ptrs) {
+        Module.HEAPU32[p >> 2] = $sim.at;
+    }
+    const updatedSimulationData = Module.HEAPU8.slice(
+        $oldSimulation.at, $oldSimulation.at + SIZE
+    );
+    // Update entity simulation
+    Module.HEAPU8.set(updatedSimulationData, $sim.at);
+    // Swap back original simulation
+    Module.HEAPU8.set(oldSimulationData, $oldSimulation.at);
+    Module.exports.free(ptr);
+}
 
 /*
     Command object: { id, usage, description, callback }
@@ -330,13 +392,24 @@ Module.todo.push([() => {
     return [];
 }, false]);
 
+Module.fetchTanks = async () => {
+    if (DYNAMICALLY_LOAD_TANKS) {
+        const res = await fetch(`${API_URL}tanks-dynamic`);
+        return res.json();
+    } else {
+        const res = await fetch(`${API_URL}tanks`);
+        return res.json();
+    }
+}
+
+
 Module.todo.push([() => {
     Module.status = "FETCH";
     // fetch necessary info and build
     return [
         fetch(`${CDN}build_${BUILD}.wasm.wasm`).then(res => res.arrayBuffer()),
         fetch(`${API_URL}servers`).then(res => res.json()),
-        fetch(`${API_URL}tanks`).then(res => res.json())
+        Module.fetchTanks()
     ];
 }, true]);
 
@@ -356,6 +429,7 @@ Module.todo.push([(dependency, servers, tanks) => {
     const originalFindCommand = parser.getFunctionIndex(MOD_CONFIG.wasmFunctions.findCommand);
     const originalDecodeComponentList = parser.getFunctionIndex(MOD_CONFIG.wasmFunctions.decodeComponentList);
     const originalCreateEntityAtIndex = parser.getFunctionIndex(MOD_CONFIG.wasmFunctions.createEntityAtIndex);
+    const originalDecodePacket = parser.getFunctionIndex(MOD_CONFIG.wasmFunctions.decodePacket);
 
     // function types
     const types = {
@@ -421,24 +495,47 @@ Module.todo.push([(dependency, servers, tanks) => {
         executeCommand: Module.executeCommand
     };
 
-    for(const addonId of Object.keys(CUSTOM_ADDONS)) {
-        imports["_addon_" + addonId] = parser.addImportEntry({
-            moduleStr: "mods",
-            fieldStr: "_addon_" + addonId,
-            kind: "func",
-            type: types.vi
-        });
+    if (!DYNAMICALLY_LOAD_TANKS) {
+        for(const addonId of Object.keys(CUSTOM_ADDONS)) {
+            imports["_addon_" + addonId] = parser.addImportEntry({
+                moduleStr: "mods",
+                fieldStr: "_addon_" + addonId,
+                kind: "func",
+                type: types.vi
+            });
 
-        parser.addExportEntry(imports["_addon_" + addonId], {
-            fieldStr: "_addon_" + addonId,
-            kind: "func"
-        });
+            parser.addExportEntry(imports["_addon_" + addonId], {
+                fieldStr: "_addon_" + addonId,
+                kind: "func"
+            });
 
-        Module.imports.mods["_addon_" + addonId] = (ptr) => {
-            const input = $(ptr);
-            if(!ptr || !input.i32) throw "Invalid pointer received on addon callback";
-            CUSTOM_ADDONS[addonId](new $Entity(input.i32 !== ptr ? input.$ : input));
-        };
+            Module.imports.mods["_addon_" + addonId] = (ptr) => {
+                const input = $(ptr);
+                if(!ptr || !input.i32) throw "Invalid pointer received on addon callback";
+                CUSTOM_ADDONS[addonId](new $Entity(input.i32 !== ptr ? input.$ : input));
+            };
+        }
+    } else {
+        for (let idx = 0; idx < tanks.length; ++idx) {
+            const tank = tanks[idx];
+            imports["_tank_dynload_" + idx] = parser.addImportEntry({
+                moduleStr: "mods",
+                fieldStr: "_tank_dynload_" + idx,
+                kind: "func",
+                type: types.vi
+            });
+
+            parser.addExportEntry(imports["_tank_dynload_" + idx], {
+                fieldStr: "_tank_dynload_" + idx,
+                kind: "func"
+            });
+
+            Module.imports.mods["_tank_dynload_" + idx] = (ptr) => {
+                const $entity = $(ptr);
+                if (!$entity || !$entity.i32) throw "Invalid pointer received on dynamic tank callback";
+                Module.applyDynamicTankDefinition($entity, tank);
+            }
+        }
     }
 
     parser.addExportEntry(imports.executeCommand, {
@@ -458,6 +555,11 @@ Module.todo.push([(dependency, servers, tanks) => {
 
     parser.addExportEntry(originalDecodeComponentList, {
         fieldStr: "decodeComponentList",
+        kind: "func"
+    });
+
+    parser.addExportEntry(originalDecodePacket, {
+        fieldStr: "decodePacket",
         kind: "func"
     });
 
@@ -596,7 +698,7 @@ Module.todo.push([() => {
         },
         // refetches tankdefs & resets them
         reloadTanks: async () => {
-            Module.tankDefinitions = await fetch(`${API_URL}tanks`).then(res => res.json());
+            Module.tankDefinitions = await Module.fetchTanks();
             if(Module.tankDefinitionsTable) {
                 for(const tankDef of Module.tankDefinitionsTable) {
                     if(tankDef) Module.exports.free(tankDef);
@@ -626,9 +728,19 @@ Module.todo.push([() => {
     Module.imports.a.table.set(Module.executeCommandFunctionIndex, Module.rawExports.executeCommand);
 
     // custom addons
-    for(const addonId of Object.keys(CUSTOM_ADDONS)) {
-        ADDON_MAP[addonId] = Module.imports.a.table.grow(1);
-        Module.imports.a.table.set(ADDON_MAP[addonId],  Module.rawExports["_addon_" + addonId]);
+    if (!DYNAMICALLY_LOAD_TANKS) {
+        for(const addonId of Object.keys(CUSTOM_ADDONS)) {
+            ADDON_MAP[addonId] = Module.imports.a.table.grow(1);
+            Module.imports.a.table.set(ADDON_MAP[addonId],  Module.rawExports["_addon_" + addonId]);
+        }
+    } else {
+        for (let idx = 0; idx < Module.tankDefinitions.length; ++idx) {
+            ADDON_MAP["_tank_dynload_" + idx] = Module.imports.a.table.grow(1);
+            Module.imports.a.table.set(
+                ADDON_MAP["_tank_dynload_" + idx], 
+                Module.rawExports["_tank_dynload_" + idx]
+            );
+        }
     }
 
     Module.status = "START";
@@ -672,8 +784,8 @@ Module.todo.push([() => {
 const PING_PACKET = new Uint8Array([5]);
 function sendThrottledPing(socket) {
     const now = performance.now();
-    const socketPtr = Module.HEAPU32[SOCKET_PTR >> 2];
-    const lastPingTimePtr = socketPtr + LAST_PING_TIME_OFFSET;
+    const socketPtr = Module.HEAPU32[MOD_CONFIG.memory.socket >> 2];
+    const lastPingTimePtr = socketPtr + 0x8;
 
     const timeSinceLastPing = now - Module.HEAPF64[lastPingTimePtr >> 3];
     if (timeSinceLastPing >= PING_THROTTLE_MS) {
@@ -684,7 +796,7 @@ function sendThrottledPing(socket) {
     // after the pong is received from the server.
     setTimeout(() => requestAnimationFrame(() => {
         if (socket.readyState !== WebSocket.OPEN) return;
-        Module.HEAPF64[lastPingTimePtr >> 3] = Module.HEAPF64[TIME_NOW_PTR >> 3];
+        Module.HEAPF64[lastPingTimePtr >> 3] = Module.HEAPF64[MOD_CONFIG.memory.timeNow >> 3];
         socket.send(PING_PACKET);
     }), PING_THROTTLE_MS - timeSinceLastPing);
 }

@@ -28,7 +28,7 @@ import { CameraEntity } from "../../Native/Camera";
 
 class CustomShapeManager extends ShapeManager {
     protected get wantedShapes() {
-        return 500;
+        return 0;
     }
 }
 
@@ -38,10 +38,10 @@ export default class PlayersArena extends ArenaEntity {
     public constructor(game: GameServer) {
         super(game);
         this.state = ArenaState.OPEN;
-        this.updateBounds(8_000, 8_000);
+        this.updateBounds(800, 800);
         this.shapes = new CustomShapeManager(this);
 
-        const PLAYER_COUNT = 100;
+        const PLAYER_COUNT = 0;
         for (let i = 0; i < PLAYER_COUNT; ++i) {
             // const tank = this.spawnTestTank(Tank.Factory);
             const tank = this.spawnTestTank(Tank.MachineGun);
@@ -60,6 +60,8 @@ export default class PlayersArena extends ArenaEntity {
             tank.tick = function(tick: number) {
                 // tank.positionData.x = posX;
                 // tank.positionData.y = posY;
+                tank.inputs.mouse.x = posX + Math.cos(tick / 30) * 200;
+                tank.inputs.mouse.y = posY + Math.sin(tick / 30) * 200;
                 tankTick(tick);
                 this.setVelocity(0, 0);
             };

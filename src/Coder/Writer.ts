@@ -137,7 +137,7 @@ export default class Writer {
         if (!entity || entity.hash === 0) return this.u8(0);
         return this.vu(entity.hash).vu(entity.id);
     }
-    public write(slice: boolean=false) {
+    public write(slice: boolean=false): Buffer {
         if (slice) return Writer.OUTPUT_BUFFER.slice(0, this.at);
         
         return Writer.OUTPUT_BUFFER.subarray(0, this.at);
