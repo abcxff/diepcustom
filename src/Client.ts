@@ -553,8 +553,6 @@ export default class Client {
         camera.spectatee = null;
         this.inputs.isPossessing = false;
         this.inputs.movement.magnitude = 0;
-  
-        if (camera.cameraData.values.flags & CameraFlags.gameWaitingStart) camera.cameraData.values.flags &= ~CameraFlags.gameWaitingStart;
     }
 
     public tick(tick: number) {
