@@ -59,7 +59,7 @@ export default class Guardian extends AbstractBoss {
     public constructor(game: GameServer) {
         super(game);
 
-        this.nameData.values.name = 'Guardian';
+        this.nameData.values.name = "Guardian";
         this.altName = 'Guardian of the Pentagons';
         this.styleData.values.color = Color.EnemyCrasher;
         this.relationsData.values.team = this.game.arena;
