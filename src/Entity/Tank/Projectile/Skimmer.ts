@@ -29,7 +29,7 @@ import { CameraEntity } from "../../../Native/Camera";
  * Barrel definition for the skimmer skimmer's barrel.
  */
 const SkimmerBarrelDefinition: BarrelDefinition = {
-    angle: Math.PI / 2,
+    angle: 0,
     offset: 0,
     size: 70,
     width: 42,
@@ -63,8 +63,10 @@ export default class Skimmer extends Bullet implements BarrelBase {
 
     /** The camera entity (used as team) of the skimmer. */
     public cameraEntity: CameraEntity;
+
     /** The reload time of the skimmer's barrel. */
     public reloadTime = 15;
+
     /** The inputs for when to shoot or not. (skimmer) */
     public inputs: Inputs;
 
