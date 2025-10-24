@@ -51,9 +51,10 @@ export default class SurvivalArena extends ArenaEntity {
         super(game);
         this.shapeScoreRewardMultiplier = 3.0;
 
-        this.updateBounds(2500, 2500);
         this.arenaData.values.flags &= ~ArenaFlags.gameReadyStart;
         this.arenaData.values.playersNeeded = MIN_PLAYERS;
+
+        this.setSurvivalArenaSize(0);
     }
 
     public updateArenaState() {
