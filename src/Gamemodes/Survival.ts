@@ -26,7 +26,7 @@ import ShapeManager from "../Entity/Shape/Manager";
 import { ArenaFlags, ClientBound } from "../Const/Enums";
 import { tps, countdownTicks, scoreboardUpdateInterval } from "../config";
 
-const MIN_PLAYERS = 4;
+const MIN_PLAYERS = 4; // 6 in Diep.io
 
 /**
  * Manage shape count
