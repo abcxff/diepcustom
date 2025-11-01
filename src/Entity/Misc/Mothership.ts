@@ -72,7 +72,7 @@ export default class Mothership extends TankBody {
 
         const def = (this.definition = Object.assign({}, this.definition));
         // 418 is what the normal health increase for stat/level would be, so we just subtract it and force it 7k
-        def.maxHealth = 7008 - 418;
+        def.maxHealth = 7000 - 418;
     }
 
     public onDeath(killer: Live): void {
