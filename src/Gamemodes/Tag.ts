@@ -89,7 +89,6 @@ export default class TagArena extends ArenaEntity {
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
-        this.updateArenaState();
         const deathMixin = tank.onDeath.bind(tank); 
         tank.onDeath = (killer: LivingEntity) => {
             deathMixin(killer);
@@ -195,4 +194,5 @@ export default class TagArena extends ArenaEntity {
         }
     }
 }
+
 
