@@ -131,8 +131,8 @@ export default class Barrel extends ObjectEntity {
 
         this.physicsData.values.width = this.definition.width * sizeFactor;
         this.positionData.values.angle = this.definition.angle + (this.definition.trapezoidDirection);
-        this.positionData.values.x = Math.cos(this.definition.angle) * (size / 2 + (this.definition.distance || 0)) - Math.sin(this.definition.angle) * this.definition.offset * sizeFactor;
-        this.positionData.values.y = Math.sin(this.definition.angle) * (size / 2 + (this.definition.distance || 0)) + Math.cos(this.definition.angle) * this.definition.offset * sizeFactor;
+        this.positionData.values.x = Math.cos(this.definition.angle) * (size / 2 + ((this.definition.distance ?? 0) * sizeFactor)) - Math.sin(this.definition.angle) * this.definition.offset * sizeFactor;
+        this.positionData.values.y = Math.sin(this.definition.angle) * (size / 2 + ((this.definition.distance ?? 0) * sizeFactor)) + Math.cos(this.definition.angle) * this.definition.offset * sizeFactor;
 
         // addons are below barrel, use StyleFlags.aboveParent to go above parent
         if (barrelDefinition.addon) {
