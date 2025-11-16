@@ -39,13 +39,6 @@ export default class Teams2Arena extends ArenaEntity {
     public blueTeamBase: TeamBase;
     /** Red Team entity */
     public redTeamBase: TeamBase;
-    // /** Limits shape count 100 */
-    //     protected shapes: ShapeManager = new class extends ShapeManager {
-    //     protected get wantedShapes() {
-    //         return 64;
-    //     }
-    // }(this);
-
     /** Maps clients to their teams */
     public playerTeamMap: WeakMap<Client, TeamBase> = new WeakMap();
     
