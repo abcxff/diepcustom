@@ -46,4 +46,6 @@ export default class MazeWall extends ObjectEntity {
     }
 
     public tick(tick: number) {} // No need to tick walls
+    
+    public applyPhysics() {} // These never move, so no need to do this either
 }
