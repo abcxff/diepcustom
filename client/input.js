@@ -71,6 +71,7 @@ window.setupInput = () => {
     }
 
     window.onkeydown = e => {
+        if (e.repeat) return;
         window.input.flushInputHooks();
         if(e.keyCode >= 112 && e.keyCode <= 130 && e.keyCode !== 113) return;
         window.input.keyDown(e.keyCode);
