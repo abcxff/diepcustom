@@ -18,7 +18,7 @@
 
 import { Color, ColorsHexCode, NameFlags, StyleFlags, Tank, ClientBound } from "../../Const/Enums";
 import ArenaEntity from "../../Native/Arena";
-import ClientCamera, { CameraEntity } from "../../Native/Camera";
+import { CameraEntity } from "../../Native/Camera";
 import { AI, AIState, Inputs } from "../AI";
 import LivingEntity from "../Live";
 import Bullet from "../Tank/Projectile/Bullet";

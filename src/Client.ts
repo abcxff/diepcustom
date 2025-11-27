@@ -23,8 +23,8 @@ import { WebSocket } from "uWebSockets.js";
 import Reader from "./Coder/Reader";
 import Writer from "./Coder/Writer";
 import GameServer from "./Game";
-import ClientCamera from "./Native/Camera";
-import { ArenaState } from "./Native/Arena";
+import { CameraEntity } from "./Native/Camera";
+
 import ObjectEntity from "./Entity/Object";
 import TankDefinitions, { getTankById, TankCount } from "./Const/TankDefinitions";
 import DevTankDefinitions, { DevTank } from "./Const/DevTankDefinitions";
@@ -80,6 +80,7 @@ export interface ClientWrapper {
     client: Client | null;
     ipAddress: string;
     gamemode: string;
+    reconnectionKey: string | null;
 }
 
 export default class Client {
@@ -102,7 +103,10 @@ export default class Client {
     /** Inner websocket connection. */
     public ws: WebSocket<ClientWrapper> | null;
     /** Client's camera entity. */
-    public camera: ClientCamera | null = null;
+    public camera: CameraEntity | null = null;
+
+    /** Client's reconnection key for reclaiming cameras. */
+    public reconnectionKey: string | null = null;
 
     /** Whether or not the player has used in game dev cheats before (such as level up or godmode). */
     private devCheatsUsed: boolean = false;
@@ -119,6 +123,7 @@ export default class Client {
         this.game.clients.add(this);
         this.ws = ws;
         this.lastPingTick = this.connectTick = game.tick;
+        this.reconnectionKey = ws.getUserData().reconnectionKey;
     }
 
     /** Accepts the client and creates a camera for it. */
@@ -126,7 +131,40 @@ export default class Client {
         this.write().u8(ClientBound.ServerInfo).stringNT(this.game.gamemode).stringNT(config.host).send();
         this.write().u8(ClientBound.PlayerCount).vu(GameServer.globalPlayerCount).send();
         this.write().u8(ClientBound.Accept).vi(this.accessLevel).send();
-        this.camera = new ClientCamera(this.game, this);
+        
+        // Check for reconnection
+        const didRestoreCamera = this.tryReconnection();
+        if (!didRestoreCamera) {
+            // If reconnection failed, create a new camera
+            this.camera = new CameraEntity(this.game);
+            this.camera.setClient(this);
+        }
+    }
+
+    private tryReconnection(): boolean {
+        if (!config.enableReconnection) return false;
+        const reconnectionKey = this.reconnectionKey;
+        if (!reconnectionKey) return false;
+
+        for (const id of this.game.entities.cameras) {
+            const camera = this.game.entities.inner[id] as CameraEntity;
+            if (!camera) continue;
+
+            if (camera.reconnectionKey === reconnectionKey) {
+                if (camera.getClient()) {
+                    // Already claimed, so our reconnection key itself is a duplicate
+                    this.reconnectionKey = null;
+                    return false;
+                }
+
+                camera.setClient(this);
+                this.camera = camera;
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Sends data to client. */
@@ -154,8 +192,14 @@ export default class Client {
 
         this.inputs.deleted = true;
         this.inputs.movement.magnitude = 0;
-
-        if (Entity.exists(this.camera)) this.camera.delete();
+        if (Entity.exists(this.camera)) {
+            if (config.enableReconnection && this.reconnectionKey) {
+                // Mark camera for reconnection instead of deleting
+                this.camera.markForReconnection();
+            } else {
+                this.camera.delete();
+            }
+        }
     }
 
     /** Handles to incoming messages. */

@@ -618,7 +618,21 @@ Module.todo.push([() => {
         // executes spawn command
         spawn: name => window.input.execute(`game_spawn ${name}`),
         // executes reconnect command
-        reconnect: () => window.input.execute(`lb_reconnect`)
+        reconnect: () => window.input.execute(`lb_reconnect`),
+        // gets or creates reconnection key
+        getReconnectionKey: () => {
+            let key = window.localStorage.getItem('reconnectionKey');
+            if (!key) {
+                key = "";
+                for (let i = 0; i < RECONNECTION_KEY_LENGTH; i++) {
+                    key += RECONNECTION_KEY_ALPHABET[Math.floor(
+                        Math.random() * RECONNECTION_KEY_ALPHABET.length
+                    )];
+                }
+                window.localStorage.setItem('reconnectionKey', key);
+            }
+            return key;
+        }
     };
 
     // custom commands
@@ -1255,7 +1269,9 @@ class ASMConsts {
 
     static createWebSocket(urlPtr) {
         const url = Module.UTF8ToString(urlPtr);
-        const ws = new WebSocket(`ws${location.protocol.slice(4)}//${location.host}/${url.slice(5, url.length - 4)}`);
+        const reconnectionKey = window.Game.getReconnectionKey();
+        const protocol = reconnectionKey ? `reconkey#${reconnectionKey}` : undefined;
+        const ws = new WebSocket(`ws${location.protocol.slice(4)}//${location.host}/${url.slice(5, url.length - 4)}`, protocol);
         ws.binaryType = "arraybuffer";
         ws.events = [];
         ws.onopen = function() {

@@ -533,3 +533,7 @@ const FLAGS = {
     isCachable: 1 << 5,
     showsAboveParent: 1 << 6
 };
+
+// Keep in sync with index.ts
+const RECONNECTION_KEY_LENGTH = 16;
+const RECONNECTION_KEY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

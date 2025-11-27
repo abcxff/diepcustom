@@ -17,7 +17,7 @@
 */
 
 import * as fs from "fs";
-import { App, SHARED_COMPRESSOR, WebSocket, WebSocketBehavior } from "uWebSockets.js";
+import { App, HttpRequest, SHARED_COMPRESSOR, WebSocket, WebSocketBehavior } from "uWebSockets.js";
 import Client, { ClientWrapper } from "./Client";
 import * as config from "./config"
 import * as util from "./util";
@@ -42,17 +42,55 @@ const allClients = new Set<Client>();
 const app = App({});
 const games: GameServer[] = [];
 
+/**
+ * Reconnection key specifications
+ * 
+ * Must be kept in sync with client/config.js
+ */
+const RECONNECTION_KEY_LENGTH = 16;
+const RECONNECTION_KEY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+function isValidReconnectionKey(key: string): boolean {
+    if (key.length !== RECONNECTION_KEY_LENGTH) return false;
+    for (const char of key) {
+        if (!RECONNECTION_KEY_ALPHABET.includes(char)) return false;
+    }
+    return true;
+}
+
+function getReconnectionKey(req: HttpRequest): string | null {
+    if (!config.enableReconnection) return null;
+
+    const protocol = req.getHeader("sec-websocket-protocol");
+    if (!protocol) return null;
+    if (!protocol.startsWith("reconkey#")) return null;
+
+    const key = protocol.slice(9);
+    if (isValidReconnectionKey(key)) {
+        return key;
+    } else {
+        throw new Error("Invalid reconnection key");
+    }
+}
+
 app.ws("/*", {
     compression: SHARED_COMPRESSOR,
     sendPingsAutomatically: true,
     maxPayloadLength: config.wssMaxMessageSize,
     idleTimeout: 10,
     upgrade: (res, req, context) => {
-        res.upgrade({ client: null, ipAddress: "", gamemode: req.getUrl().slice(1) } as ClientWrapper,
-            req.getHeader('sec-websocket-key'),
-            req.getHeader('sec-websocket-protocol'),
-            req.getHeader('sec-websocket-extensions'),
-            context);
+        try {
+            const reconnectionKey = getReconnectionKey(req);
+
+            res.upgrade({ client: null, ipAddress: "", gamemode: req.getUrl().slice(1), reconnectionKey } as ClientWrapper,
+                req.getHeader('sec-websocket-key'),
+                req.getHeader('sec-websocket-protocol'),
+                req.getHeader('sec-websocket-extensions'),
+                context);
+        } catch (e) {
+            console.warn("WebSocket upgrade rejected:", e);
+            return res.close();
+        }
     },
     open: (ws: WebSocket<ClientWrapper>) => {
         const ipAddress = Buffer.from(ws.getRemoteAddressAsText()).toString();

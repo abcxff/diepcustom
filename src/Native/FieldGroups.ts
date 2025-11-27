@@ -460,7 +460,7 @@ export class CameraGroup {
         cameraX: 0,
         cameraY: 0,
         score: 0,
-        respawnLevel: 0,
+        respawnLevel: 1,
         killedBy: "",
         spawnTick: 0,
         deathTick: -1,

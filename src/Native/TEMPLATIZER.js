@@ -339,7 +339,8 @@ const FIELD_GROUPS = [
             {
                 "name": "respawnLevel",
                 "encType": "vi",
-                "type": "number"
+                "type": "number",
+                "default": 1
             },
             {
                 "name": "killedBy",

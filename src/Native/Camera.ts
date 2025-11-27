@@ -16,19 +16,18 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
+import * as config from "../config";
 import type GameServer from "../Game";
 import type Client from "../Client";
-import Writer from "../Coder/Writer";
 import TankBody from "../Entity/Tank/TankBody";
 import ObjectEntity from "../Entity/Object";
+import ClientHandle from "./ClientHandle";
 
-import { Entity, EntityStateFlags } from "./Entity";
+import { Entity } from "./Entity";
 import { CameraGroup, RelationsGroup } from "./FieldGroups";
-import { CameraFlags, ClientBound, levelToScore, levelToScoreTable, PhysicsFlags, Stat } from "../Const/Enums";
+import { CameraFlags, levelToScore, levelToScoreTable, Stat } from "../Const/Enums";
 import { getTankById } from "../Const/TankDefinitions";
-import { removeFast } from "../util";
 
-import { compileCreation, compileUpdate } from "./UpcreateCompiler";
 import { maxPlayerLevel } from "../config";
 
 /**
@@ -43,6 +42,43 @@ export class CameraEntity extends Entity {
 
     /** Entity being spectated if any (deathscreen). */
     public spectatee: ObjectEntity | null = null;
+
+    /** Client handle for view and compilation. Only exists for client cameras. */
+    public clientHandle: ClientHandle | null = null;
+
+    /** Ticks waiting for reconnection. Only used when clientHandle is null but camera is waiting for reconnect. */
+    protected ticksWaitingForReconnect: number = 0;
+
+    /** Reconnect key */
+    public reconnectionKey: string | null = null;
+
+    /** Always existant relations field group. Present in all GUI/camera entities. */
+    public relationsData: RelationsGroup = new RelationsGroup(this);
+
+    public constructor(game: GameServer) {
+        super(game);
+        this.relationsData.values.team = this;
+    }
+
+    /** Deals with deleting the tank body */
+    public override delete() {
+        const player = this.cameraData.values.player;
+        if (Entity.exists(player) && player instanceof TankBody) {
+            if (this.cameraData.values.level <= 5) {
+                return player.destroy();
+            }
+        }
+
+        return super.delete();
+    }
+
+    /** Calculates the amount of stats available at a specific level. */
+    public static calculateStatCount(level: number) {
+        if (level <= 0) return 0;
+        if (level <= 28) return level - 1;
+
+        return Math.floor(level / 3) + 18;
+    }
 
     /** Used to set the current camera's level. Should be the only way used to set level. */
     public setLevel(level: number) {
@@ -61,7 +97,7 @@ export class CameraEntity extends Entity {
         }
 
         // Update stats available
-        const statIncrease = ClientCamera.calculateStatCount(level) - ClientCamera.calculateStatCount(previousLevel);
+        const statIncrease = CameraEntity.calculateStatCount(level) - CameraEntity.calculateStatCount(previousLevel);
         this.cameraData.statsAvailable += statIncrease;
 
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor || 1);
@@ -69,7 +105,20 @@ export class CameraEntity extends Entity {
 
     /** Returns the camera's client if it exists */
     public getClient(): Client | null {
-        return null;
+        return this.clientHandle?.client ?? null;
+    }
+
+    public setClient(client: Client) {
+        if (this.clientHandle) {
+            console.trace("ClientHandle already exists for this camera, cancelling");
+            return;
+        }
+        this.clientHandle = new ClientHandle(client);
+        this.reconnectionKey = client.reconnectionKey;
+        this.ticksWaitingForReconnect = 0;
+        if (this.cameraData.values.player instanceof TankBody) {
+            this.cameraData.values.player.inputs = client.inputs;
+        }
     }
 
     /** Sets the current FOV by field factor. */
@@ -109,226 +158,46 @@ export class CameraEntity extends Entity {
         } else {
             this.cameraData.flags |= CameraFlags.usesCameraCoords;
         }
-    }
-}
 
-/**
- * This is the entity that controls stats and other gui data.
- * It is also the class that compiles entity data and sends it to the client.
- */
-export default class ClientCamera extends CameraEntity {
-    /** Client interface. */
-    public client: Client;
-    /** All entities in the view of the camera. Represented by id. */
-    private view: Entity[] = [];
-
-    /** Always existant relations field group. Present in all GUI/camera entities. */
-    public relationsData: RelationsGroup = new RelationsGroup(this);
-
-    /** Calculates the amount of stats available at a specific level. */
-    public static calculateStatCount(level: number) {
-        if (level <= 0) return 0;
-        if (level <= 28) return level - 1;
-
-        return Math.floor(level / 3) + 18;
-    }
-
-    public constructor(game: GameServer, client: Client) {
-        super(game);
-
-        this.client = client;
-
-        this.cameraData.values.respawnLevel = this.cameraData.values.level = this.cameraData.values.score = 1;
-
-        this.cameraData.values.FOV = .35;
-        this.relationsData.values.team = this;
-    }
-    
-    /** Returns the camera's client. */
-    public override getClient(): Client {
-        return this.client;
-    }
-
-    /** Adds an entity the camera's current view. */
-    private addToView(entity: Entity) {
-        let c = this.view.find(r => r.id === entity.id)
-        if (c) {
-            console.log(c.toString(), entity.toString(), c === entity)
-        }
-        this.view.push(entity);
-    }
-
-    /** Removes an entity the camera's current view. */
-    private removeFromView(id: number) {
-        const index = this.view.findIndex(r => r.id === id);
-        if (index === -1) return;
-
-        removeFast(this.view, index);
-    }
-
-    /** Updates the camera's current view. */
-    private updateView(tick: number) {
-        const w = this.client.write().u8(ClientBound.Update).vu(tick);
-
-        const deletes: { id: number, hash: number, noDelete?: boolean }[] = [];
-        const updates: Entity[] = [];
-        const creations: Entity[] = [];
-
-        const fov = this.cameraData.values.FOV;
-        const width = (1920 / fov) / 1.5;
-        const height = (1080 / fov) / 1.5;
-
-        // TODO(speed)
-        const entitiesNearRange = this.game.entities.collisionManager.retrieve(this.cameraData.values.cameraX, this.cameraData.values.cameraY, width, height);
-        const entitiesInRange: ObjectEntity[] = [];
-
-        const l = this.cameraData.values.cameraX - width;
-        const r = this.cameraData.values.cameraX + width;
-        const t = this.cameraData.values.cameraY - height;
-        const b = this.cameraData.values.cameraY + height;
-        for (let i = 0; i < entitiesNearRange.data.length; ++i) {
-            let chunk = entitiesNearRange.data[i];
-
-            while (chunk) {
-                const bitValue = chunk & -chunk;
-                const bitIdx = 31 - Math.clz32(bitValue);
-                chunk ^= bitValue;
-                const id = 32 * i + bitIdx;
-
-                const entity = this.game.entities.inner[id] as ObjectEntity;
-                const width = entity.physicsData.values.sides === 2 ? entity.physicsData.values.size / 2 : entity.physicsData.values.size;
-                const size = entity.physicsData.values.sides === 2 ? entity.physicsData.values.width / 2 : entity.physicsData.values.size;
-                        
-                if (entity.positionData.values.x - width < r &&
-                    entity.positionData.values.y + size > t &&
-                    entity.positionData.values.x + width > l &&
-                    entity.positionData.values.y - size < b
-                ) {
-                    if (entity !== this.cameraData.values.player &&!(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) {
-                        entitiesInRange.push(entity);
-                    }
-                }
-            }
-        }
-
-        for (let id = 0; id < this.game.entities.globalEntities.length; ++id) {
-            const entity = this.game.entities.inner[this.game.entities.globalEntities[id]] as ObjectEntity;
-            
-            if (!entitiesInRange.includes(entity)) entitiesInRange.push(entity);
-        }
-
-        if (Entity.exists(this.cameraData.values.player) && this.cameraData.values.player instanceof ObjectEntity) entitiesInRange.push(this.cameraData.values.player);
-
-        for (let i = 0; i < this.view.length; ++i) {
-            const entity = this.view[i]
-            if (entity instanceof ObjectEntity) {
-                // TODO(speed)
-                // Orphan children must be destroyed
-                if (!entitiesInRange.includes(entity.rootParent)) {
-                    deletes.push({id: entity.id, hash: entity.preservedHash});
-                    continue;
-                }
-            }
-            // If the entity is gone, notify the client, if its updated, notify the client
-            if (entity.hash === 0) {
-                deletes.push({ id: entity.id, hash: entity.preservedHash });
-            } else if (entity.entityState & EntityStateFlags.needsCreate) {
-                if (entity.entityState & EntityStateFlags.needsDelete) deletes.push({hash: entity.hash, id: entity.id, noDelete: true});
-                creations.push(entity);
-            } else if (entity.entityState & EntityStateFlags.needsUpdate) {
-                updates.push(entity);
-            }
-        }
-
-        // Now compile
-        w.vu(deletes.length);
-        for (let i = 0; i < deletes.length; ++i) {
-            w.entid(deletes[i]);
-            if (!deletes[i].noDelete) this.removeFromView(deletes[i].id);
-        }
-
-        // Yeah.
-        if (this.view.length === 0) {
-            creations.push(this.game.arena, this);
-            this.view.push(this.game.arena, this);
+        // Update view if this is a client camera
+        const client = this.getClient();
+        if (client && client.terminated) {
+            this.clientHandle = null;
         }
         
-        const entities = this.game.entities;
-        for (const id of this.game.entities.otherEntities) {
-            // TODO(speed)
-            if (this.view.findIndex(r => r.id === id) === -1) {
-                const entity = entities.inner[id];
-
-                if (!entity) continue;
-                if (entity instanceof CameraEntity) continue;
-
-                creations.push(entity);
-
-                this.addToView(entity);
+        if (this.clientHandle) {
+            const fov = this.cameraData.values.FOV;
+            const width = (1920 / fov) / 1.5;
+            const height = (1080 / fov) / 1.5;
+            
+            this.clientHandle.updateView(
+                tick,
+                this.cameraData.values.player as ObjectEntity | null,
+                this.cameraData.values.cameraX,
+                this.cameraData.values.cameraY,
+                width,
+                height,
+                fov
+            );
+        } else if (this.reconnectionKey) {
+            // Give 30s for reconnection, if none, delete camera
+            this.ticksWaitingForReconnect += 1;
+            if (this.ticksWaitingForReconnect > 30 * config.tps) {
+                this.reconnectionKey = null;
+                return this.delete();
             }
         }
-
-        for (const entity of entitiesInRange) {
-            if (this.view.indexOf(entity) === -1) {
-                creations.push(entity);
-                this.addToView(entity);
-
-                if (entity instanceof ObjectEntity) {
-                    if (entity.children.length && !entity.isChild) {
-                        // add any of its children
-                        this.view.push.apply(this.view, entity.children);
-                        creations.push.apply(creations, entity.children);
-                    }
-                }
-            } else {
-                if (!Entity.exists(entity)) throw new Error("wtf");
-                // add untracked children, if it has any
-                if (entity.children.length && !entity.isChild) {
-                    for (let child of entity.children) {
-                        if (this.view.findIndex(r => r.id === child.id) === -1) {
-                            this.view.push.apply(this.view, entity.children);
-                            creations.push.apply(creations, entity.children);
-                        } //else if (child.hash === 0) deletes.push({hash: child.preservedHash, id: child})
-                    }
-                }
-            }
-        }
-
-        // Arrays of entities
-        w.vu(creations.length + updates.length);
-        for (let i = 0; i < updates.length; ++i) {
-            this.compileUpdate(w, updates[i]);
-        }
-        for (let i = 0; i < creations.length; ++i) {
-            this.compileCreation(w, creations[i]);
-        }
-
-        w.send();
     }
 
-    /** Entity creation compiler function... Run! */
-    private compileCreation(w: Writer, entity: Entity) {
-        compileCreation(this, w, entity);
+    public markForReconnection() {
+        this.ticksWaitingForReconnect = 0;
+        this.clientHandle = null;
     }
 
-    /** Entity update compiler function... Run! */
-    private compileUpdate(w: Writer, entity: Entity) {
-        compileUpdate(this, w, entity);
-    }
-
-    public tick(tick: number) {
-        super.tick(tick);
-
-        if (!Entity.exists(this.cameraData.values.player) || !(this.cameraData.values.player instanceof TankBody)) {
-            if (Entity.exists(this.spectatee)) {
-                const pos = this.spectatee.rootParent.positionData.values;
-                this.cameraData.cameraX = pos.x;
-                this.cameraData.cameraY = pos.y;
-                this.cameraData.flags |= CameraFlags.usesCameraCoords;
-            }
-        }
-
-        // always last
-        this.updateView(tick);
+    public expectingReconnection(): boolean {
+        return this.reconnectionKey !== null && this.clientHandle === null;
     }
 }
+
+export default CameraEntity;
+

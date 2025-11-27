@@ -105,3 +105,6 @@ export const defaultAccessLevel: AccessLevel = AccessLevel.BetaAccess;
 
 /** Maximum level that player tanks can have. Default: 45 */
 export const maxPlayerLevel = 45;
+
+/** Enable client reconnection feature. When enabled, clients can reconnect and reclaim their previous tank. */
+export const enableReconnection: boolean = false;

@@ -280,18 +280,21 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 if (client && client.accessLevel < AccessLevel.FullAccess) this.setInvulnerability(false);
             }
         }
-        if (!this.deletionAnimation && !this.inputs.deleted) this.physicsData.size = this.baseSize * this.cameraEntity.sizeFactor;
-        else this.regenPerTick = 0;
+        if (!this.deletionAnimation) {
+            this.physicsData.size = this.baseSize * this.cameraEntity.sizeFactor;
+        }
+        
+        if (this.deletionAnimation) this.regenPerTick = 0;
 
         super.tick(tick);
 
         // If we're currently in a deletion animation
         if (this.deletionAnimation) return;
 
-        if (this.inputs.deleted) {
-            if (this.cameraEntity.cameraData.values.level <= 5) return this.destroy();
+        if (!Entity.exists(this.cameraEntity)) {
             this.lastDamageTick = tick;
             this.healthData.health -= 2 + this.healthData.values.maxHealth / 500;
+            this.regenPerTick = 0;
 
             if (this.isInvulnerable) this.setInvulnerability(false);
             if (this.styleData.values.flags & StyleFlags.isFlashing) {
@@ -299,7 +302,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 this.damageReduction = 1.0;
             }
             return;
-            // return this.destroy();
         }
 
         if (this.definition.flags.zoomAbility && (this.inputs.flags & InputFlags.rightclick)) {
