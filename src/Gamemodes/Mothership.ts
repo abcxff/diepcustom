@@ -106,7 +106,7 @@ export default class MothershipArena extends ArenaEntity {
         for (let i = 0; i < length; ++i) {
             const mothership = this.motherships[i];
             const team = mothership.relationsData.values.team;
-            const isTeamATeam = team instanceof TeamEntity;
+            const isTeamATeam = TeamEntity.isTeam(team);
             if (mothership.styleData.values.color === Color.Tank) this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = Color.ScoreboardBar;
             else this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = mothership.styleData.values.color;
             this.arenaData.values.scoreboardNames[i as ValidScoreboardIndex] = isTeamATeam ? team.teamName : `Mothership ${i+1}`;

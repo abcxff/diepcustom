@@ -258,8 +258,7 @@ export default class Client {
                 this.inputs.mouse.y = util.constrain(mouseY, minY, maxY);
 
                 const player = camera.cameraData.values.player;
-                if (!Entity.exists(player) || !(player instanceof TankBody)) return;
-
+                if (!TankBody.isTank(player)) return;
                 // No AI
                 if (this.inputs.isPossessing && this.accessLevel !== config.AccessLevel.FullAccess) return;
                 
@@ -346,7 +345,7 @@ export default class Client {
                 if (camera.cameraData.statsAvailable <= 0) return;
 
                 const player = camera.cameraData.values.player;
-                if (!Entity.exists(player) || !(player instanceof TankBody)) return;
+                if (!TankBody.isTank(player)) return;
 
                 const definition = getTankById(player.currentTank);
                 if (!definition || !definition.stats.length) return;
@@ -366,7 +365,7 @@ export default class Client {
             }
             case ServerBound.TankUpgrade: {
                 const player = camera.cameraData.values.player;
-                if (!Entity.exists(player) || !(player instanceof TankBody)) return;
+                if (!TankBody.isTank(player)) return;
 
                 const definition = getTankById(player.currentTank);
                 const tankId: Tank = r.vi() ^ TANK_XOR;
@@ -460,7 +459,7 @@ export default class Client {
         ai.state = AIState.possessed;
 
         // Silly workaround to change color of player when needed
-        if (this.camera?.cameraData.values.player instanceof ObjectEntity) {
+        if (ObjectEntity.isObject(this.camera?.cameraData.values.player)) {
             const color = this.camera.cameraData.values.player.styleData.values.color;
             this.camera.cameraData.values.player.styleData.values.color = -1 as Color;
             this.camera.cameraData.values.player.styleData.color = color;
@@ -480,7 +479,7 @@ export default class Client {
         this.camera.cameraData.player = ai.owner;
         this.camera.cameraData.movementSpeed = ai.movementSpeed;
 
-        if (ai.owner instanceof TankBody) {
+        if (TankBody.isTank(ai.owner)) {
             // If its a TankBody, set the stats, level, and tank to that of the TankBody
             this.camera.cameraData.tank = ai.owner.cameraEntity.cameraData.values.tank;
             this.camera.setLevel(ai.owner.cameraEntity.cameraData.values.level);
@@ -490,13 +489,13 @@ export default class Client {
             for (let i = 0; i < StatCount; ++i) this.camera.cameraData.statNames[i as Stat] = ai.owner.cameraEntity.cameraData.statNames.values[i];
 
             this.camera.cameraData.FOV = ai.owner.cameraEntity.cameraData.FOV;
-        } else if (ai.owner instanceof AbstractBoss) {
+        } else if (AbstractBoss.isBoss(ai.owner)) {
             this.camera.setLevel(75);
             this.camera.cameraData.FOV = 0.35;
         } else {
             this.camera.setLevel(30);
         }
-        
+
         this.camera.cameraData.statsAvailable = 0;
         this.camera.cameraData.score = 0;
         this.camera.entityState = EntityStateFlags.needsCreate | EntityStateFlags.needsDelete;

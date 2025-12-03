@@ -234,7 +234,6 @@ export default class HashGrid implements CollisionManager {
                         // Ensure (x, y) -> x.id < y.id
                         callback(entityB, entityA);
                     }
-                
                 }
             }
         }

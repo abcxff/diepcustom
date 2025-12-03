@@ -17,7 +17,9 @@
 */
 
 import GameServer from "../Game";
+
 import ObjectEntity from "../Entity/Object";
+import LivingEntity from "../Entity/Live";
 
 import CollisionManager from "../Physics/CollisionManager";
 import HashGrid from "../Physics/HashGrid";
@@ -26,7 +28,7 @@ import { CameraEntity } from "./Camera";
 import { Entity } from "./Entity";
 import { AI } from "../Entity/AI";
 import { removeFast } from "../util";
-import LivingEntity from "../Entity/Live";
+import { EntityTags } from "../Const/Enums";
 
 /**
  * Manages all entities in the game.
@@ -71,9 +73,10 @@ export default class EntityManager {
             entity.id = id;
             entity.hash = entity.preservedHash = this.hashTable[id] += 1;
             this.inner[id] = entity;
-            
 
+            // TODO figure out why instanceof is neccessary for this
             if (this.collisionManager && entity instanceof ObjectEntity) {
+                // Nothing
             } else if (entity instanceof CameraEntity) this.cameras.push(id);
             else this.otherEntities.push(id);
 
@@ -92,9 +95,9 @@ export default class EntityManager {
         if (!entity) throw new RangeError("Deleting entity that isn't in the game?");
         entity.hash = 0;
 
-        if (this.collisionManager && entity instanceof ObjectEntity) {
+        if (this.collisionManager && ObjectEntity.isObject(entity)) {
             // Nothing I guess
-        } else if (entity instanceof CameraEntity) removeFast(this.cameras, this.cameras.indexOf(id));
+        } else if (entity.cameraData) removeFast(this.cameras, this.cameras.indexOf(id));
         else removeFast(this.otherEntities, this.otherEntities.indexOf(id));
 
         // TODO(speed)[not super important]:
@@ -126,8 +129,8 @@ export default class EntityManager {
         ObjectEntity.handleCollision(entityA, entityB);
 
         if (
-            entityA instanceof LivingEntity &&
-            entityB instanceof LivingEntity
+            LivingEntity.isLive(entityA) &&
+            LivingEntity.isLive(entityB)
         ) {
             LivingEntity.handleCollision(entityA, entityB);
         }
@@ -145,7 +148,7 @@ export default class EntityManager {
 
             if (!Entity.exists(entity)) continue;
 
-            if (entity instanceof ObjectEntity && entity.isPhysical) {
+            if (ObjectEntity.isObject(entity) && entity.isPhysical) {
                 this.collisionManager.insert(entity);
             }
         }
@@ -170,7 +173,7 @@ export default class EntityManager {
         for (let id = 0; id <= this.lastId; ++id) {
             const entity = this.inner[id];
 
-            if (entity && entity instanceof ObjectEntity && entity.isPhysical) {
+            if (entity && ObjectEntity.isObject(entity) && entity.isPhysical) {
                 entity.applyPhysics();
             }
         }
@@ -180,8 +183,8 @@ export default class EntityManager {
 
             if (!Entity.exists(entity)) continue;
 
-            if (!(entity instanceof CameraEntity)) {
-                if (!(entity instanceof ObjectEntity) || !entity.isChild) entity.tick(tick);
+            if (!(entity.cameraData)) {
+                if (!(ObjectEntity.isObject(entity)) || !entity.isChild) entity.tick(tick);
             }
         }
 

@@ -40,8 +40,9 @@ export const enum Color {
     EnemyTank = 15,
     NecromancerSquare = 16,
     Fallen = 17,
+    EnemyHexagon = 18,
 
-    kMaxColors = 18
+    kMaxColors = 19
 }
 
 /**
@@ -66,6 +67,7 @@ export const ColorsHexCode: Record<Color, number> = {
     [Color.EnemyTank]: 0xF14E54,
     [Color.NecromancerSquare]: 0xFCC376,
     [Color.Fallen]: 0xC0C0C0,
+    [Color.EnemyHexagon]: 0xFCAD76,
     [Color.kMaxColors]: 0x000000
 }
 
@@ -279,6 +281,17 @@ export const enum HealthFlags {
 export const enum NameFlags {
     hiddenName = 1 << 0,
     highlightedName = 1 << 1
+}
+
+/**
+ * Entity type flags.
+ */
+export const enum EntityTags {
+    isShape = 1 << 0,
+    isTank = 1 << 1,
+    isDominator = 1 << 2,
+    isBoss = 1 << 3,
+    isShiny= 1 << 4,
 }
 
 /**

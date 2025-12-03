@@ -158,7 +158,7 @@ export default class Barrel extends ObjectEntity {
 
         let tankDefinition: TankDefinition | null = null;
 
-        if (this.rootParent instanceof TankBody) tankDefinition = this.rootParent.definition;
+        if (TankBody.isTank(this.rootParent)) tankDefinition = this.rootParent.definition;
 
         let projectile: ObjectEntity | null = null;
 

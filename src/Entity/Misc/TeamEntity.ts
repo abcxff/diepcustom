@@ -58,4 +58,10 @@ export class TeamEntity extends Entity implements TeamGroupEntity {
         this.teamData.values.teamColor = color;
         this.teamName = name;
     }
+
+    public static isTeam(entity: Entity | null | undefined): entity is TeamEntity {
+        if (!entity) return false;
+
+        return !!entity.teamData
+    }
 }

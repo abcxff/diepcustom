@@ -54,7 +54,7 @@ export class CameraEntity extends Entity {
             this.cameraData.score = levelToScore(level);
 
             const player = this.cameraData.values.player;
-            if (Entity.exists(player) && player instanceof TankBody) {
+            if (TankBody.isTank(player)) {
                 player.scoreData.score = this.cameraData.values.score;
                 player.scoreReward = this.cameraData.values.score;
             }
@@ -80,12 +80,12 @@ export class CameraEntity extends Entity {
     public tick(tick: number) {
         if (Entity.exists(this.cameraData.values.player)) {
             const focus = this.cameraData.values.player;
-            if (!(this.cameraData.values.flags & CameraFlags.usesCameraCoords) && focus instanceof ObjectEntity) {
+            if (!(this.cameraData.values.flags & CameraFlags.usesCameraCoords) && ObjectEntity.isObject(focus)) {
                 this.cameraData.cameraX = focus.rootParent.positionData.values.x;
                 this.cameraData.cameraY = focus.rootParent.positionData.values.y;
             }
 
-            if (this.cameraData.values.player instanceof TankBody) {
+            if (TankBody.isTank(this.cameraData.values.player)) {
                 // Update player related data
                 const player = this.cameraData.values.player as TankBody;
 
@@ -204,7 +204,7 @@ export default class ClientCamera extends CameraEntity {
                     entity.positionData.values.x + width > l &&
                     entity.positionData.values.y - size < b
                 ) {
-                    if (entity !== this.cameraData.values.player &&!(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) {
+                    if (entity !== this.cameraData.values.player && entity.styleData.values.opacity !== 0) { // Invisible tanks shouldn't be sent
                         entitiesInRange.push(entity);
                     }
                 }
@@ -217,11 +217,11 @@ export default class ClientCamera extends CameraEntity {
             if (!entitiesInRange.includes(entity)) entitiesInRange.push(entity);
         }
 
-        if (Entity.exists(this.cameraData.values.player) && this.cameraData.values.player instanceof ObjectEntity) entitiesInRange.push(this.cameraData.values.player);
+        if (Entity.exists(this.cameraData.values.player)) entitiesInRange.push(this.cameraData.values.player as ObjectEntity);
 
         for (let i = 0; i < this.view.length; ++i) {
             const entity = this.view[i]
-            if (entity instanceof ObjectEntity) {
+            if (ObjectEntity.isObject(entity)) {
                 // TODO(speed)
                 // Orphan children must be destroyed
                 if (!entitiesInRange.includes(entity.rootParent)) {
@@ -260,10 +260,10 @@ export default class ClientCamera extends CameraEntity {
                 const entity = entities.inner[id];
 
                 if (!entity) continue;
-                if (entity instanceof CameraEntity) continue;
+
+                if (entity.cameraData) continue;
 
                 creations.push(entity);
-
                 this.addToView(entity);
             }
         }
@@ -273,7 +273,7 @@ export default class ClientCamera extends CameraEntity {
                 creations.push(entity);
                 this.addToView(entity);
 
-                if (entity instanceof ObjectEntity) {
+                if (ObjectEntity.isObject(entity)) {
                     if (entity.children.length && !entity.isChild) {
                         // add any of its children
                         this.view.push.apply(this.view, entity.children);
@@ -319,7 +319,7 @@ export default class ClientCamera extends CameraEntity {
     public tick(tick: number) {
         super.tick(tick);
 
-        if (!Entity.exists(this.cameraData.values.player) || !(this.cameraData.values.player instanceof TankBody)) {
+        if (!Entity.exists(this.cameraData.values.player)) {
             if (Entity.exists(this.spectatee)) {
                 const pos = this.spectatee.rootParent.positionData.values;
                 this.cameraData.cameraX = pos.x;
@@ -327,7 +327,6 @@ export default class ClientCamera extends CameraEntity {
                 this.cameraData.flags |= CameraFlags.usesCameraCoords;
             }
         }
-
         // always last
         this.updateView(tick);
     }

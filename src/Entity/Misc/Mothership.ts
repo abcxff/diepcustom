@@ -79,10 +79,10 @@ export default class Mothership extends TankBody {
         if ((this.game.arena.state >= ArenaState.OVER)) return; // Do not send a defeat notification if the game has been won already
 
         const team = this.relationsData.values.team;
-        const teamIsATeam = team instanceof TeamEntity;
+        const teamIsATeam = TeamEntity.isTeam(team);
 
         const killerTeam = killer.relationsData.values.team;
-        const killerTeamIsATeam = killerTeam instanceof TeamEntity;
+        const killerTeamIsATeam = TeamEntity.isTeam(killerTeam);
 
         // UNCOMMENT TO ALLOW SOLO KILLS
         // if (!killerTeamIsATeam) return;

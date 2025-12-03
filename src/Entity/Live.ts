@@ -18,7 +18,8 @@
 
 import ObjectEntity from "./Object";
 
-import { StyleFlags } from "../Const/Enums";
+import { Entity } from "../Native/Entity";
+import { StyleFlags, EntityTags } from "../Const/Enums";
 import { HealthGroup } from "../Native/FieldGroups";
 
 /**
@@ -56,6 +57,12 @@ export default class LivingEntity extends ObjectEntity {
         if (animate) this.healthData.health = 0;
 
         super.destroy(animate);
+    }
+    
+    public static isLive(entity: Entity | null | undefined): entity is LivingEntity {
+        if (!ObjectEntity.isObject(entity)) return false;
+
+        return !!entity.healthData;
     }
 
     /** Applies damage to two entity after colliding with eachother. */

@@ -15,6 +15,7 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
+
 import ArenaEntity from "../Native/Arena";
 import GameServer from "../Game";
 import MazeGenerator, { MazeGeneratorConfig } from "../Systems/MazeGenerator";

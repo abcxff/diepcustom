@@ -19,11 +19,13 @@
 import GameServer from "../../Game";
 import AbstractShape from "./AbstractShape";
 
-import { Color } from "../../Const/Enums";
+import { Color, EntityTags } from "../../Const/Enums";
+import { shinyChance } from "../../config";
 
 export default class Square extends AbstractShape {
-    public constructor(game: GameServer, shiny=Math.random() < 0.000001) {
+    public constructor(game: GameServer, shiny=Math.random() < shinyChance) {
         super(game);
+
         this.nameData.values.name = "Square";
         this.healthData.values.health = this.healthData.values.maxHealth = 10;
         this.physicsData.values.size = 55 * Math.SQRT1_2;
@@ -37,6 +39,9 @@ export default class Square extends AbstractShape {
         if (shiny) {
             this.scoreReward *= 100;
             this.healthData.values.health = this.healthData.values.maxHealth *= 10;
+            this.entityTags |= EntityTags.isShiny;
         }
+        
+        this.arenaMobID = "square";
     }
 }

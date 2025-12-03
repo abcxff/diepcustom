@@ -22,7 +22,7 @@ import Vector from "../Physics/Vector";
 
 import { PhysicsGroup, PositionGroup, RelationsGroup, StyleGroup } from "../Native/FieldGroups";
 import { Entity } from "../Native/Entity";
-import { PositionFlags, PhysicsFlags } from "../Const/Enums";
+import { PositionFlags, PhysicsFlags, EntityTags } from "../Const/Enums";
 
 /**
  * The animator for how entities delete (the opacity and size fade out).
@@ -70,10 +70,13 @@ class DeletionAnimation {
 export default class ObjectEntity extends Entity {
     /** Always existant relations field group. Present in all objects. */
     public relationsData: RelationsGroup = new RelationsGroup(this);
+
     /** Always existant physics field group. Present in all objects. */
     public physicsData: PhysicsGroup = new PhysicsGroup(this);
+
     /** Always existant position field group. Present in all objects. */
     public positionData: PositionGroup = new PositionGroup(this);
+
     /** Always existant style field group. Present in all objects. */
     public styleData: StyleGroup = new StyleGroup(this);
 
@@ -92,6 +95,12 @@ export default class ObjectEntity extends Entity {
     /** Used to determine the parent of all parents. */
     public rootParent: ObjectEntity = this;
 
+    /** Entity tags. */
+    public entityTags: number = 0;
+    
+    /** Entity type ID. */
+    public arenaMobID: string = ""
+
     /** Velocity used for physics. */
     public velocity = new Vector();
 
@@ -107,6 +116,12 @@ export default class ObjectEntity extends Entity {
         super(game);
 
         this.styleData.zIndex = game.entities.zIndex++;
+    }
+    
+    public static isObject(entity: Entity | null | undefined): entity is ObjectEntity {
+        if (!entity) return false;
+
+        return !!entity.physicsData;
     }
 
     /** Receives collision pairs from CollisionManager and applies kb */

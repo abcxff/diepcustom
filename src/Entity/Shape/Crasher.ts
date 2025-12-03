@@ -59,6 +59,8 @@ export default class Crasher extends AbstractShape {
         this.ai.viewRange = 2000;
         this.ai.aimSpeed = (this.ai.movementSpeed = this.targettingSpeed);
         this.ai['_findTargetInterval'] = tps;
+
+        this.arenaMobID = "crasher";
     }
 
     tick(tick: number) {

@@ -17,14 +17,16 @@
 */
 
 import GameServer from "../../Game";
+import ObjectEntity from "../Object";
+import LivingEntity from "../Live";
 import Barrel from "../Tank/Barrel";
+import TankBody from "../Tank/TankBody";
 
-import { ClientBound, Color, PositionFlags, NameFlags } from "../../Const/Enums";
+import { ClientBound, Color, PositionFlags, NameFlags, EntityTags } from "../../Const/Enums";
 import { VectorAbstract } from "../../Physics/Vector";
 import { AI, AIState, Inputs } from "../AI";
 import { NameGroup } from "../../Native/FieldGroups";
-import LivingEntity from "../Live";
-import TankBody from "../Tank/TankBody";
+import { Entity } from "../../Native/Entity";
 import { CameraEntity } from "../../Native/Camera";
 
 
@@ -137,6 +139,14 @@ export default class AbstractBoss extends LivingEntity {
         this.reloadTime = 15 * Math.pow(0.914, 7);
 
         this.healthData.values.health = this.healthData.values.maxHealth = 3000;
+
+        this.entityTags |= EntityTags.isBoss;
+    }
+    
+    public static isBoss(entity: Entity | null | undefined): entity is AbstractBoss {
+        if (!ObjectEntity.isObject(entity)) return false;
+
+        return !!(entity.entityTags & EntityTags.isBoss);
     }
 
     public get sizeFactor() {
@@ -158,8 +168,8 @@ export default class AbstractBoss extends LivingEntity {
 
         let killerName: string;
 
-        if ((killer.nameData && killer.nameData.values.name && !(killer.nameData.values.flags & NameFlags.hiddenName))) {
-            killerName = killer.nameData.values.name; // in Diep.io, it should only show the name in notification if it is visible above the killer entity for whatever reason
+        if (TankBody.isTank(killer)) {
+            killerName = killer.nameData.values.name;
         } else {
             killerName = "an unnamed tank";
         }

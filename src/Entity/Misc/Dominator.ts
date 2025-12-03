@@ -100,10 +100,12 @@ export default class Dominator extends TankBody {
     }
 
     public onDeath(killer: LivingEntity) {
-        if (this.relationsData.values.team === this.game.arena && killer.relationsData.values.team instanceof TeamEntity) {
-            const killerTeam = killer.relationsData.values.team;
-            this.relationsData.team = killerTeam || this.game.arena;
-            this.styleData.color = this.relationsData.team.teamData?.teamColor || killer.styleData.values.color;
+        const killerTeam = killer.relationsData.values.team;
+        
+        if (TeamEntity.isTeam(killerTeam) && this.relationsData.values.team === this.game.arena) { // Only proper teams should capture doms
+            // capture neutral dominator
+            this.relationsData.team = killerTeam;
+            this.styleData.color = killerTeam.teamData.values.teamColor
             this.game.broadcast()
                 .u8(ClientBound.Notification)
                 .stringNT(`The ${this.prefix}${this.nameData.values.name} is now controlled by ${killerTeam.teamName}`)
