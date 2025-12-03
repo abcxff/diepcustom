@@ -18,10 +18,10 @@ export interface MazeGeneratorConfig {
  *  - Split into its own file on Wednesday 3rd of December 2025
  */
 export default class MazeGenerator {
+    /** The arena to place the walls in */
     public arena: ArenaEntity;
-
+    /** The variables that affect maze generation */
     public config: MazeGeneratorConfig;
-
     /** Stores all the "seed"s */
     public SEEDS: VectorAbstract[] = [];
     /** Stores all the "wall"s, contains cell based coords */
@@ -190,9 +190,12 @@ export default class MazeGenerator {
             this._buildWallFromGridCoord(x, y, width, height);
         }
     }
+
+    /** Checks if the given coordinates overlap with any wall */
     public isInWall(x: number, y: number): boolean {
-        const width = this.arena.width / 2
-        const height = this.arena.height / 2
+        const width = this.arena.width / 2;
+        const height = this.arena.height / 2;
+
         for (const wall of this.WALLS) {
             const wallX = wall.x * this.config.CELL_SIZE - width;
             const wallY = wall.y * this.config.CELL_SIZE - height;
