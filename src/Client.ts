@@ -258,7 +258,7 @@ export default class Client {
                 this.inputs.mouse.y = util.constrain(mouseY, minY, maxY);
 
                 const player = camera.cameraData.values.player;
-                if (!TankBody.isTank(player)) return;
+                if (!Entity.exists(player) || !TankBody.isTank(player)) return;
                 // No AI
                 if (this.inputs.isPossessing && this.accessLevel !== config.AccessLevel.FullAccess) return;
                 
