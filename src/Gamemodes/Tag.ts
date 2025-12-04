@@ -30,7 +30,7 @@ import { tps, scoreboardUpdateInterval } from "../config";
 import TeamBase from "../Entity/Misc/TeamBase"
 import Dominator from "../Entity/Misc/Dominator"
 
-import ShapeManager from "../Entity/Shape/Manager";
+import ShapeManager from "../Misc/ShapeManager";
 
 const arenaSize = 11150;
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamPurple, Color.TeamGreen];

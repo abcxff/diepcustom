@@ -19,7 +19,7 @@
 import GameServer from "../Game";
 import ArenaEntity, { ArenaState } from "../Native/Arena";
 
-import ShapeManager from "../Entity/Shape/Manager";
+import ShapeManager from "../Misc/ShapeManager";
 import { ArenaFlags } from "../Const/Enums";
 
 /**

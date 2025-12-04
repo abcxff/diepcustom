@@ -18,9 +18,9 @@
 
 import ArenaEntity from "../Native/Arena";
 import GameServer from "../Game";
-import MazeGenerator, { MazeGeneratorConfig } from "../Systems/MazeGenerator";
+import MazeGenerator, { MazeGeneratorConfig } from "../Misc/MazeGenerator";
 
-import ShapeManager from "../Entity/Shape/Manager";
+import ShapeManager from "../Misc/ShapeManager";
 
 /**
  * Manage shape count

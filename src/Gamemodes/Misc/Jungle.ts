@@ -19,7 +19,7 @@
 import GameServer from "../../Game";
 import ArenaEntity from "../../Native/Arena";
 
-import ShapeManager from "../../Entity/Shape/Manager";
+import ShapeManager from "../../Misc/ShapeManager";
 import TankBody from "../../Entity/Tank/TankBody";
 import AbstractShape from "../../Entity/Shape/AbstractShape";
 import Client from "../../Client";

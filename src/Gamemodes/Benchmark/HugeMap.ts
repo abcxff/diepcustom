@@ -16,7 +16,7 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import ShapeManager from "../../Entity/Shape/Manager";
+import ShapeManager from "../../Misc/ShapeManager";
 import GameServer from "../../Game";
 import ArenaEntity, { ArenaState } from "../../Native/Arena";
 

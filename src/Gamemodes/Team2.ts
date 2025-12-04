@@ -26,19 +26,8 @@ import TankBody from "../Entity/Tank/TankBody";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
 
-import MazeGenerator, { MazeGeneratorConfig } from "../Systems/MazeGenerator";
-
 const arenaSize = 11150;
 const baseWidth = arenaSize / (3 + 1/3) * 0.6; // 2007
-
-const config: MazeGeneratorConfig = {
-    CELL_SIZE: arenaSize * 2 / 40,
-    GRID_SIZE: 40,
-    SEED_AMOUNT: Math.floor(Math.random() * 30) + 30,
-    TURN_CHANCE: 0.2,
-    BRANCH_CHANCE: 0.2,
-    TERMINATION_CHANCE: 0.2
-}
 
 /**
  * Teams2 Gamemode Arena
@@ -50,9 +39,6 @@ export default class Teams2Arena extends ArenaEntity {
     public blueTeamBase: TeamBase;
     /** Red Team entity */
     public redTeamBase: TeamBase;
-
-    public mazeGenerator: MazeGenerator = new MazeGenerator(this, config);
-
     /** Maps clients to their teams */
     public playerTeamMap: WeakMap<Client, TeamBase> = new WeakMap();
     
@@ -61,7 +47,6 @@ export default class Teams2Arena extends ArenaEntity {
         this.updateBounds(arenaSize * 2, arenaSize * 2);
         this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
         this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
-        this.mazeGenerator.buildMaze();
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
@@ -76,10 +61,5 @@ export default class Teams2Arena extends ArenaEntity {
         this.playerTeamMap.set(client, base);
 
         if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
-    }
-    
-    public isValidSpawnLocation(x: number, y: number): boolean {
-        // Should never spawn inside walls
-        return !this.mazeGenerator.isInWall(x, y);
     }
 }

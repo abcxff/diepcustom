@@ -20,7 +20,7 @@ import { DevTank } from "../../Const/DevTankDefinitions";
 import { InputFlags, Stat, Tank } from "../../Const/Enums";
 import { Inputs } from "../../Entity/AI";
 
-import ShapeManager from "../../Entity/Shape/Manager";
+import ShapeManager from "../../Misc/ShapeManager";
 import TankBody from "../../Entity/Tank/TankBody";
 import GameServer from "../../Game";
 import ArenaEntity, { ArenaState } from "../../Native/Arena";

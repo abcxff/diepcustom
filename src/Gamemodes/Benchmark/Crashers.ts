@@ -18,7 +18,7 @@
 
 import AbstractShape from "../../Entity/Shape/AbstractShape";
 import Crasher from "../../Entity/Shape/Crasher";
-import ShapeManager from "../../Entity/Shape/Manager";
+import ShapeManager from "../../Misc/ShapeManager";
 import GameServer from "../../Game";
 import ArenaEntity, { ArenaState } from "../../Native/Arena";
 
