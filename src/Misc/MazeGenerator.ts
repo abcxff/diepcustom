@@ -3,17 +3,17 @@ import MazeWall from "../Entity/Misc/MazeWall";
 import { VectorAbstract } from "../Physics/Vector";
 
 export interface MazeGeneratorConfig {
-    CELL_SIZE: number,
-    GRID_SIZE: number,
-    SEED_AMOUNT: number,
-    TURN_CHANCE: number,
-    BRANCH_CHANCE: number,
-    TERMINATION_CHANCE: number
+    cellSize: number,
+    gridSize: number,
+    seedAmount: number,
+    turnChance: number,
+    branchChance: number,
+    terminationChance: number
 }
 
 /**
  * Implementation details:
- * Maze map generator by damocles <github.com/SpanksMcYeet>
+ * Maze map generator by damocles <https://github.com/lunacles>
  *  - Added into codebase on Saturday 3rd of December 2022
  *  - Split into its own file on Wednesday 3rd of December 2025
  */
@@ -23,39 +23,39 @@ export default class MazeGenerator {
     /** The variables that affect maze generation */
     public config: MazeGeneratorConfig;
     /** Stores all the "seed"s */
-    public SEEDS: VectorAbstract[] = [];
+    public seeds: VectorAbstract[] = [];
     /** Stores all the "wall"s, contains cell based coords */
-    public WALLS: (VectorAbstract & {width: number, height: number})[] = [];
+    public walls: (VectorAbstract & {width: number, height: number})[] = [];
     /** Rolled out matrix of the grid */
-    public MAZE: Uint8Array;
+    public maze: Uint8Array;
     
     constructor(arena: ArenaEntity, config: MazeGeneratorConfig) {
         this.arena = arena;
         
         this.config = config;
         
-        this.MAZE = new Uint8Array(config.GRID_SIZE * config.GRID_SIZE);
+        this.maze = new Uint8Array(config.gridSize * config.gridSize);
     }
     /** Creates a maze wall from cell coords */
-    public _buildWallFromGridCoord(gridX: number, gridY: number, gridW: number, gridH: number) {
-        const scaledW = gridW * this.config.CELL_SIZE;
-        const scaledH = gridH * this.config.CELL_SIZE;
-        const scaledX = gridX * this.config.CELL_SIZE - this.arena.width / 2 + (scaledW / 2);
-        const scaledY = gridY * this.config.CELL_SIZE - this.arena.height / 2 + (scaledH / 2);
+    public buildWallFromGridCoord(gridX: number, gridY: number, gridW: number, gridH: number) {
+        const scaledW = gridW * this.config.cellSize;
+        const scaledH = gridH * this.config.cellSize;
+        const scaledX = gridX * this.config.cellSize - this.arena.width / 2 + (scaledW / 2);
+        const scaledY = gridY * this.config.cellSize - this.arena.height / 2 + (scaledH / 2);
         new MazeWall(this.arena.game, scaledX, scaledY, scaledH, scaledW);
     }
     /** Allows for easier (x, y) based getting of maze cells */
-    public _get(x: number, y: number): number {
-        return this.MAZE[y * this.config.GRID_SIZE + x];
+    public get(x: number, y: number): number {
+        return this.maze[y * this.config.gridSize + x];
     }
     /** Allows for easier (x, y) based setting of maze cells */
-    public _set(x: number, y: number, value: number): number {
-        return this.MAZE[y * this.config.GRID_SIZE + x] = value;
+    public set(x: number, y: number, value: number): number {
+        return this.maze[y * this.config.gridSize + x] = value;
     }
     /** Converts MAZE grid into an array of set and unset bits for ease of use */
-    public _mapValues(): [x: number, y: number, value: number][] {
-        const values: [x: number, y: number, value: number][] = Array(this.MAZE.length);
-        for (let i = 0; i < this.MAZE.length; ++i) values[i] = [i % this.config.GRID_SIZE, Math.floor(i / this.config.GRID_SIZE), this.MAZE[i]];
+    public mapValues(): [x: number, y: number, value: number][] {
+        const values: [x: number, y: number, value: number][] = Array(this.maze.length);
+        for (let i = 0; i < this.maze.length; ++i) values[i] = [i % this.config.gridSize, Math.floor(i / this.config.gridSize), this.maze[i]];
         return values;
     }
     /** Builds the maze */
@@ -63,30 +63,30 @@ export default class MazeGenerator {
         // Plant some seeds
         for (let i = 0; i < 10000; i++) {
             // Stop if we exceed our maximum seed amount
-            if (this.SEEDS.length >= this.config.SEED_AMOUNT) break;
+            if (this.seeds.length >= this.config.seedAmount) break;
             // Attempt a seed planting
             let seed: VectorAbstract = {
-                x: Math.floor((Math.random() * this.config.GRID_SIZE) - 1),
-                y: Math.floor((Math.random() * this.config.GRID_SIZE) - 1),
+                x: Math.floor((Math.random() * this.config.gridSize) - 1),
+                y: Math.floor((Math.random() * this.config.gridSize) - 1),
             };
             // Check if our seed is valid (is 3 GU away from another seed, and is not on the border)
-            if (this.SEEDS.some(a => (Math.abs(seed.x - a.x) <= 3 && Math.abs(seed.y - a.y) <= 3))) continue;
-            if (seed.x <= 0 || seed.y <= 0 || seed.x >= this.config.GRID_SIZE - 1 || seed.y >= this.config.GRID_SIZE - 1) continue;
+            if (this.seeds.some(a => (Math.abs(seed.x - a.x) <= 3 && Math.abs(seed.y - a.y) <= 3))) continue;
+            if (seed.x <= 0 || seed.y <= 0 || seed.x >= this.config.gridSize - 1 || seed.y >= this.config.gridSize - 1) continue;
             // Push it to the pending seeds and set its grid to a wall cell
-            this.SEEDS.push(seed);
-            this._set(seed.x, seed.y, 1);
+            this.seeds.push(seed);
+            this.set(seed.x, seed.y, 1);
         }
         const direction: number[][] = [
             [-1, 0], [1, 0], // left and right
             [0, -1], [0, 1], // up and down
         ];
         // Let it grow!
-        for (let seed of this.SEEDS) {
+        for (let seed of this.seeds) {
             // Select a direction we want to head in
             let dir: number[] = direction[Math.floor(Math.random() * 4)];
             let termination = 1;
             // Now we can start to grow
-            while (termination >= this.config.TERMINATION_CHANCE) {
+            while (termination >= this.config.terminationChance) {
                 // Choose the next termination chance
                 termination = Math.random();
                 // Get the direction we're going in
@@ -94,12 +94,12 @@ export default class MazeGenerator {
                 // Move forward in that direction, and set that grid to a wall cell
                 seed.x += x;
                 seed.y += y;
-                if (seed.x <= 0 || seed.y <= 0 || seed.x >= this.config.GRID_SIZE - 1 || seed.y >= this.config.GRID_SIZE - 1) break;
-                this._set(seed.x, seed.y, 1);
+                if (seed.x <= 0 || seed.y <= 0 || seed.x >= this.config.gridSize - 1 || seed.y >= this.config.gridSize - 1) break;
+                this.set(seed.x, seed.y, 1);
                 // Now lets see if we want to branch or turn
-                if (Math.random() <= this.config.BRANCH_CHANCE) {
+                if (Math.random() <= this.config.branchChance) {
                     // If the seeds exceeds 75, then we're going to stop creating branches in order to avoid making a massive maze tumor(s)
-                    if (this.SEEDS.length > 75) continue;
+                    if (this.seeds.length > 75) continue;
                     // Get which side we want the branch to be on (left or right if moving up or down, and up and down if moving left or right)
                     let [ xx, yy ] = direction.filter(a => a.every((b, c) => b !== dir[c]))[Math.floor(Math.random() * 2)];
                     // Create the seed
@@ -108,9 +108,9 @@ export default class MazeGenerator {
                         y: seed.y + yy,
                     };
                     // Push the seed and set its grid to a maze zone
-                    this.SEEDS.push(newSeed);
-                    this._set(seed.x, seed.y, 1);
-                } else if (Math.random() <= this.config.TURN_CHANCE) {
+                    this.seeds.push(newSeed);
+                    this.set(seed.x, seed.y, 1);
+                } else if (Math.random() <= this.config.turnChance) {
                     // Get which side we want to turn to (left or right if moving up or down, and up and down if moving left or right)
                     dir = direction.filter(a => a.every((b, c) => b !== dir[c]))[Math.floor(Math.random() * 2)];
                 }
@@ -120,19 +120,19 @@ export default class MazeGenerator {
         for (let i = 0; i < 10; i++) {
             // Attempt to place it 
             let seed = {
-                x: Math.floor((Math.random() * this.config.GRID_SIZE) - 1),
-                y: Math.floor((Math.random() * this.config.GRID_SIZE) - 1),
+                x: Math.floor((Math.random() * this.config.gridSize) - 1),
+                y: Math.floor((Math.random() * this.config.gridSize) - 1),
             };
             // Check if our sprinkle is valid (is 3 GU away from another wall, and is not on the border)
-            if (this._mapValues().some(([x, y, r]) => r === 1 && (Math.abs(seed.x - x) <= 3 && Math.abs(seed.y - y) <= 3))) continue;
-            if (seed.x <= 0 || seed.y <= 0 || seed.x >= this.config.GRID_SIZE - 1 || seed.y >= this.config.GRID_SIZE - 1) continue;
+            if (this.mapValues().some(([x, y, r]) => r === 1 && (Math.abs(seed.x - x) <= 3 && Math.abs(seed.y - y) <= 3))) continue;
+            if (seed.x <= 0 || seed.y <= 0 || seed.x >= this.config.gridSize - 1 || seed.y >= this.config.gridSize - 1) continue;
             // Set its grid to a wall cell
-            this._set(seed.x, seed.y, 1);
+            this.set(seed.x, seed.y, 1);
         }
         // Now it's time to fill in the inaccessible pockets
         // Start at the top left
         let queue: number[][] = [[0, 0]];
-        this._set(0, 0, 2);
+        this.set(0, 0, 2);
         let checkedIndices = new Set([0]);
         // Now lets cycle through the whole map
         for (let i = 0; i < 3000 && queue.length > 0; i++) {
@@ -147,8 +147,8 @@ export default class MazeGenerator {
                 [x, y + 1], // bottom
             ]) {
                 // If its a wall ignore it
-                if (this._get(nx, ny) !== 0) continue;
-                let i = ny * this.config.GRID_SIZE + nx;
+                if (this.get(nx, ny) !== 0) continue;
+                let i = ny * this.config.gridSize + nx;
                 // Check if we've already checked this cell
                 if (checkedIndices.has(i)) continue;
                 // Add it to the checked cells if we haven't already
@@ -156,19 +156,19 @@ export default class MazeGenerator {
                 // Add it to the next cycle to check
                 queue.push([nx, ny]);
                 // Set its grid to an accessible cell
-                this._set(nx, ny, 2);
+                this.set(nx, ny, 2);
             }
         }
         // Cycle through all areas of the map
-        for (let x = 0; x < this.config.GRID_SIZE; x++) {
-            for (let y = 0; y < this.config.GRID_SIZE; y++) {
+        for (let x = 0; x < this.config.gridSize; x++) {
+            for (let y = 0; y < this.config.gridSize; y++) {
                 // If we're not a wall, ignore the cell and move on
-                if (this._get(x, y) === 2) continue;
+                if (this.get(x, y) === 2) continue;
                 // Define our properties
                 let chunk = { x, y, width: 0, height: 1 };
                 // Loop through adjacent cells and see how long we should be
-                while (this._get(x + chunk.width, y) !== 2) {
-                    this._set(x + chunk.width, y, 2);
+                while (this.get(x + chunk.width, y) !== 2) {
+                    this.set(x + chunk.width, y, 2);
                     chunk.width++;
                 }
                 // Now lets see if we need to be t h i c c
@@ -176,18 +176,18 @@ export default class MazeGenerator {
                     // Check the row below to see if we can still make a box
                     for (let i = 0; i < chunk.width; i++)
                         // Stop if we can't
-                        if (this._get(x + i, y + chunk.height) === 2) break outer;
+                        if (this.get(x + i, y + chunk.height) === 2) break outer;
                     // If we can, remove the line of cells from the map and increase the height of the block
                     for (let i = 0; i < chunk.width; i++)
-                        this._set(x + i, y + chunk.height, 2);
+                        this.set(x + i, y + chunk.height, 2);
                     chunk.height++;
                 }
-                this.WALLS.push(chunk);
+                this.walls.push(chunk);
             }
         }
         // Create the walls!
-        for (let {x, y, width, height} of this.WALLS) {
-            this._buildWallFromGridCoord(x, y, width, height);
+        for (let {x, y, width, height} of this.walls) {
+            this.buildWallFromGridCoord(x, y, width, height);
         }
     }
 
@@ -196,11 +196,11 @@ export default class MazeGenerator {
         const width = this.arena.width / 2;
         const height = this.arena.height / 2;
 
-        for (const wall of this.WALLS) {
-            const wallX = wall.x * this.config.CELL_SIZE - width;
-            const wallY = wall.y * this.config.CELL_SIZE - height;
-            const wallW = wall.width * this.config.CELL_SIZE;
-            const wallH = wall.height * this.config.CELL_SIZE;
+        for (const wall of this.walls) {
+            const wallX = wall.x * this.config.cellSize - width;
+            const wallY = wall.y * this.config.cellSize - height;
+            const wallW = wall.width * this.config.cellSize;
+            const wallH = wall.height * this.config.cellSize;
             if (
                 x >= wallX &&
                 x <= wallX + wallW &&
