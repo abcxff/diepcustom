@@ -39,12 +39,12 @@ export class MazeShapeManager extends ShapeManager {
 }
 
 const config: MazeGeneratorConfig = {
-    CELL_SIZE: 635,
-    GRID_SIZE: 40,
-    SEED_AMOUNT: Math.floor(Math.random() * 30) + 30,
-    TURN_CHANCE: 0.2,
-    BRANCH_CHANCE: 0.2,
-    TERMINATION_CHANCE: 0.2
+    cellSize: 635,
+    gridSize: 40,
+    seedAmount: Math.floor(Math.random() * 30) + 30,
+    turnChance: 0.2,
+    branchChance: 0.2,
+    terminationChance: 0.2
 }
 
 export default class MazeArena extends ArenaEntity {
@@ -57,7 +57,7 @@ export default class MazeArena extends ArenaEntity {
     public constructor(game: GameServer) {
         super(game);
 
-        const arenaSize = config.CELL_SIZE * config.GRID_SIZE
+        const arenaSize = config.cellSize * config.gridSize;
         this.updateBounds(arenaSize, arenaSize);
 
         this.mazeGenerator.buildMaze();
