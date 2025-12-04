@@ -345,7 +345,7 @@ export default class ObjectEntity extends Entity {
         let par = 0;
         
         let entity: ObjectEntity = this;
-        while (entity.relationsData.values.parent instanceof ObjectEntity) {
+        while (ObjectEntity.isObject(entity.relationsData.values.parent)) {
             if (!(entity.relationsData.values.parent.positionData.values.flags & PositionFlags.absoluteRotation)) pos.angle += entity.positionData.values.angle;
             entity = entity.relationsData.values.parent;
             px += entity.positionData.values.x;
@@ -393,8 +393,8 @@ export default class ObjectEntity extends Entity {
     
         // Keep things in the arena
         if (
-            this.isPhysical
-            && !(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)
+            this.isPhysical &&
+            !(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)
         ) {
             this.keepInArena();
         }
