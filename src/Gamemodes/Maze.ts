@@ -62,7 +62,7 @@ export default class MazeArena extends ArenaEntity {
 
         this.mazeGenerator.buildMaze();
 
-        this.allowBoss = false;
+        this.bossManager = null; // Disables boss spawning
     }
 
     public isValidSpawnLocation(x: number, y: number): boolean {

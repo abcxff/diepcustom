@@ -29,7 +29,7 @@ class ManyCrashersManager extends ShapeManager {
 
     protected spawnShape(): AbstractShape {
         const shape = new Crasher(this.arena.game, Math.random() < 0.3);
-        const loc = this.arena.findSpawnLocation(false);
+        const loc = this.arena.findSpawnLocation();
         shape.positionData.values.x = loc.x;
         shape.positionData.values.y = loc.y;
         return shape;

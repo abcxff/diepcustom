@@ -108,7 +108,7 @@ export default class TagArena extends ArenaEntity {
         if (!this.playerTeamMap.has(client)) {
             const team = this.getAlivePlayers().length <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
                          this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
-            const { x, y } = this.findSpawnLocation();
+            const { x, y } = this.findPlayerSpawnLocation();
 
             tank.positionData.values.x = x;
             tank.positionData.values.y = y;
