@@ -18,8 +18,10 @@
 
 import GameServer from "../Game";
 import ShapeManager from "../Misc/ShapeManager";
+import BossManager from "../Misc/BossManager";
 import TankBody from "../Entity/Tank/TankBody";
 import ArenaCloser from "../Entity/Misc/ArenaCloser";
+import AbstractBoss from "../Entity/Boss/AbstractBoss";
 
 import { VectorAbstract } from "../Physics/Vector";
 import { ArenaGroup, TeamGroup } from "./FieldGroups";
@@ -29,13 +31,6 @@ import { PI2, saveToLog } from "../util";
 import { TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 
 import Client from "../Client";
-
-import AbstractBoss from "../Entity/Boss/AbstractBoss";
-import Guardian from "../Entity/Boss/Guardian";
-import Summoner from "../Entity/Boss/Summoner";
-import FallenOverlord from "../Entity/Boss/FallenOverlord";
-import FallenBooster from "../Entity/Boss/FallenBooster";
-import Defender from "../Entity/Boss/Defender";
 
 import { countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
 
@@ -76,11 +71,8 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
     public shapeScoreRewardMultiplier: number = 1;
 
-    /** Enable or disable natural boss spawning */
-    public allowBoss: boolean = true;
-
-    /** The current boss spawned into the game */
-    public boss: AbstractBoss | null = null;
+    /** The boss spawner. Set to null in gamemode file to disable boss spawning. */
+    public bossManager: BossManager | null = new BossManager(this);
 
     /** Scoreboard leader */
     public leader: TankBody | null = null;
@@ -134,21 +126,18 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     }
 
     /**
-     * Finds a spawnable location on the map.
+     * Finds a spawnable location on the map within the given width and height.
      */
-     public findSpawnLocation(isPlayer: boolean=false): VectorAbstract {
+     public findSpawnLocation(width: number = this.width, height: number = this.height): VectorAbstract {
         const pos = {
-            x: ~~(Math.random() * this.width - this.width / 2),
-            y: ~~(Math.random() * this.height - this.height / 2),
+            x: ~~(Math.random() * width - width / 2),
+            y: ~~(Math.random() * height - height / 2),
         }
 
         for (let i = 0; i < 20; ++i) {
-            if (
-                !this.isValidSpawnLocation(pos.x, pos.y) ||
-                isPlayer && Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 2 && Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 2
-            ) {
-                pos.x = ~~(Math.random() * this.width - this.width / 2);
-                pos.y = ~~(Math.random() * this.height - this.height / 2);
+            if (!this.isValidSpawnLocation(pos.x, pos.y)) {
+                pos.x = ~~(Math.random() * width - width / 2);
+                pos.y = ~~(Math.random() * height - height / 2);
                 continue;
             }
 
@@ -163,8 +152,8 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             });
 
             if (entity) {
-                pos.x = ~~(Math.random() * this.width - this.width / 2);
-                pos.y = ~~(Math.random() * this.height - this.height / 2);
+                pos.x = ~~(Math.random() * width - width / 2);
+                pos.y = ~~(Math.random() * height - height / 2);
                 continue;
             }
 
@@ -174,6 +163,21 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         return pos;
     }
     
+    public findPlayerSpawnLocation(): VectorAbstract {
+        let pos = this.findSpawnLocation();
+        for (let i = 0; i < 20; ++i) {
+            if (
+                Math.max(pos.x, pos.y) < this.arenaData.values.rightX / 2 &&
+                Math.min(pos.x, pos.y) > this.arenaData.values.leftX / 2
+            ) {
+                pos = this.findSpawnLocation(); // Players spawn away from the center
+                continue;
+            }
+            break;
+        }
+        return pos;
+    }
+
     /** Checks if players or shapes can spawn at the given coordinates. */
     public isValidSpawnLocation(x: number, y: number): boolean {
         // Override in gamemode files
@@ -301,7 +305,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
      * Allows the arena to decide how players are spawned into the game.
      */
     public spawnPlayer(tank: TankBody, client: Client) {
-        const { x, y } = this.findSpawnLocation(true);
+        const { x, y } = this.findPlayerSpawnLocation();
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
@@ -337,18 +341,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         this.state = ArenaState.OPEN;
     }
 
-    /** Spawns the boss into the arena */
-    protected spawnBoss() {
-        const TBoss = [Guardian, Summoner, FallenOverlord, FallenBooster, Defender]
-            [~~(Math.random() * 5)];
-        
-        this.boss = new TBoss(this.game);
-
-        const { x, y } = this.game.arena.findSpawnLocation();
-        this.boss.positionData.values.x = x;
-        this.boss.positionData.values.y = y;
-    }
-
     public tick(tick: number) {
         this.shapes.tick();
         this.updateArenaState();
@@ -359,8 +351,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             this.arenaData.leaderY = this.leader.positionData.values.y;
         }
 
-        if (this.allowBoss && this.game.tick >= 1 && (this.game.tick % bossSpawningInterval) === 0 && !this.boss) {
-            this.spawnBoss();
-        }
+        this.bossManager?.tick(tick);
     }
 }
