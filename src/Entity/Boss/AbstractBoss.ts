@@ -163,9 +163,6 @@ export default class AbstractBoss extends LivingEntity {
      * Will set game.arena.boss to null, so that the next boss can spawn
      */
     public onDeath(killer: LivingEntity) {
-        // Reset arena.boss
-        if (this.game.arena.boss === this) this.game.arena.boss = null;
-
         let killerName: string;
 
         if (TankBody.isTank(killer)) {
