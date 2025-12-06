@@ -74,8 +74,9 @@ export default class BossManager {
     }
 
     public tick(tick: number) { 
-        if (this.arena.game.tick >= 1 && (this.arena.game.tick % bossSpawningInterval) !== 0 && !this.boss) {
+        if (this.arena.game.tick >= 1 && (this.arena.game.tick % bossSpawningInterval) === 0 && !this.boss) {
             this.spawnBoss();
         }
     }
+
 }
