@@ -83,7 +83,7 @@ export const hashGridCellSize: number = 7;
 export const bossSpawningInterval = 45 * 60 * tps;
 
 /** Amount of TICKs before the scoreboard update */
-export const scoreboardUpdateInterval = 0.5 * tps;
+export const scoreboardUpdateInterval = 1 * tps;
 
 /** Hashed (sha256) dev password */
 export const devPasswordHash: string | undefined = process.env.DEV_PASSWORD_HASH;
