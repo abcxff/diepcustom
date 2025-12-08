@@ -126,7 +126,7 @@ export default class TagArena extends ArenaEntity {
         tank.relationsData.values.team = team;
         tank.styleData.values.color = team.teamData.values.teamColor;
 
-        const { x, y } = this.findSpawnLocation();
+        const { x, y } = this.findPlayerSpawnLocation();
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
@@ -194,5 +194,3 @@ export default class TagArena extends ArenaEntity {
         }
     }
 }
-
-
