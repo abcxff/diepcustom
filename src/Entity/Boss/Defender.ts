@@ -36,8 +36,8 @@ const MountedTurretDefinition: BarrelDefinition = {
     ...AutoTurretDefinition,
     bullet: {
         ...AutoTurretDefinition.bullet,
-        speed: 2.3,
-        damage: 1.3,
+        speed: 2.46,
+        damage: 1.2,
         health: 5.75,
         color: Color.Neutral
     }
@@ -78,16 +78,16 @@ const DEFENDER_SIZE = 150;
  * Class which represents the boss "Defender"
  */
 export default class Defender extends AbstractBoss {
-
-    /** Defender's trap launchers */
-    private trappers: Barrel[] = [];
     /** See AbstractBoss.movementSpeed */
     public movementSpeed = 0.2;
 
     public constructor(game: GameServer) {
         super(game);
+
         this.nameData.values.name = "Defender";
+
         this.styleData.values.color = Color.EnemyTriangle;
+
         this.relationsData.values.team = this.game.arena;
 
         this.ai.viewRange = 0;
@@ -100,7 +100,7 @@ export default class Defender extends AbstractBoss {
         const offset = 60 / (DEFENDER_SIZE * Math.SQRT1_2);
         for (let i = 0; i < count; ++i) {
             // Add trap launcher
-            this.trappers.push(new Barrel(this, {
+            this.barrels.push(new Barrel(this, {
                 ...TrapperDefinition,
                 angle: PI2 * ((i / count) + 1 / (count * 2))
             }));

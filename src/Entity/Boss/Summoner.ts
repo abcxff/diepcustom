@@ -58,10 +58,6 @@ const SUMMONER_SIZE = 150;
  * Class which represents the boss "Summoner"
  */
 export default class Summoner extends AbstractBoss {
-
-    /** Summoner spawners */
-    private spawners: Barrel[] = [];
-
     public constructor(game: GameServer) {
         super(game);
 
@@ -71,10 +67,11 @@ export default class Summoner extends AbstractBoss {
         this.physicsData.values.size = SUMMONER_SIZE * Math.SQRT1_2;
         this.physicsData.values.sides = 4;
 
-        for (let i = 0; i < 4; ++i) {
-            this.spawners.push(new Barrel(this, {
+        const count = this.physicsData.values.sides;
+        for (let i = 0; i < count; ++i) {
+            this.barrels.push(new Barrel(this, {
                 ...SummonerSpawnerDefinition,
-                angle: PI2 * ((i / 4))
+                angle: PI2 * ((i / count))
             }));
         }
     }
