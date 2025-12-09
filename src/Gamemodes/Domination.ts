@@ -25,7 +25,7 @@ import TankBody from "../Entity/Tank/TankBody";
 import GameServer from "../Game";
 import ArenaEntity, { ArenaState } from "../Native/Arena";
 import { Entity } from "../Native/Entity";
-
+import { randomFrom } from "../util";
 
 const arenaSize = 11150;
 const baseSize = arenaSize / (3 + 1/3); // 3345, must scale with arena size
@@ -88,7 +88,7 @@ export default class DominationArena extends ArenaEntity {
         const xOffset = (Math.random() - 0.5) * baseSize,
               yOffset = (Math.random() - 0.5) * baseSize;
 
-        const team = this.playerTeamMap.get(client) || this.teams[~~(Math.random() * this.teams.length)];
+        const team = this.playerTeamMap.get(client) || randomFrom(this.teams);
         const teamBase: TeamBase = this.game.entities.inner.find((entity) => entity instanceof TeamBase && entity.relationsData.values.team === team) as TeamBase;
 
         tank.relationsData.values.team = teamBase.relationsData.values.team;
