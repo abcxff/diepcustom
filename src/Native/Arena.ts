@@ -26,9 +26,9 @@ import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import { VectorAbstract } from "../Physics/Vector";
 import { ArenaGroup, TeamGroup } from "./FieldGroups";
 import { Entity } from "./Entity";
-import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
+import { Color, Tank, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
 import { PI2, saveToLog } from "../util";
-import { TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 
 import Client from "../Client";
 
@@ -163,7 +163,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         return pos;
     }
     
-    public findPlayerSpawnLocation(): VectorAbstract {
+    public findPlayerSpawnLocation(player: TankBody): VectorAbstract {
         let pos = this.findSpawnLocation();
         for (let i = 0; i < 20; ++i) {
             if (
@@ -305,8 +305,26 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
      * Allows the arena to decide how players are spawned into the game.
      */
     public spawnPlayer(tank: TankBody, client: Client) {
-        const { x, y } = this.findPlayerSpawnLocation();
+        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
 
+        if (Math.random() < 0.5 && TeamEntity.isTeam(tank.relationsData.values.team)) { // Spawning from factory
+            const teamPlayers = this.getTeamPlayers(tank.relationsData.values.team as TeamEntity);
+            for (const teammate of teamPlayers) {
+                if (teammate.currentTank === Tank.Factory) {
+                    const { x, y } = teammate.getWorldPosition();
+                    const barrel = teammate.barrels[0];
+                    const shootAngle = barrel.definition.angle + teammate.positionData.values.angle;
+
+                    tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * teammate.sizeFactor;
+                    tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * teammate.sizeFactor;
+                    tank.addVelocity(shootAngle, 15);
+
+                    return;
+                }
+            }
+        }
+
+        const  { x, y } = this.findPlayerSpawnLocation(tank);
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
     }
