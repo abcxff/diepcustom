@@ -89,6 +89,8 @@ export default class TagArena extends ArenaEntity {
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
+        this.updateArenaState(); // So players will be distributed evenly across teams when the game starts
+
         const deathMixin = tank.onDeath.bind(tank); 
         tank.onDeath = (killer: LivingEntity) => {
             deathMixin(killer);
@@ -108,14 +110,12 @@ export default class TagArena extends ArenaEntity {
         if (!this.playerTeamMap.has(client)) {
             const team = this.getAlivePlayers().length <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
                          this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
-            const { x, y } = this.findPlayerSpawnLocation();
 
-            tank.positionData.values.x = x;
-            tank.positionData.values.y = y;
             tank.relationsData.values.team = team;
             tank.styleData.values.color = team.teamData.teamColor;
 
-            this.playerTeamMap.set(client, team)
+            this.playerTeamMap.set(client, team);
+            super.spawnPlayer(tank, client);
             return;
         }
 
@@ -126,12 +126,9 @@ export default class TagArena extends ArenaEntity {
         tank.relationsData.values.team = team;
         tank.styleData.values.color = team.teamData.values.teamColor;
 
-        const { x, y } = this.findPlayerSpawnLocation();
-
-        tank.positionData.values.x = x;
-        tank.positionData.values.y = y;
-
         if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        
+        super.spawnPlayer(tank, client);
     }
 
     public updateScoreboard() {
@@ -194,3 +191,5 @@ export default class TagArena extends ArenaEntity {
         }
     }
 }
+
+

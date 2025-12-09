@@ -81,23 +81,29 @@ export default class DominationArena extends ArenaEntity {
         NE.prefix = "NE ";
         this.dominators.push(SE, SW, NW, NE);
     }
-
-    public spawnPlayer(tank: TankBody, client: Client) {
-        tank.positionData.values.y = arenaSize * Math.random() - arenaSize;
+    
+    public findPlayerSpawnLocation(player: TankBody) {
+        const client = player.cameraEntity.getClient() as Client;
+        const team = this.playerTeamMap.get(client) as TeamEntity;
+        const base: TeamBase = this.game.entities.inner.find((entity) => entity instanceof TeamBase && entity.relationsData.values.team === team) as TeamBase;
 
         const xOffset = (Math.random() - 0.5) * baseSize,
               yOffset = (Math.random() - 0.5) * baseSize;
 
-        const team = this.playerTeamMap.get(client) || randomFrom(this.teams);
-        const teamBase: TeamBase = this.game.entities.inner.find((entity) => entity instanceof TeamBase && entity.relationsData.values.team === team) as TeamBase;
+        const x = base.positionData.values.x + xOffset,
+              y =  base.positionData.values.y + yOffset;
 
-        tank.relationsData.values.team = teamBase.relationsData.values.team;
-        tank.styleData.values.color = teamBase.styleData.values.color;
-        tank.positionData.values.x = teamBase.positionData.values.x + xOffset;
-        tank.positionData.values.y = teamBase.positionData.values.y + yOffset;
+        return { x, y }
+    }
+
+    public spawnPlayer(tank: TankBody, client: Client) {
+        const team = this.playerTeamMap.get(client) || randomFrom(this.teams);
+
+        tank.relationsData.values.team = team;
+        tank.styleData.values.color = team.teamData.values.teamColor;
         this.playerTeamMap.set(client, team);
 
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        super.spawnPlayer(tank, client);
     }
     
     public getTeamDominatorCount(team: TeamEntity) {

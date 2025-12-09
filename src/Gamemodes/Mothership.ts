@@ -71,7 +71,7 @@ export default class MothershipArena extends ArenaEntity {
     public spawnPlayer(tank: TankBody, client: Client) {
         if (!this.motherships.length && !this.playerTeamMotMap.has(client)) {
             const team = randomFrom(this.teams);
-            const { x, y } = this.findPlayerSpawnLocation();
+            const { x, y } = this.findPlayerSpawnLocation(tank);
 
             tank.positionData.values.x = x;
             tank.positionData.values.y = y;
@@ -87,7 +87,7 @@ export default class MothershipArena extends ArenaEntity {
         tank.styleData.values.color = mothership.styleData.values.color;
 
         // TODO: Possess mothership if its unpossessed
-        const { x, y } = this.findPlayerSpawnLocation();
+        const { x, y } = this.findPlayerSpawnLocation(tank);
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;

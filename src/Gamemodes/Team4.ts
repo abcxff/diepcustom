@@ -57,20 +57,26 @@ export default class Teams4Arena extends ArenaEntity {
         this.greenTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamGreen), -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
         this.purpleTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamPurple), arenaSize - baseSize / 2, -arenaSize + baseSize / 2, baseSize, baseSize);
     }
-
-    public spawnPlayer(tank: TankBody, client: Client) {
-        tank.positionData.values.y = arenaSize * Math.random() - arenaSize;
-
+    
+    public findPlayerSpawnLocation(player: TankBody) {
+        const client = player.cameraEntity.getClient() as Client;
+        const base = this.playerTeamMap.get(client) as TeamBase;
+        
         const xOffset = (Math.random() - 0.5) * baseSize,
               yOffset = (Math.random() - 0.5) * baseSize;
-        
-        const base = this.playerTeamMap.get(client) || randomFrom([this.blueTeamBase, this.redTeamBase, this.greenTeamBase, this.purpleTeamBase]);
+
+        const x = base.positionData.values.x + xOffset,
+              y =  base.positionData.values.y + yOffset;
+
+        return { x, y }
+    }
+
+    public spawnPlayer(tank: TankBody, client: Client) {
+        const base = this.playerTeamMap.get(client) || randomFrom([this.blueTeamBase, this.redTeamBase]);
         tank.relationsData.values.team = base.relationsData.values.team;
         tank.styleData.values.color = base.styleData.values.color;
-        tank.positionData.values.x = base.positionData.values.x + xOffset;
-        tank.positionData.values.y = base.positionData.values.y + yOffset;
         this.playerTeamMap.set(client, base);
-
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        
+        super.spawnPlayer(tank, client);
     }
 }
