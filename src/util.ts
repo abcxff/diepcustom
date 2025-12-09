@@ -24,11 +24,13 @@ import { doVerboseLogs } from "./config";
 export const log = (...args: any[]) => {
     console.log(`[${Date().split(" ")[4]}]`, ...args)
 }
+
 /** Logs data prefixed with the Date in a yellow format. */
 export const warn = (...args: any[]) => {
     args = args.map(s => typeof s === "string" ? chalk.yellow(s) : s);
     console.log(chalk.yellow(`[${Date().split(" ")[4]}] WARNING: `), ...args);
 }
+
 /** Logs a raw object. */
 export const inspectLog = (object: any, c = 14) => {
     console.log(inspect(object, false, c, true));
@@ -46,13 +48,22 @@ export const removeFast = (array: any[], index: number) => {
 }
 
 /**
- * Self explanatory
+ * Self explanatory.
  */
 export const shuffleArray = (array: any[]) => {
     for (let i = array.length - 1; i >= 1; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
+
+    return array;
+}
+
+/**
+ * Picks a random element from an array.
+ */
+export const randomFrom = (array: any[]) => {
+    return array[Math.floor(Math.random() * array.length)];
 }
 
 /**
