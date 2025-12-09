@@ -54,13 +54,14 @@ export default class MothershipArena extends ArenaEntity {
         for (const teamColor of TEAM_COLORS) {
             const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
+
             const mot = new Mothership(this.game);
             this.motherships.push(mot);
     
             mot.relationsData.values.team = team;
             mot.styleData.values.color = team.teamData.values.teamColor;
-            mot.positionData.values.x = Math.cos(randAngle) * arenaSize * 0.75;
-            mot.positionData.values.y = Math.sin(randAngle) * arenaSize * 0.75;
+            mot.positionData.values.x = Math.cos(randAngle) * arenaSize * 0.8;
+            mot.positionData.values.y = Math.sin(randAngle) * arenaSize * 0.8;
 
             randAngle += PI2 / TEAM_COLORS.length;
         }
@@ -71,12 +72,8 @@ export default class MothershipArena extends ArenaEntity {
     public spawnPlayer(tank: TankBody, client: Client) {
         if (!this.motherships.length && !this.playerTeamMotMap.has(client)) {
             const team = randomFrom(this.teams);
-            const { x, y } = this.findPlayerSpawnLocation(tank);
 
-            tank.positionData.values.x = x;
-            tank.positionData.values.y = y;
-            tank.relationsData.values.team = team;
-            tank.styleData.values.color = team.teamData.teamColor;
+            super.spawnPlayer(tank, client);
             return;
         }
 
@@ -86,13 +83,7 @@ export default class MothershipArena extends ArenaEntity {
         tank.relationsData.values.team = mothership.relationsData.values.team;
         tank.styleData.values.color = mothership.styleData.values.color;
 
-        // TODO: Possess mothership if its unpossessed
-        const { x, y } = this.findPlayerSpawnLocation(tank);
-
-        tank.positionData.values.x = x;
-        tank.positionData.values.y = y;
-
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        super.spawnPlayer(tank, client);
     }
     public updateScoreboard() {
         this.motherships.sort((m1, m2) => m2.healthData.values.health - m1.healthData.values.health);
