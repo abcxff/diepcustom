@@ -305,13 +305,14 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
      * Allows the arena to decide how players are spawned into the game.
      */
     public spawnPlayer(tank: TankBody, client: Client) {
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        const team = tank.relationsData.values.team;
+        if (client.camera) client.camera.relationsData.team = team
 
-        if (Math.random() < 0.05 && TeamEntity.isTeam(tank.relationsData.values.team)) { // Spawning from factory
-            const teamPlayers = this.getTeamPlayers(tank.relationsData.values.team as TeamEntity);
+        if (Math.random() < 0.05 && TeamEntity.isTeam(team)) { // Spawning from factory
+            const teammates = this.getTeamPlayers(team);
             const factories: TankBody[] = [];
 
-            for (const teammate of teamPlayers) {
+            for (const teammate of teammates) {
                 if (teammate.currentTank === Tank.Factory) {
                     factories.push(teammate);
                 }
@@ -333,7 +334,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
             tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * factory.sizeFactor;
             tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * factory.sizeFactor;
-            tank.addVelocity(shootAngle, 15);
+            tank.addVelocity(shootAngle, 20);
 
             return;
         }
