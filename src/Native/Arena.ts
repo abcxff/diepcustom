@@ -307,7 +307,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     public spawnPlayer(tank: TankBody, client: Client) {
         if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
 
-        if (Math.random() < 0.5 && TeamEntity.isTeam(tank.relationsData.values.team)) { // Spawning from factory
+        if (Math.random() < 0.05 && TeamEntity.isTeam(tank.relationsData.values.team)) { // Spawning from factory
             const teamPlayers = this.getTeamPlayers(tank.relationsData.values.team as TeamEntity);
             for (const teammate of teamPlayers) {
                 if (teammate.currentTank === Tank.Factory) {
