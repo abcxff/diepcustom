@@ -27,6 +27,7 @@ import Defender from "../Entity/Boss/Defender";
 
 import { bossSpawningInterval } from "../config";
 import { VectorAbstract } from "../Physics/Vector";
+import { randomFrom } from "../util";
 
 /**
  * Manages boss spawning.
@@ -44,6 +45,7 @@ export default class BossManager {
     }
 
     public findBossSpawnLocation(): VectorAbstract {
+        // Bossess spawn around the center of the arena
         const width = this.arena.width / 2;
         const height = this.arena.height / 2;
 
@@ -52,7 +54,7 @@ export default class BossManager {
     }
     
     public spawnBoss() {
-        const TBoss = this.bossClasses[Math.floor(Math.random() * this.bossClasses.length)];
+        const TBoss = randomFrom(this.bossClasses);
         this.boss = new TBoss(this.arena.game);
         
         const { x, y } = this.findBossSpawnLocation();
@@ -74,3 +76,4 @@ export default class BossManager {
         }
     }
 }
+
