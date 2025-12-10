@@ -54,7 +54,7 @@ export default class BossManager {
     }
     
     public spawnBoss() {
-        const TBoss = randomFrom(this.bossClasses);
+        const TBoss = randomFrom(this.bossClasses) as typeof AbstractBoss;
         this.boss = new TBoss(this.arena.game);
         
         const { x, y } = this.findBossSpawnLocation();
@@ -76,4 +76,3 @@ export default class BossManager {
         }
     }
 }
-
