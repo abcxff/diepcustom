@@ -26,7 +26,7 @@ import TankDefinitions from "./Const/TankDefinitions";
 import { commandDefinitions } from "./Const/Commands";
 import { ColorsHexCode } from "./Const/Enums";
 
-import FFAArena from "./Gamemodes/Maze";
+import FFAArena from "./Gamemodes/FFA";
 import SandboxArena from "./Gamemodes/Sandbox";
 
 const PORT = config.serverPort;

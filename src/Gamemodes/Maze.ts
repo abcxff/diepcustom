@@ -66,7 +66,6 @@ export default class MazeArena extends ArenaEntity {
         this.mazeGenerator.generate();
         this.mazeGenerator.placeWalls(this);
 
-        this.state = 0
         this.bossManager = null; // Disables boss spawning
     }
 
