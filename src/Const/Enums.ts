@@ -289,7 +289,7 @@ export const enum EntityTags {
     isTank = 1 << 1,
     isDominator = 1 << 2,
     isBoss = 1 << 3,
-    isShiny= 1 << 4,
+    isShiny = 1 << 4,
 }
 
 /**
