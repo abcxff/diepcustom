@@ -66,12 +66,12 @@ export default class MazeArena extends ArenaEntity {
         this.mazeGenerator.generate();
         this.mazeGenerator.placeWalls(this);
 
+        this.state = 0
         this.bossManager = null; // Disables boss spawning
     }
 
     public isValidSpawnLocation(x: number, y: number): boolean {
         const { gridX, gridY } = this.mazeGenerator.getGridCell(this, x, y);
-        
         // Should never spawn inside walls
         return this.mazeGenerator.isCellOccupied(gridX, gridY) === false;
     }
