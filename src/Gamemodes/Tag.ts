@@ -32,17 +32,16 @@ import Dominator from "../Entity/Misc/Dominator"
 
 import ShapeManager from "../Misc/ShapeManager";
 
-const arenaSize = 11150;
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamPurple, Color.TeamGreen];
 const MIN_PLAYERS = TEAM_COLORS.length * 1; // It is higher in the official servers, though we do not have enough players for that (4 players per team)
+
+const ARENA_SIZE = 11150;
 
 const SHRINK_AMOUNT = 100;
 const SHRINK_INTERVAL = 15 * tps;
 const MIN_SIZE = 6600;
 
 const ENABLE_DOMINATOR = false;
-
-shuffleArray(TEAM_COLORS); // Randomize leading team
 
 /**
  * Manage shape count
@@ -74,8 +73,9 @@ export default class TagArena extends ArenaEntity {
         this.shapeScoreRewardMultiplier = 3.0;
 
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
-		
-        for (const teamColor of TEAM_COLORS) {
+        const teamOrder = TEAM_COLORS.slice();
+        shuffleArray(teamOrder);
+        for (const teamColor of teamOrder) {
             const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
         }
@@ -85,7 +85,7 @@ export default class TagArena extends ArenaEntity {
             new Dominator(this, new TeamBase(game, this, 0, 0, domBaseSize, domBaseSize, false));
         }
 
-        this.updateBounds(arenaSize * 2, arenaSize * 2);
+        this.updateBounds(ARENA_SIZE * 2, ARENA_SIZE * 2);
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
