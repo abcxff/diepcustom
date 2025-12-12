@@ -48,28 +48,26 @@ export const removeFast = (array: any[], index: number) => {
 }
 
 /**
- * Self explanatory.
+ * Shuffles an array in place.
  */
 export const shuffleArray = (array: any[]) => {
     for (let i = array.length - 1; i >= 1; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
-
-    return array;
 }
 
 /**
  * Picks a random element from an array.
  */
-export const randomFrom = (array: any[]) => {
+export const randomFrom = <T>(array: T[]): T => {
     return array[Math.floor(Math.random() * array.length)];
 }
 
 /**
  * Contrains a value between bounds
  */
-export const constrain = (value: number, min: number, max: number) => {
+export const constrain = (value: number, min: number, max: number): number => {
     return Math.max(min, Math.min(max, value));
 }
 
@@ -79,7 +77,7 @@ export const PI2 = Math.PI * 2;
 /**
  * Normalize angle (ex: 4π-> 0π, 3π -> 1π)
  */
-export const normalizeAngle = (angle: number) => {
+export const normalizeAngle = (angle: number): number => {
     return ((angle % PI2) + PI2) % PI2;
 }
 
