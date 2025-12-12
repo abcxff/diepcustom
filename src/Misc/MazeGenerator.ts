@@ -42,7 +42,7 @@ interface GridWall {
 const MAZE_CELL_EMPTY = 0;
 const MAZE_CELL_WALL = 1;
 const MAZE_CELL_ACCESSIBLE = 2;
-const MAZE_CELL_PLACED = 3;
+const MAZE_CELL_PLACED_WALL = 3;
 
 /**
  * Implementation details:
@@ -160,7 +160,8 @@ export default class MazeGenerator {
                 [x, y - 1], // top
                 [x, y + 1], // bottom
             ]) {
-                // If its a wall ignore it
+                if (nx < 0 || ny < 0 || nx >= this.config.size || ny >= this.config.size) continue;
+                // If its not empty ignore it
                 if (this.get(nx, ny) !== MAZE_CELL_EMPTY) continue;
                 let i = ny * this.config.size + nx;
                 // Check if we've already checked this cell
@@ -173,9 +174,22 @@ export default class MazeGenerator {
                 this.set(nx, ny, MAZE_CELL_ACCESSIBLE);
             }
         }
+
+        for (const [x, y, value] of this.mapValues()) {
+            // If we are a wall or accessible cell, ignore us
+            if (value === MAZE_CELL_WALL || value === MAZE_CELL_ACCESSIBLE) continue;
+            // Otherwise, we are an inaccessible empty cell, so we need to convert ourselves to a wall
+            this.set(x, y, MAZE_CELL_WALL);
+        }
     }
 
     protected convertToWalls(): GridWall[] {
+        // Unplace any walls
+        for (const [x, y, value] of this.mapValues()) {
+            if (value !== MAZE_CELL_PLACED_WALL) continue;
+            this.set(x, y, MAZE_CELL_WALL);
+        }
+
         const walls: GridWall[] = [];
 
         // Cycle through all areas of the map
@@ -187,7 +201,7 @@ export default class MazeGenerator {
                 const chunk: GridWall = { x, y, width: 0, height: 1 };
                 // Loop through adjacent cells and see how long we should be
                 while (this.get(x + chunk.width, y) === MAZE_CELL_WALL) {
-                    this.set(x + chunk.width, y, MAZE_CELL_PLACED);
+                    this.set(x + chunk.width, y, MAZE_CELL_PLACED_WALL);
                     chunk.width++;
                 }
                 // Now lets see if we need to be t h i c c
@@ -198,7 +212,7 @@ export default class MazeGenerator {
                         if (this.get(x + i, y + chunk.height) !== MAZE_CELL_WALL) break outer;
                     // If we can, remove the line of cells from the map and increase the height of the block
                     for (let i = 0; i < chunk.width; i++)
-                        this.set(x + i, y + chunk.height, MAZE_CELL_PLACED);
+                        this.set(x + i, y + chunk.height, MAZE_CELL_PLACED_WALL);
                     chunk.height++;
                 }
                 walls.push(chunk);
@@ -235,7 +249,7 @@ export default class MazeGenerator {
 
     /** Checks if a cell is occupied on grid */
     public isCellOccupied(x: number, y: number): boolean {
-        return this.get(x, y) === MAZE_CELL_PLACED;
+        return this.get(x, y) === MAZE_CELL_PLACED_WALL;
     }
 
     /** Allows for easier (x, y) based setting of maze cells */
