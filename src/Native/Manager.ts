@@ -70,15 +70,23 @@ export default class EntityManager {
         for (let id = 0; id <= lastId; ++id) {
             if (this.inner[id]) continue;
 
+            // We found a free id
             entity.id = id;
             entity.hash = entity.preservedHash = this.hashTable[id] += 1;
             this.inner[id] = entity;
 
-            // TODO figure out why instanceof is neccessary for this
+            // Classify entity so that we know what to send to client
             if (this.collisionManager && entity instanceof ObjectEntity) {
-                // Nothing
-            } else if (entity instanceof CameraEntity) this.cameras.push(id);
-            else this.otherEntities.push(id);
+                // ObjectEntitys need no special handling here
+                // they added to collisionManager in preTick
+            } else if (entity instanceof CameraEntity) {
+                // CameraEntitys entities go into the camera list
+                this.cameras.push(id);
+            } else {
+                // Anything else is stored in otherEntities
+                // (this will be removed soon as it is practically unused)
+                this.otherEntities.push(id);
+            }
 
             if (this.lastId < id) this.lastId = entity.id;
 

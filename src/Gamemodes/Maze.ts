@@ -38,10 +38,14 @@ export class MazeShapeManager extends ShapeManager {
     }
 }
 
+const GRID_SIZE = 40;
+const CELL_SIZE = 635;
+const ARENA_SIZE = GRID_SIZE * CELL_SIZE;
+
 const config: MazeGeneratorConfig = {
-    cellSize: 635,
-    gridSize: 40,
-    seedAmount: Math.floor(Math.random() * 30) + 30,
+    size: GRID_SIZE,
+    baseSeedCount: 45,
+    seedCountVariation: 30,
     turnChance: 0.2,
     branchChance: 0.2,
     terminationChance: 0.2
@@ -52,21 +56,24 @@ export default class MazeArena extends ArenaEntity {
 
     protected shapes: ShapeManager = new MazeShapeManager(this);
 
-    public mazeGenerator: MazeGenerator = new MazeGenerator(this, config);
+    public mazeGenerator: MazeGenerator = new MazeGenerator(config);
 
     public constructor(game: GameServer) {
         super(game);
 
-        const arenaSize = config.cellSize * config.gridSize;
-        this.updateBounds(arenaSize, arenaSize);
+        this.updateBounds(ARENA_SIZE, ARENA_SIZE);
 
-        this.mazeGenerator.buildMaze();
+        this.state = 0;
+        this.mazeGenerator.generate();
+        this.mazeGenerator.placeWalls(this);
 
         this.bossManager = null; // Disables boss spawning
     }
 
     public isValidSpawnLocation(x: number, y: number): boolean {
+        const { gridX, gridY } = this.mazeGenerator.getGridCell(this, x, y);
+        
         // Should never spawn inside walls
-        return !this.mazeGenerator.isInWall(x, y);
+        return this.mazeGenerator.isCellOccupied(gridX, gridY) === false;
     }
 }

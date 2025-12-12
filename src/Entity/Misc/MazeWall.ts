@@ -24,6 +24,25 @@ import { PhysicsFlags, Color } from "../../Const/Enums";
  * Only used for maze walls and nothing else.
  */
 export default class MazeWall extends ObjectEntity {
+    public static newFromBounds(
+        game: GameServer,
+        minX: number,
+        minY: number,
+        maxX: number,
+        maxY: number
+    ): MazeWall {
+        if (minX > maxX) [minX, maxX] = [maxX, minX];
+        if (minY > maxY) [minY, maxY] = [maxY, minY];
+
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        return new MazeWall(game, centerX, centerY, width, height);
+    }
+
     public constructor(game: GameServer, x: number, y: number, width: number, height: number) {
         super(game);
 
@@ -32,8 +51,8 @@ export default class MazeWall extends ObjectEntity {
         this.positionData.values.x = x;
         this.positionData.values.y = y;
 
-        this.physicsData.values.width = width;
-        this.physicsData.values.size = height;
+        this.physicsData.values.width = height;
+        this.physicsData.values.size = width;
         this.physicsData.values.sides = 2;
         this.physicsData.values.flags |= PhysicsFlags.isSolidWall;
         this.physicsData.values.pushFactor = 2;

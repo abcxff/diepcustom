@@ -46,7 +46,6 @@ export default class BossManager {
     }
 
     public findBossSpawnLocation(): VectorAbstract {
-        // TODO confirm this? seems accurate to me so far - X
         const width = this.arena.width / 2;
         const height = this.arena.height / 2;
 
