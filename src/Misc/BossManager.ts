@@ -25,8 +25,6 @@ import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import Defender from "../Entity/Boss/Defender";
 
-import TankBody from "../Entity/Tank/TankBody";
-
 import { bossSpawningInterval } from "../config";
 import { VectorAbstract } from "../Physics/Vector";
 
@@ -50,7 +48,6 @@ export default class BossManager {
         const height = this.arena.height / 2;
 
         const pos = this.arena.findSpawnLocation(width, height);
-
         return pos;
     }
     
@@ -66,7 +63,6 @@ export default class BossManager {
         const deleteMixin = this.boss.delete.bind(this.boss); 
         this.boss.delete = () => {
             deleteMixin();
-
             // Reset arena boss
             this.boss = null;
         }
@@ -77,6 +73,4 @@ export default class BossManager {
             this.spawnBoss();
         }
     }
-
 }
-

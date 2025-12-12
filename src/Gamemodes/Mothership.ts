@@ -24,7 +24,7 @@ import TankBody from "../Entity/Tank/TankBody";
 import GameServer from "../Game";
 import ArenaEntity, { ArenaState } from "../Native/Arena";
 import { Entity } from "../Native/Entity";
-import { PI2 } from "../util";
+import { PI2, randomFrom } from "../util";
 
 const arenaSize = 11150;
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed];
@@ -70,7 +70,7 @@ export default class MothershipArena extends ArenaEntity {
 
     public spawnPlayer(tank: TankBody, client: Client) {
         if (!this.motherships.length && !this.playerTeamMotMap.has(client)) {
-            const team = this.teams[~~(Math.random()*this.teams.length)];
+            const team = randomFrom(this.teams);
             const { x, y } = this.findPlayerSpawnLocation();
 
             tank.positionData.values.x = x;
@@ -80,22 +80,17 @@ export default class MothershipArena extends ArenaEntity {
             return;
         }
 
-        const mothership = this.playerTeamMotMap.get(client) || this.motherships[~~(Math.random() * this.motherships.length)];
+        const mothership = this.playerTeamMotMap.get(client) || randomFrom(this.motherships);
         this.playerTeamMotMap.set(client, mothership);
 
         tank.relationsData.values.team = mothership.relationsData.values.team;
         tank.styleData.values.color = mothership.styleData.values.color;
 
         // TODO: Possess mothership if its unpossessed
-        if (Entity.exists(mothership)) {
-            tank.positionData.values.x = mothership.positionData.values.x;
-            tank.positionData.values.y = mothership.positionData.values.y;
-        } else {
-            const { x, y } = this.findPlayerSpawnLocation();
+        const { x, y } = this.findPlayerSpawnLocation();
 
-            tank.positionData.values.x = x;
-            tank.positionData.values.y = y;
-        }
+        tank.positionData.values.x = x;
+        tank.positionData.values.y = y;
 
         if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
     }

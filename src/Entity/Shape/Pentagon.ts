@@ -58,6 +58,6 @@ export default class Pentagon extends AbstractShape {
             this.entityTags |= EntityTags.isShiny;
         }
 
-        this.arenaMobID = this.isAlpha ? "alphapentagon" : "pentagon";
+        this.arenaMobID = this.isAlpha ? "alphaPentagon" : "pentagon";
     }
 }

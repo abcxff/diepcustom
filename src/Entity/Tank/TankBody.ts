@@ -202,7 +202,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             const barrelsToShoot = this.barrels.filter((e) => e.definition.bullet.type === "necrodrone" && e.droneCount < MAX_DRONES_PER_BARREL);
 
             if (barrelsToShoot.length) {
-                const barrelToShoot = barrelsToShoot[~~(Math.random()*barrelsToShoot.length)];
+                const barrelToShoot = util.randomFrom(barrelsToShoot);
 
                 // No destroy it on the next tick to make it look more like the way diep does it.
                 entity.destroy(true);

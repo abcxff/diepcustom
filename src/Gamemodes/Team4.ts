@@ -25,6 +25,7 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
+import { randomFrom } from "../util";
 
 const arenaSize = 11150;
 const baseSize = arenaSize / (3 + 1/3); // 3345
@@ -63,7 +64,7 @@ export default class Teams4Arena extends ArenaEntity {
         const xOffset = (Math.random() - 0.5) * baseSize,
               yOffset = (Math.random() - 0.5) * baseSize;
         
-        const base = this.playerTeamMap.get(client) || [this.blueTeamBase, this.redTeamBase, this.greenTeamBase, this.purpleTeamBase][0|Math.random()*4];
+        const base = this.playerTeamMap.get(client) || randomFrom([this.blueTeamBase, this.redTeamBase, this.greenTeamBase, this.purpleTeamBase]);
         tank.relationsData.values.team = base.relationsData.values.team;
         tank.styleData.values.color = base.styleData.values.color;
         tank.positionData.values.x = base.positionData.values.x + xOffset;
