@@ -63,7 +63,6 @@ export default class MazeArena extends ArenaEntity {
 
         this.updateBounds(ARENA_SIZE, ARENA_SIZE);
 
-        this.state = 0;
         this.mazeGenerator.generate();
         this.mazeGenerator.placeWalls(this);
 
