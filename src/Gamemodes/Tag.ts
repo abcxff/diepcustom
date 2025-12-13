@@ -30,19 +30,18 @@ import { tps, scoreboardUpdateInterval } from "../config";
 import TeamBase from "../Entity/Misc/TeamBase"
 import Dominator from "../Entity/Misc/Dominator"
 
-import ShapeManager from "../Entity/Shape/Manager";
+import ShapeManager from "../Misc/ShapeManager";
 
-const arenaSize = 11150;
 const TEAM_COLORS = [Color.TeamBlue, Color.TeamRed, Color.TeamPurple, Color.TeamGreen];
 const MIN_PLAYERS = TEAM_COLORS.length * 1; // It is higher in the official servers, though we do not have enough players for that (4 players per team)
+
+const ARENA_SIZE = 11150;
 
 const SHRINK_AMOUNT = 100;
 const SHRINK_INTERVAL = 15 * tps;
 const MIN_SIZE = 6600;
 
 const ENABLE_DOMINATOR = false;
-
-shuffleArray(TEAM_COLORS); // Randomize leading team
 
 /**
  * Manage shape count
@@ -74,8 +73,9 @@ export default class TagArena extends ArenaEntity {
         this.shapeScoreRewardMultiplier = 3.0;
 
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
-		
-        for (const teamColor of TEAM_COLORS) {
+        const teamOrder = TEAM_COLORS.slice();
+        shuffleArray(teamOrder);
+        for (const teamColor of teamOrder) {
             const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
         }
@@ -85,11 +85,10 @@ export default class TagArena extends ArenaEntity {
             new Dominator(this, new TeamBase(game, this, 0, 0, domBaseSize, domBaseSize, false));
         }
 
-        this.updateBounds(arenaSize * 2, arenaSize * 2);
+        this.updateBounds(ARENA_SIZE * 2, ARENA_SIZE * 2);
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
-        this.updateArenaState();
         const deathMixin = tank.onDeath.bind(tank); 
         tank.onDeath = (killer: LivingEntity) => {
             deathMixin(killer);
@@ -109,7 +108,7 @@ export default class TagArena extends ArenaEntity {
         if (!this.playerTeamMap.has(client)) {
             const team = this.getAlivePlayers().length <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
                          this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
-            const { x, y } = this.findSpawnLocation();
+            const { x, y } = this.findPlayerSpawnLocation();
 
             tank.positionData.values.x = x;
             tank.positionData.values.y = y;
@@ -127,7 +126,7 @@ export default class TagArena extends ArenaEntity {
         tank.relationsData.values.team = team;
         tank.styleData.values.color = team.teamData.values.teamColor;
 
-        const { x, y } = this.findSpawnLocation();
+        const { x, y } = this.findPlayerSpawnLocation();
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
@@ -195,4 +194,3 @@ export default class TagArena extends ArenaEntity {
         }
     }
 }
-

@@ -37,7 +37,7 @@ export const ColorsTeamName: { [K in Color]?: string } = {
     [Color.EnemyTriangle]: "TRIANGLE",
     [Color.EnemyPentagon]: "PENTAGON",
     [Color.EnemyCrasher]: "CRASHER",
-    [Color.Neutral]: "a mysterious group",
+    [Color.Neutral]: "NEUTRAL",
     [Color.ScoreboardBar]: "SCOREBOARD",
     [Color.Box]: "MAZE",
     [Color.EnemyTank]: "ENEMY",
@@ -57,5 +57,11 @@ export class TeamEntity extends Entity implements TeamGroupEntity {
 
         this.teamData.values.teamColor = color;
         this.teamName = name;
+    }
+
+    public static isTeam(entity: Entity | null | undefined): entity is TeamEntity {
+        if (!entity) return false;
+
+        return !!entity.teamData;
     }
 }

@@ -19,7 +19,7 @@
 import GameServer from "../../Game";
 import ArenaEntity from "../../Native/Arena";
 
-import ShapeManager from "../../Entity/Shape/Manager";
+import ShapeManager from "../../Misc/ShapeManager";
 import { NameFlags, Tank } from "../../Const/Enums";
 import Dominator from "../../Entity/Misc/Dominator";
 import TeamBase from "../../Entity/Misc/TeamBase";

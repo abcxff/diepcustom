@@ -18,7 +18,7 @@
 
 import AbstractShape from "../../Entity/Shape/AbstractShape";
 import Crasher from "../../Entity/Shape/Crasher";
-import ShapeManager from "../../Entity/Shape/Manager";
+import ShapeManager from "../../Misc/ShapeManager";
 import GameServer from "../../Game";
 import ArenaEntity, { ArenaState } from "../../Native/Arena";
 
@@ -29,7 +29,7 @@ class ManyCrashersManager extends ShapeManager {
 
     protected spawnShape(): AbstractShape {
         const shape = new Crasher(this.arena.game, Math.random() < 0.3);
-        const loc = this.arena.findSpawnLocation(false);
+        const loc = this.arena.findSpawnLocation();
         shape.positionData.values.x = loc.x;
         shape.positionData.values.y = loc.y;
         return shape;

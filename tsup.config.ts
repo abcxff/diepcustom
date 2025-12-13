@@ -9,5 +9,6 @@ export default defineConfig({
   sourcemap: false,
   minify: false,
   skipNodeModulesBundle: true,
+  onSuccess: 'npm run check',
   external: ['uWebSockets.js']
 })

@@ -22,7 +22,7 @@ import Vector from "../Physics/Vector";
 
 import { PhysicsGroup, PositionGroup, RelationsGroup, StyleGroup } from "../Native/FieldGroups";
 import { Entity } from "../Native/Entity";
-import { PositionFlags, PhysicsFlags } from "../Const/Enums";
+import { PositionFlags, PhysicsFlags, EntityTags } from "../Const/Enums";
 
 /**
  * The animator for how entities delete (the opacity and size fade out).
@@ -70,10 +70,13 @@ class DeletionAnimation {
 export default class ObjectEntity extends Entity {
     /** Always existant relations field group. Present in all objects. */
     public relationsData: RelationsGroup = new RelationsGroup(this);
+
     /** Always existant physics field group. Present in all objects. */
     public physicsData: PhysicsGroup = new PhysicsGroup(this);
+
     /** Always existant position field group. Present in all objects. */
     public positionData: PositionGroup = new PositionGroup(this);
+
     /** Always existant style field group. Present in all objects. */
     public styleData: StyleGroup = new StyleGroup(this);
 
@@ -92,6 +95,12 @@ export default class ObjectEntity extends Entity {
     /** Used to determine the parent of all parents. */
     public rootParent: ObjectEntity = this;
 
+    /** Entity tags. */
+    public entityTags: number = 0;
+    
+    /** Entity type ID. */
+    public arenaMobID: string = ""
+
     /** Velocity used for physics. */
     public velocity = new Vector();
 
@@ -107,6 +116,12 @@ export default class ObjectEntity extends Entity {
         super(game);
 
         this.styleData.zIndex = game.entities.zIndex++;
+    }
+    
+    public static isObject(entity: Entity | null | undefined): entity is ObjectEntity {
+        if (!entity) return false;
+
+        return !!entity.physicsData;
     }
 
     /** Receives collision pairs from CollisionManager and applies kb */
@@ -222,11 +237,18 @@ export default class ObjectEntity extends Entity {
         super.delete();
     }
 
-    /** @deprecated Applies acceleration to the object. */
+    /**
+     * DEPRECATED:
+     * Please switch to calling `addVelocity()` instead.
+     * 
+     * > Applies acceleration to the object
+     * @deprecated
+     */
     public addAcceleration(angle: number, acceleration: number) {
         this.addVelocity(angle, acceleration);
     }
 
+    /** Adds to the velocity of the object. */
     public addVelocity(angle: number, magnitude: number) {
         this.velocity.add(Vector.fromPolar(angle, magnitude));
     }
@@ -284,20 +306,20 @@ export default class ObjectEntity extends Entity {
                 const relB = Math.sin(kbAngle + entity.positionData.values.angle) / entity.physicsData.values.width;
                 if (Math.abs(relA) <= Math.abs(relB)) {
                     if (relB < 0) {
-                        this.addAcceleration(Math.PI * 3 / 2, kbMagnitude);
+                        this.addVelocity(Math.PI * 3 / 2, kbMagnitude);
                     } else {
-                        this.addAcceleration(Math.PI * 1 / 2, kbMagnitude);
+                        this.addVelocity(Math.PI * 1 / 2, kbMagnitude);
                     }
                 } else {
                     if (relA < 0) {
-                        this.addAcceleration(Math.PI, kbMagnitude);
+                        this.addVelocity(Math.PI, kbMagnitude);
                     } else {
-                        this.addAcceleration(0, kbMagnitude);
+                        this.addVelocity(0, kbMagnitude);
                     }
                 }
             }
         } else {
-            this.addAcceleration(kbAngle, kbMagnitude);
+            this.addVelocity(kbAngle, kbMagnitude);
         }
     }
 
@@ -323,7 +345,7 @@ export default class ObjectEntity extends Entity {
         let par = 0;
         
         let entity: ObjectEntity = this;
-        while (entity.relationsData.values.parent instanceof ObjectEntity) {
+        while (ObjectEntity.isObject(entity.relationsData.values.parent)) {
             if (!(entity.relationsData.values.parent.positionData.values.flags & PositionFlags.absoluteRotation)) pos.angle += entity.positionData.values.angle;
             entity = entity.relationsData.values.parent;
             px += entity.positionData.values.x;
@@ -346,24 +368,35 @@ export default class ObjectEntity extends Entity {
         this.game.entities.globalEntities.push(this.id);
     }
 
+    /** Keeps the object within the arena bounds. */
+    protected keepInArena() {
+        const arena = this.game.arena.arenaData;
+        const padding = this.game.arena.ARENA_PADDING;
+
+        if (this.positionData.values.x < arena.values.leftX - padding) {
+            this.positionData.x = arena.values.leftX - padding;
+        } else if (this.positionData.values.x > arena.values.rightX + padding) {
+            this.positionData.x = arena.values.rightX + padding;
+        }
+        
+        if (this.positionData.values.y < arena.values.topY - padding) {
+            this.positionData.y = arena.values.topY - padding;
+        } else if (this.positionData.values.y > arena.values.bottomY + padding) {
+            this.positionData.y = arena.values.bottomY + padding;
+        }
+    }
+
     public tick(tick: number) {
         this.deletionAnimation?.tick();
 
         for (let i = 0; i < this.children.length; ++i) this.children[i].tick(tick);
     
         // Keep things in the arena
-        if (!(this.physicsData.values.flags & PhysicsFlags.canEscapeArena) && this.isPhysical) {
-            const arena = this.game.arena;
-            xPos: {
-                if (this.positionData.values.x < arena.arenaData.values.leftX - arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.leftX - arena.ARENA_PADDING;
-                else if (this.positionData.values.x > arena.arenaData.values.rightX + arena.ARENA_PADDING) this.positionData.x = arena.arenaData.values.rightX + arena.ARENA_PADDING;
-                else break xPos;
-            }
-            yPos: {
-                if (this.positionData.values.y < arena.arenaData.values.topY - arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.topY - arena.ARENA_PADDING;
-                else if (this.positionData.values.y > arena.arenaData.values.bottomY + arena.ARENA_PADDING) this.positionData.y = arena.arenaData.values.bottomY + arena.ARENA_PADDING;
-                else break yPos;
-            }
+        if (
+            this.isPhysical &&
+            !(this.physicsData.values.flags & PhysicsFlags.canEscapeArena)
+        ) {
+            this.keepInArena();
         }
     }
 }

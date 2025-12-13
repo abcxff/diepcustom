@@ -25,7 +25,7 @@ import { Tank } from "../../../Const/Enums";
 import { AIState } from "../../AI";
 
 /**
- * Class which represents the boss "FallenBooster"
+ * Class which represents the boss "Fallen Mega Trapper"
  */
 export default class FallenMegaTrapper extends AbstractBoss {
     /** The speed to maintain during movement. */
@@ -34,10 +34,10 @@ export default class FallenMegaTrapper extends AbstractBoss {
     public constructor(game: GameServer) {
         super(game);
 
-        this.nameData.values.name = 'Fallen Mega Trapper';
+        this.nameData.values.name = "Fallen Mega Trapper";
 
         for (const barrelDefinition of TankDefinitions[Tank.MegaTrapper].barrels) {
-            const def = Object.assign({}, barrelDefinition, {reload: 4});
+            const def = Object.assign({}, barrelDefinition, { reload: 4 });
             def.bullet = Object.assign({}, def.bullet, { speed: 1.7, damage: 20, health: 20, });
             this.barrels.push(new Barrel(this, def));
         }

@@ -21,13 +21,13 @@ import * as util from "../../util";
 import type GameServer from "../../Game";
 import type { CameraEntity } from "../../Native/Camera";
 
-import Square from "../Shape/Square";
+import AbstractShape from "../Shape/AbstractShape";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
 import LivingEntity from "../Live";
 import ObjectEntity from "../Object";
 import Barrel from "./Barrel";
 
-import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, PhysicsFlags, PositionFlags, NameFlags, HealthFlags } from "../../Const/Enums";
+import { Color, StyleFlags, StatCount, Tank, CameraFlags, Stat, InputFlags, PhysicsFlags, PositionFlags, NameFlags, HealthFlags, EntityTags } from "../../Const/Enums";
 import { Entity } from "../../Native/Entity";
 import { NameGroup, ScoreGroup } from "../../Native/FieldGroups";
 import { Addon, AddonById } from "./Addons";
@@ -100,6 +100,14 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.damagePerTick = 5;
         this.maxDamageMultiplier = 6;
         this.setTank(Tank.Basic);
+
+        this.entityTags |= EntityTags.isTank;
+    }
+    
+    public static isTank(entity: Entity | null | undefined): entity is TankBody {
+        if (!ObjectEntity.isObject(entity)) return false;
+
+        return !!(entity.entityTags & EntityTags.isTank);
     }
 
     /** The active change in size from the base size to the current. Contributes to barrel and addon sizes. */
@@ -188,13 +196,13 @@ export default class TankBody extends LivingEntity implements BarrelBase {
 
         // TODO(ABC):
         // This is actually not how necromancers claim squares.
-        if (entity instanceof Square && this.definition.flags.canClaimSquares && this.barrels.length) {
+        if (entity.arenaMobID === "square" && this.definition.flags.canClaimSquares && this.barrels.length) {
             // If can claim, pick a random barrel that has drones it can still shoot, then shoot
             const MAX_DRONES_PER_BARREL = 11 + this.cameraEntity.cameraData.values.statLevels.values[Stat.Reload];
             const barrelsToShoot = this.barrels.filter((e) => e.definition.bullet.type === "necrodrone" && e.droneCount < MAX_DRONES_PER_BARREL);
 
             if (barrelsToShoot.length) {
-                const barrelToShoot = barrelsToShoot[~~(Math.random()*barrelsToShoot.length)];
+                const barrelToShoot = util.randomFrom(barrelsToShoot);
 
                 // No destroy it on the next tick to make it look more like the way diep does it.
                 entity.destroy(true);
@@ -204,7 +212,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                     entity.healthData.flags = HealthFlags.hiddenHealthbar
                 }
 
-                const sunchip = NecromancerSquare.fromShape(barrelToShoot, this, this.definition, entity);
+                const sunchip = NecromancerSquare.fromShape(barrelToShoot, this, this.definition, entity as AbstractShape);
             }
         }
     }

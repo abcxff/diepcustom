@@ -19,10 +19,11 @@
 import GameServer from "../../Game";
 import AbstractShape from "./AbstractShape";
 
-import { Color } from "../../Const/Enums";
+import { Color, EntityTags } from "../../Const/Enums";
+import { shinyChance } from "../../config";
 
 export default class Triangle extends AbstractShape {
-    public constructor(game: GameServer, shiny=Math.random() < 0.000001) {
+    public constructor(game: GameServer, shiny=Math.random() < shinyChance) {
         super(game);
         
         this.nameData.values.name = "Triangle";
@@ -38,6 +39,9 @@ export default class Triangle extends AbstractShape {
         if (shiny) {
             this.scoreReward *= 100;
             this.healthData.values.health = this.healthData.values.maxHealth *= 10;
+            this.entityTags |= EntityTags.isShiny;
         }
+
+        this.arenaMobID = "triangle";
     }
 }

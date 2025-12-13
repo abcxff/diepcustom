@@ -1,3 +1,21 @@
+/*
+    DiepCustom - custom tank game server that shares diep.io's WebSocket protocol
+    Copyright (C) 2022 ABCxFF (github.com/ABCxFF)
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program. If not, see <https://www.gnu.org/licenses/>
+*/
+
 import Client from "../Client"
 import { AccessLevel, maxPlayerLevel } from "../config";
 import AbstractBoss from "../Entity/Boss/AbstractBoss";
@@ -169,14 +187,14 @@ export const commandCallbacks = {
     game_set_tank: (client: Client, tankNameArg: string) => {
         const tankDef = getTankByName(tankNameArg);
         const player = client.camera?.cameraData.player;
-        if (!tankDef || !Entity.exists(player) || !(player instanceof TankBody)) return;
+        if (!tankDef || !Entity.exists(player) || !TankBody.isTank(player)) return;
         if (tankDef.flags.devOnly && client.accessLevel !== AccessLevel.FullAccess) return;
         player.setTank(tankDef.id);
     },
     game_set_level: (client: Client, levelArg: string) => {
         const level = parseInt(levelArg);
         const player = client.camera?.cameraData.player;
-        if (isNaN(level) || !Entity.exists(player) || !(player instanceof TankBody)) return;
+        if (isNaN(level) || !Entity.exists(player) || !TankBody.isTank(player)) return;
         const finalLevel = client.accessLevel == AccessLevel.FullAccess ? level : Math.min(maxPlayerLevel, level);
         client.camera?.setLevel(finalLevel);
     },
@@ -184,7 +202,7 @@ export const commandCallbacks = {
         const score = parseInt(scoreArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (isNaN(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !(player instanceof TankBody) || !camera) return;
+        if (isNaN(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.score = score;
     },
     game_set_stat_max: (client: Client, statIdArg: string, statMaxArg: string) => {
@@ -192,7 +210,7 @@ export const commandCallbacks = {
         const statMax = parseInt(statMaxArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statMax) || !Entity.exists(player) || !(player instanceof TankBody) || !camera) return;
+        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statMax) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         const clampedStatMax = Math.max(statMax, 0);
         camera.statLimits[statId as Stat] = clampedStatMax;
         camera.statLevels[statId as Stat] = Math.min(camera.statLevels[statId as Stat], clampedStatMax);
@@ -202,19 +220,19 @@ export const commandCallbacks = {
         const statPoints = parseInt(statPointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statPoints) || !Entity.exists(player) || !(player instanceof TankBody) || !camera) return;
+        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statPoints) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statLevels[statId as Stat] = statPoints;
     },
     game_add_upgrade_points: (client: Client, pointsArg: string) => {
         const points = parseInt(pointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (isNaN(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !(player instanceof TankBody) || !camera) return;
+        if (isNaN(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statsAvailable += points;
     },
     game_teleport: (client: Client, xArg: string, yArg: string) => {
         const player = client.camera?.cameraData.player;
-        if (!Entity.exists(player) || !(player instanceof ObjectEntity)) return;
+        if (!Entity.exists(player) || !ObjectEntity.isObject(player)) return;
         const x = xArg.match(RELATIVE_POS_REGEX) ? player.positionData.x + parseInt(xArg.slice(1) || "0", 10) : parseInt(xArg, 10);
         const y = yArg.match(RELATIVE_POS_REGEX) ? player.positionData.y + parseInt(yArg.slice(1) || "0", 10) : parseInt(yArg, 10);
         if (isNaN(x) || isNaN(y)) return;
@@ -244,7 +262,7 @@ export const commandCallbacks = {
     },
     game_godmode: (client: Client, activeArg?: string) => {
         const player = client.camera?.cameraData.player;
-        if (!Entity.exists(player) || !(player instanceof TankBody)) return;
+        if (!Entity.exists(player) || !TankBody.isTank(player)) return;
 
         switch (activeArg) {
             case "on":
@@ -281,7 +299,7 @@ export const commandCallbacks = {
         let y = parseInt(yArg || "0", 10);
 
         const player = client.camera?.cameraData.player;
-        if (Entity.exists(player) && player instanceof ObjectEntity) {
+        if (Entity.exists(player) && ObjectEntity.isObject(player)) {
             if (xArg && xArg.match(RELATIVE_POS_REGEX)) {
                 x = player.positionData.x + parseInt(xArg.slice(1) || "0", 10);
             }
@@ -325,7 +343,7 @@ export const commandCallbacks = {
             const entity = game.entities.inner[id];
             if (
                 Entity.exists(entity) &&
-                entity instanceof LivingEntity &&
+                LivingEntity.isLive(entity) &&
                 entity !== client.camera?.cameraData.player && 
                 !(entity.physicsData.values.flags & PhysicsFlags.showsOnMap)
             ) entity.destroy();

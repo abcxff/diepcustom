@@ -16,15 +16,15 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import ArenaEntity from "../../Native/Arena";
-import GameServer from "../../Game";
+import ArenaEntity from "../Native/Arena";
+import GameServer from "../Game";
 
-import Crasher from "./Crasher";
-import Pentagon from "./Pentagon";
-import Triangle from "./Triangle";
-import Square from "./Square";
-import AbstractShape from "./AbstractShape";
-import { removeFast } from "../../util";
+import Crasher from "../Entity/Shape/Crasher";
+import Pentagon from "../Entity/Shape/Pentagon";
+import Triangle from "../Entity/Shape/Triangle";
+import Square from "../Entity/Shape/Square";
+import AbstractShape from "../Entity/Shape/AbstractShape";
+import { removeFast } from "../util";
 
 /**
  * Used to balance out shape count in the arena, as well

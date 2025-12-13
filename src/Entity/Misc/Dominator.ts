@@ -16,10 +16,12 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import { Color, ColorsHexCode, NameFlags, StyleFlags, Tank, ClientBound } from "../../Const/Enums";
+import { Color, ColorsHexCode, NameFlags, StyleFlags, EntityTags, Tank, ClientBound } from "../../Const/Enums";
 import ArenaEntity from "../../Native/Arena";
 import ClientCamera, { CameraEntity } from "../../Native/Camera";
+import { Entity } from "../../Native/Entity";
 import { AI, AIState, Inputs } from "../AI";
+import ObjectEntity from "../Object";
 import LivingEntity from "../Live";
 import Bullet from "../Tank/Projectile/Bullet";
 import TankBody from "../Tank/TankBody";
@@ -97,13 +99,23 @@ export default class Dominator extends TankBody {
             this.styleData.values.flags ^= StyleFlags.isFlashing;
             this.damageReduction = 1.0;
         }
+
+        this.entityTags |= EntityTags.isDominator;
+    }
+
+    public static isDominator(entity: Entity | null | undefined): entity is Dominator {
+        if (!ObjectEntity.isObject(entity)) return false;
+
+        return !!(entity.entityTags & EntityTags.isDominator);
     }
 
     public onDeath(killer: LivingEntity) {
-        if (this.relationsData.values.team === this.game.arena && killer.relationsData.values.team instanceof TeamEntity) {
-            const killerTeam = killer.relationsData.values.team;
-            this.relationsData.team = killerTeam || this.game.arena;
-            this.styleData.color = this.relationsData.team.teamData?.teamColor || killer.styleData.values.color;
+        const killerTeam = killer.relationsData.values.team;
+        
+        if (TeamEntity.isTeam(killerTeam) && this.relationsData.values.team === this.game.arena) { // Only proper teams should capture doms
+            // capture neutral dominator
+            this.relationsData.team = killerTeam;
+            this.styleData.color = killerTeam.teamData.values.teamColor
             this.game.broadcast()
                 .u8(ClientBound.Notification)
                 .stringNT(`The ${this.prefix}${this.nameData.values.name} is now controlled by ${killerTeam.teamName}`)

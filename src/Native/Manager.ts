@@ -17,7 +17,9 @@
 */
 
 import GameServer from "../Game";
+
 import ObjectEntity from "../Entity/Object";
+import LivingEntity from "../Entity/Live";
 
 import CollisionManager from "../Physics/CollisionManager";
 import HashGrid from "../Physics/HashGrid";
@@ -26,7 +28,7 @@ import { CameraEntity } from "./Camera";
 import { Entity } from "./Entity";
 import { AI } from "../Entity/AI";
 import { removeFast } from "../util";
-import LivingEntity from "../Entity/Live";
+import { EntityTags } from "../Const/Enums";
 
 /**
  * Manages all entities in the game.
@@ -68,14 +70,23 @@ export default class EntityManager {
         for (let id = 0; id <= lastId; ++id) {
             if (this.inner[id]) continue;
 
+            // We found a free id
             entity.id = id;
             entity.hash = entity.preservedHash = this.hashTable[id] += 1;
             this.inner[id] = entity;
-            
 
+            // Classify entity so that we know what to send to client
             if (this.collisionManager && entity instanceof ObjectEntity) {
-            } else if (entity instanceof CameraEntity) this.cameras.push(id);
-            else this.otherEntities.push(id);
+                // ObjectEntitys need no special handling here
+                // they added to collisionManager in preTick
+            } else if (entity instanceof CameraEntity) {
+                // CameraEntitys entities go into the camera list
+                this.cameras.push(id);
+            } else {
+                // Anything else is stored in otherEntities
+                // (this will be removed soon as it is practically unused)
+                this.otherEntities.push(id);
+            }
 
             if (this.lastId < id) this.lastId = entity.id;
 
@@ -92,9 +103,9 @@ export default class EntityManager {
         if (!entity) throw new RangeError("Deleting entity that isn't in the game?");
         entity.hash = 0;
 
-        if (this.collisionManager && entity instanceof ObjectEntity) {
+        if (this.collisionManager && ObjectEntity.isObject(entity)) {
             // Nothing I guess
-        } else if (entity instanceof CameraEntity) removeFast(this.cameras, this.cameras.indexOf(id));
+        } else if (entity.cameraData) removeFast(this.cameras, this.cameras.indexOf(id));
         else removeFast(this.otherEntities, this.otherEntities.indexOf(id));
 
         // TODO(speed)[not super important]:
@@ -126,46 +137,59 @@ export default class EntityManager {
         ObjectEntity.handleCollision(entityA, entityB);
 
         if (
-            entityA instanceof LivingEntity &&
-            entityB instanceof LivingEntity
+            LivingEntity.isLive(entityA) &&
+            LivingEntity.isLive(entityB)
         ) {
             LivingEntity.handleCollision(entityA, entityB);
         }
     }.bind(this);
+    
+    public preTick(tick: number) {
+        this.collisionManager.preTick(tick);
 
-    /** Ticks all entities in the game. */
-    public tick(tick: number) {
         while (!this.inner[this.lastId] && this.lastId >= 0) {
             this.lastId -= 1;
         }
 
-        scanner: for (let id = 0; id <= this.lastId; ++id) {
+        for (let id = 0; id <= this.lastId; ++id) {
             const entity = this.inner[id];
 
             if (!Entity.exists(entity)) continue;
 
-            if (entity instanceof ObjectEntity && entity.isPhysical) {
+            if (ObjectEntity.isObject(entity) && entity.isPhysical) {
                 this.collisionManager.insert(entity);
             }
         }
+    }
 
-        this.collisionManager.forEachCollisionPair(this.handleCollision)
+    public postTick(tick: number) {
+        this.collisionManager.postTick(tick);
 
         for (let id = 0; id <= this.lastId; ++id) {
             const entity = this.inner[id];
 
-            if (entity && entity instanceof ObjectEntity && entity.isPhysical) {
-                entity.applyPhysics();
+            if (entity) {
+                entity.wipeState();
             }
         }
+    }
+
+    /** Ticks all entities in the game. */
+    public tick(tick: number) {
+        this.collisionManager.forEachCollisionPair(this.handleCollision);
 
         for (let id = 0; id <= this.lastId; ++id) {
-            const entity = this.inner[id];
+            const entity = this.inner[id] as ObjectEntity;
 
-            if (!Entity.exists(entity)) continue;
+            // Alternatively, Entity.exists(entity), though this is probably faster.
+            if (!entity || entity.hash === 0) continue;
+            
+            if (entity.isPhysical) {
+                entity.applyPhysics();
+            }
 
-            if (!(entity instanceof CameraEntity)) {
-                if (!(entity instanceof ObjectEntity) || !entity.isChild) entity.tick(tick);
+            if (!entity.isChild) {
+                entity.tick(tick);
             }
         }
 
@@ -179,14 +203,6 @@ export default class EntityManager {
 
         for (let i = 0; i < this.cameras.length; ++i) {
             (this.inner[this.cameras[i]] as CameraEntity).tick(tick);
-        }
-
-        for (let id = 0; id <= this.lastId; ++id) {
-            const entity = this.inner[id];
-
-            if (entity) {
-                entity.wipeState();
-            }
         }
     }
 }

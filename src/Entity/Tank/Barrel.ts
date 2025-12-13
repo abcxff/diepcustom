@@ -58,7 +58,7 @@ export class ShootCycle {
         const reloadTime = this.barrelEntity.tank.reloadTime * this.barrelEntity.definition.reload;
         if (reloadTime !== this.reloadTime) {
             this.pos *= reloadTime / this.reloadTime;
-            this.reloadTime = reloadTime;
+            this.reloadTime = this.barrelEntity.barrelData.reloadTime = reloadTime;
         }
 
         const alwaysShoot = (this.barrelEntity.definition.forceFire) || (this.barrelEntity.definition.bullet.type === 'drone') || (this.barrelEntity.definition.bullet.type === 'minion');
@@ -154,11 +154,11 @@ export default class Barrel extends ObjectEntity {
         const scatterAngle = (Math.PI / 180) * this.definition.bullet.scatterRate * (Math.random() - .5) * 10;
         let angle = this.definition.angle + scatterAngle + this.tank.positionData.values.angle;
 
-        this.rootParent.addAcceleration(angle + Math.PI, this.definition.recoil * 2);
+        this.rootParent.addVelocity(angle + Math.PI, this.definition.recoil * 2);
 
         let tankDefinition: TankDefinition | null = null;
 
-        if (this.rootParent instanceof TankBody) tankDefinition = this.rootParent.definition;
+        if (TankBody.isTank(this.rootParent)) tankDefinition = this.rootParent.definition;
 
         let projectile: ObjectEntity | null = null;
 

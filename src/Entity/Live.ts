@@ -18,7 +18,8 @@
 
 import ObjectEntity from "./Object";
 
-import { StyleFlags } from "../Const/Enums";
+import { Entity } from "../Native/Entity";
+import { StyleFlags, EntityTags } from "../Const/Enums";
 import { HealthGroup } from "../Native/FieldGroups";
 
 /**
@@ -56,6 +57,12 @@ export default class LivingEntity extends ObjectEntity {
         if (animate) this.healthData.health = 0;
 
         super.destroy(animate);
+    }
+    
+    public static isLive(entity: Entity | null | undefined): entity is LivingEntity {
+        if (!ObjectEntity.isObject(entity)) return false;
+
+        return !!entity.healthData;
     }
 
     /** Applies damage to two entity after colliding with eachother. */
@@ -104,11 +111,11 @@ export default class LivingEntity extends ObjectEntity {
             this.healthData.health = 0;
 
             let killer: ObjectEntity = source;
-            while (killer.relationsData.values.owner instanceof ObjectEntity && killer.relationsData.values.owner.hash !== 0) {
+            while (ObjectEntity.isObject(killer.relationsData.values.owner) && killer.relationsData.values.owner.hash !== 0) {
                 killer = killer.relationsData.values.owner;
             }
 
-            if (killer instanceof LivingEntity) {
+            if (LivingEntity.isLive(killer)) {
                 this.onDeath(killer);
             }
 
@@ -129,7 +136,7 @@ export default class LivingEntity extends ObjectEntity {
         if (this.healthData.values.health <= 0) {
             this.destroy(true);
 
-            this.damagedEntities = [];
+            this.damagedEntities.length = 0;
             return;
         }
 
@@ -147,7 +154,7 @@ export default class LivingEntity extends ObjectEntity {
             this.healthData.health = this.healthData.values.maxHealth;
         }
 
-        this.damagedEntities = [];
+        this.damagedEntities.length = 0;
     }
 
     public tick(tick: number) {

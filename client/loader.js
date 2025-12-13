@@ -257,6 +257,9 @@ Module.executeCommand = execCtx => {
         if(!Module.commandDefinitions.find(({ id }) => id === tokens[0])) {
             throw `${Module.executionCallbackMap[tokens]} for command ${cmd} is an invalid callback`;
         }
+
+        if (Game.socket.readyState !== WebSocket.OPEN) return;
+        
         return Game.socket.send(new Uint8Array([
             6,
             ...Encoder.encode(tokens[0]), 0,

@@ -31,7 +31,7 @@ export default class FallenOverlord extends AbstractBoss {
     public constructor(game: GameServer) {
         super(game);
 
-        this.nameData.values.name = 'Fallen Overlord';
+        this.nameData.values.name = "Fallen Overlord";
 
         for (const barrelDefinition of TankDefinitions[Tank.Overlord].barrels) {
 

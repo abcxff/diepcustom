@@ -13,11 +13,11 @@
   ],
   "license": "AGPL-3.0-only",
   "scripts": {
-    "build": "npx tsup",
-    "dev": "npx tsup --watch --onSuccess \"node lib/index.js\"",
-    "check": "npx tsc --noEmit",
+    "check": "tsc --noEmit",
     "start": "node index",
+    "build": "npm run check && tsup",
     "server": "npm run build && npm run start",
+    "dev": "tsup --watch --onSuccess \"npm run check && npm run start\"",
     "docker:build": "docker build --tag diepcustom .",
     "docker:start": "docker run --pull never --rm --publish ${PORT:-8080}:8080 --env PORT=8080 --env DEV_PASSWORD_HASH --env SERVER_INFO --env NODE_ENV --init --interactive --tty diepcustom",
     "docker": "npm run docker:build && npm run docker:start"

@@ -17,9 +17,11 @@
 */
 
 import GameServer from "../../Game";
+import ObjectEntity from "../Object";
 import LivingEntity from "../Live";
 
-import { Color, PositionFlags, NameFlags } from "../../Const/Enums";
+import { Entity } from "../../Native/Entity";
+import { Color, PositionFlags, NameFlags, EntityTags } from "../../Const/Enums";
 import { NameGroup } from "../../Native/FieldGroups";
 import { AI } from "../AI";
 import { normalizeAngle, PI2 } from "../../util";
@@ -74,6 +76,14 @@ export default class AbstractShape extends LivingEntity {
         this.orbitAngle = this.positionData.values.angle = (Math.random() * PI2);
         
         this.maxDamageMultiplier = 4.0;
+
+        this.entityTags |= EntityTags.isShape;
+    }
+    
+    public static isShape(entity: Entity | null | undefined): entity is AbstractShape {
+        if (!ObjectEntity.isObject(entity)) return false;
+
+        return !!(entity.entityTags & EntityTags.isShape);
     }
 
     protected turnTo(angle: number) {

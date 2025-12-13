@@ -72,24 +72,24 @@ export default class Mothership extends TankBody {
 
         const def = (this.definition = Object.assign({}, this.definition));
         // 418 is what the normal health increase for stat/level would be, so we just subtract it and force it 7k
-        def.maxHealth = 7008 - 418;
+        def.maxHealth = 7000 - 418;
     }
 
     public onDeath(killer: Live): void {
         if ((this.game.arena.state >= ArenaState.OVER)) return; // Do not send a defeat notification if the game has been won already
 
         const team = this.relationsData.values.team;
-        const teamIsATeam = team instanceof TeamEntity;
+        const teamIsATeam = TeamEntity.isTeam(team);
 
         const killerTeam = killer.relationsData.values.team;
-        const killerTeamIsATeam = killerTeam instanceof TeamEntity;
+        const killerTeamIsATeam = TeamEntity.isTeam(killerTeam);
 
         // UNCOMMENT TO ALLOW SOLO KILLS
         // if (!killerTeamIsATeam) return;
         this.game.broadcast()
             .u8(ClientBound.Notification)
             // If mothership has a team name, use it, otherwise just say has destroyed a mothership
-            .stringNT(`${killerTeamIsATeam ? killerTeam.teamName : (killer.nameData?.values.name || "an unnamed tank")} has destroyed ${teamIsATeam ? team.teamName + "'s" : "a"} Mothership!`)
+            .stringNT(`${killerTeamIsATeam ? (killerTeam.teamName || "a mysterious group") : (killer.nameData?.values.name || "an unnamed tank")} has destroyed ${teamIsATeam ? team.teamName + "'s" : "a"} Mothership!`)
             .u32(killerTeamIsATeam ? ColorsHexCode[killerTeam.teamData.values.teamColor] : 0x000000)
             .float(-1)
             .stringNT("").send();   

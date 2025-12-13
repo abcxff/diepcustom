@@ -31,7 +31,7 @@ export default class FallenSpike extends AbstractBoss {
 
         this.movementSpeed = 3.0;
 
-        this.nameData.values.name = 'Fallen Spike';
+        this.nameData.values.name = "Fallen Spike";
 
         // Sharp
         this.damagePerTick *= 2;

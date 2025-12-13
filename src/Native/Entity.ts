@@ -40,7 +40,9 @@ export class Entity {
      * Determines if the first parameter is an entity and not a deleted one.
      */
     public static exists(entity: Entity | null | undefined): entity is Entity {
-        return entity instanceof Entity && entity.hash !== 0
+        if (!entity) return false;
+
+        return (entity as Entity).hash !== 0;
     }
 
     /**

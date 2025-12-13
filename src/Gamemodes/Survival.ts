@@ -22,11 +22,11 @@ import ArenaEntity, { ArenaState } from "../Native/Arena";
 import { Entity } from "../Native/Entity";
 import TankBody from "../Entity/Tank/TankBody";
 
-import ShapeManager from "../Entity/Shape/Manager";
+import ShapeManager from "../Misc/ShapeManager";
 import { ArenaFlags, ClientBound } from "../Const/Enums";
 import { tps, countdownTicks, scoreboardUpdateInterval } from "../config";
 
-const MIN_PLAYERS = 4;
+const MIN_PLAYERS = 4; // 6 in Diep.io
 
 /**
  * Manage shape count
@@ -51,9 +51,10 @@ export default class SurvivalArena extends ArenaEntity {
         super(game);
         this.shapeScoreRewardMultiplier = 3.0;
 
-        this.updateBounds(2500, 2500);
         this.arenaData.values.flags &= ~ArenaFlags.gameReadyStart;
         this.arenaData.values.playersNeeded = MIN_PLAYERS;
+
+        this.setSurvivalArenaSize(0);
     }
 
     public updateArenaState() {

@@ -67,6 +67,9 @@ export default class NecromancerSquare extends Drone {
 
         sunchip.damagePerTick *= shapeDamagePerTick / 2;
         sunchip.healthData.values.maxHealth = (sunchip.healthData.values.health *= (shapeDamagePerTick / 2));
+
+        sunchip.scoreReward = shape.scoreReward;
+
         return sunchip;
     }
 }

@@ -282,6 +282,17 @@ export const enum NameFlags {
 }
 
 /**
+ * Entity type flags.
+ */
+export const enum EntityTags {
+    isShape = 1 << 0,
+    isTank = 1 << 1,
+    isDominator = 1 << 2,
+    isBoss = 1 << 3,
+    isShiny = 1 << 4,
+}
+
+/**
  * Credits to CX for discovering this.
  * This is not fully correct but it works up to the decimal (float rounding likely causes this).
  * 

@@ -25,6 +25,7 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
+import { randomFrom } from "../util";
 
 const arenaSize = 11150;
 const baseWidth = arenaSize / (3 + 1/3) * 0.6; // 2007
@@ -39,13 +40,6 @@ export default class Teams2Arena extends ArenaEntity {
     public blueTeamBase: TeamBase;
     /** Red Team entity */
     public redTeamBase: TeamBase;
-    // /** Limits shape count 100 */
-    //     protected shapes: ShapeManager = new class extends ShapeManager {
-    //     protected get wantedShapes() {
-    //         return 64;
-    //     }
-    // }(this);
-
     /** Maps clients to their teams */
     public playerTeamMap: WeakMap<Client, TeamBase> = new WeakMap();
     
@@ -61,7 +55,7 @@ export default class Teams2Arena extends ArenaEntity {
 
         const xOffset = (Math.random() - 0.5) * baseWidth;
         
-        const base = this.playerTeamMap.get(client) || [this.blueTeamBase, this.redTeamBase][0|Math.random()*2];
+        const base = this.playerTeamMap.get(client) || randomFrom([this.blueTeamBase, this.redTeamBase]);
         tank.relationsData.values.team = base.relationsData.values.team;
         tank.styleData.values.color = base.styleData.values.color;
         tank.positionData.values.x = base.positionData.values.x + xOffset;

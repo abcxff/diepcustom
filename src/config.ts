@@ -41,10 +41,13 @@ export const writtenBufferChunkSize = Buffer.poolSize || 2048;
 export const host: string = process.env.SERVER_INFO || "unknown";
 
 /** Runtime mode. */
-export const mode: string = process.env.NODE_ENV || "development";
+export const mode: string = process.env.NODE_ENV || "production";
 
 /** How long the countdown should last until the game is started. By default it is 10 seconds. Set to 0 if you wish to disable this. */
 export const countdownTicks = 10 * tps;
+
+/** Chance for a shape to spawn as shiny (green) */
+export const shinyChance: number = 1 / 1_000_000;
 
 /** Is hosting a rest api */
 export const enableApi: boolean = true;
@@ -80,7 +83,7 @@ export const hashGridCellSize: number = 7;
 export const bossSpawningInterval = 45 * 60 * tps;
 
 /** Amount of TICKs before the scoreboard update */
-export const scoreboardUpdateInterval = 0.5 * tps;
+export const scoreboardUpdateInterval = 1 * tps;
 
 /** Hashed (sha256) dev password */
 export const devPasswordHash: string | undefined = process.env.DEV_PASSWORD_HASH;

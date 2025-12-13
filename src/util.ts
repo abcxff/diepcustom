@@ -24,11 +24,13 @@ import { doVerboseLogs } from "./config";
 export const log = (...args: any[]) => {
     console.log(`[${Date().split(" ")[4]}]`, ...args)
 }
+
 /** Logs data prefixed with the Date in a yellow format. */
 export const warn = (...args: any[]) => {
     args = args.map(s => typeof s === "string" ? chalk.yellow(s) : s);
     console.log(chalk.yellow(`[${Date().split(" ")[4]}] WARNING: `), ...args);
 }
+
 /** Logs a raw object. */
 export const inspectLog = (object: any, c = 14) => {
     console.log(inspect(object, false, c, true));
@@ -46,7 +48,7 @@ export const removeFast = (array: any[], index: number) => {
 }
 
 /**
- * Self explanatory
+ * Shuffles an array in place.
  */
 export const shuffleArray = (array: any[]) => {
     for (let i = array.length - 1; i >= 1; i--) {
@@ -56,9 +58,16 @@ export const shuffleArray = (array: any[]) => {
 }
 
 /**
+ * Picks a random element from an array.
+ */
+export const randomFrom = <T>(array: T[]): T => {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
  * Contrains a value between bounds
  */
-export const constrain = (value: number, min: number, max: number) => {
+export const constrain = (value: number, min: number, max: number): number => {
     return Math.max(min, Math.min(max, value));
 }
 
@@ -68,7 +77,7 @@ export const PI2 = Math.PI * 2;
 /**
  * Normalize angle (ex: 4π-> 0π, 3π -> 1π)
  */
-export const normalizeAngle = (angle: number) => {
+export const normalizeAngle = (angle: number): number => {
     return ((angle % PI2) + PI2) % PI2;
 }
 

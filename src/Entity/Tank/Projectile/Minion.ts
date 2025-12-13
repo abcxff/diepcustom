@@ -89,6 +89,8 @@ export default class Minion extends Drone implements BarrelBase {
 
         this.minionBarrel = new Barrel(this, MinionBarrelDefinition);
         this.ai.movementSpeed = this.ai.aimSpeed = this.baseAccel;
+
+        this.arenaMobID = "factoryDrone";
     }
 
     public get sizeFactor() {

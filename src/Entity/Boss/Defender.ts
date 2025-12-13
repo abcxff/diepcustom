@@ -112,8 +112,8 @@ export default class Defender extends AbstractBoss {
 
             const angle = base.ai.inputs.mouse.angle = PI2 * (i / count);
 
-            base.positionData.values.y = this.physicsData.values.size * Math.sin(angle) * offset
-            base.positionData.values.x = this.physicsData.values.size * Math.cos(angle) * offset
+            base.positionData.values.y = this.physicsData.values.size * Math.sin(angle) * offset;
+            base.positionData.values.x = this.physicsData.values.size * Math.cos(angle) * offset;
 
             base.physicsData.values.flags |= PositionFlags.absoluteRotation;
 

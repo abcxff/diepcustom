@@ -65,7 +65,7 @@ export default class Summoner extends AbstractBoss {
     public constructor(game: GameServer) {
         super(game);
 
-        this.nameData.values.name = 'Summoner';
+        this.nameData.values.name = "Summoner";
         this.styleData.values.color = Color.EnemySquare;
         this.relationsData.values.team = this.game.arena;
         this.physicsData.values.size = SUMMONER_SIZE * Math.SQRT1_2;
