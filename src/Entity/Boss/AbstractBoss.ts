@@ -165,7 +165,7 @@ export default class AbstractBoss extends LivingEntity {
     public onDeath(killer: LivingEntity) {
         let killerName: string;
 
-        if (TankBody.isTank(killer)) {
+        if (TankBody.isTank(killer) || AbstractBoss.isBoss(killer)) {
             killerName = killer.nameData.values.name;
         } else {
             killerName = "an unnamed tank";
