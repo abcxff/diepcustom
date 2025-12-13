@@ -176,23 +176,20 @@ export default class EntityManager {
 
     /** Ticks all entities in the game. */
     public tick(tick: number) {
-        this.collisionManager.forEachCollisionPair(this.handleCollision)
+        this.collisionManager.forEachCollisionPair(this.handleCollision);
 
         for (let id = 0; id <= this.lastId; ++id) {
-            const entity = this.inner[id];
+            const entity = this.inner[id] as ObjectEntity;
 
-            if (entity && ObjectEntity.isObject(entity) && entity.isPhysical) {
+            // Alternatively, Entity.exists(entity), though this is probably faster.
+            if (!entity || entity.hash === 0) continue;
+            
+            if (entity.isPhysical) {
                 entity.applyPhysics();
             }
-        }
 
-        for (let id = 0; id <= this.lastId; ++id) {
-            const entity = this.inner[id];
-
-            if (!Entity.exists(entity)) continue;
-
-            if (!(entity.cameraData)) {
-                if (!(ObjectEntity.isObject(entity)) || !entity.isChild) entity.tick(tick);
+            if (!entity.isChild) {
+                entity.tick(tick);
             }
         }
 
