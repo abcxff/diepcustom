@@ -324,11 +324,11 @@ export default class Client {
                         this.setHasCheated(true);
 
                         player.destroy();
-                        player.onKill(player);
                         player.onDeath(player);
+                        player.onKill(player);
                     }
                 }
-                
+
                 return;
             }
             case ServerBound.Spawn: {

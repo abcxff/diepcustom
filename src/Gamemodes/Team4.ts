@@ -20,6 +20,7 @@ import GameServer from "../Game";
 import ArenaEntity from "../Native/Arena";
 import Client from "../Client";
 
+import ObjectEntity from "../Entity/Object";
 import TeamBase from "../Entity/Misc/TeamBase";
 import TankBody from "../Entity/Tank/TankBody";
 
@@ -36,41 +37,51 @@ const baseSize = arenaSize / (3 + 1/3); // 3345
 export default class Teams4Arena extends ArenaEntity {
     static override GAMEMODE_ID: string = "4teams";
 
-    /** Blue TeamBASEentity */
-    public blueTeamBase: TeamBase;
+    /** Blue Team entity */
+    public blueTeamEntity: TeamEntity;
     /** Red TeamBASE entity */
-    public redTeamBase: TeamBase;
+    public redTeamEntity: TeamEntity;
     /** Green TeamBASE entity */
-    public greenTeamBase: TeamBase;
+    public greenTeamEntity: TeamEntity;
     /** Purple TeamBASE entity */
-    public purpleTeamBase: TeamBase;
+    public purpleTeamEntity: TeamEntity;
 
     /** Maps clients to their teams */
-    public playerTeamMap: WeakMap<Client, TeamBase> = new WeakMap();
+    public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
 
     public constructor(game: GameServer) {
         super(game);
+
         this.updateBounds(arenaSize * 2, arenaSize * 2);
 
-        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseSize / 2,  -arenaSize + baseSize / 2, baseSize, baseSize);
-        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseSize / 2, arenaSize - baseSize / 2, baseSize, baseSize);
-        this.greenTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamGreen), -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
-        this.purpleTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamPurple), arenaSize - baseSize / 2, -arenaSize + baseSize / 2, baseSize, baseSize);
+        this.blueTeamEntity = new TeamEntity(this.game, Color.TeamBlue);
+        this.redTeamEntity = new TeamEntity(this.game, Color.TeamRed);
+        this.purpleTeamEntity = new TeamEntity(this.game, Color.TeamPurple);
+        this.greenTeamEntity = new TeamEntity(this.game, Color.TeamGreen);
+        
+        new TeamBase(game, this.blueTeamEntity, -arenaSize + baseSize / 2,  -arenaSize + baseSize / 2, baseSize, baseSize);
+        new TeamBase(game, this.redTeamEntity, arenaSize - baseSize / 2, arenaSize - baseSize / 2, baseSize, baseSize);
+        new TeamBase(game, this.purpleTeamEntity, -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
+        new TeamBase(game, this.greenTeamEntity, arenaSize - baseSize / 2, -arenaSize + baseSize / 2, baseSize, baseSize);
+    }
+
+    public decideTeam(client: Client): TeamEntity {
+        const team =  this.playerTeamMap.get(client) || randomFrom([this.blueTeamEntity, this.redTeamEntity, this.purpleTeamEntity, this.greenTeamEntity]);
+        this.playerTeamMap.set(client, team);
+
+        return team;
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
-        tank.positionData.values.y = arenaSize * Math.random() - arenaSize;
-
-        const xOffset = (Math.random() - 0.5) * baseSize,
-              yOffset = (Math.random() - 0.5) * baseSize;
+        const team = this.decideTeam(client);
+        TeamEntity.setTeam(team, tank);
         
-        const base = this.playerTeamMap.get(client) || randomFrom([this.blueTeamBase, this.redTeamBase, this.greenTeamBase, this.purpleTeamBase]);
-        tank.relationsData.values.team = base.relationsData.values.team;
-        tank.styleData.values.color = base.styleData.values.color;
-        tank.positionData.values.x = base.positionData.values.x + xOffset;
-        tank.positionData.values.y = base.positionData.values.y + yOffset;
-        this.playerTeamMap.set(client, base);
+        const success = this.attemptFactorySpawn(tank);
+        if (success) return; // This player was spawned from a factory instead
 
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        const base = team.base as TeamBase;
+        const pos = ObjectEntity.getRandomPosition(base);
+        tank.positionData.x = pos.x;
+        tank.positionData.y = pos.y;
     }
 }

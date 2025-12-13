@@ -87,6 +87,13 @@ export default class TagArena extends ArenaEntity {
 
         this.updateBounds(ARENA_SIZE * 2, ARENA_SIZE * 2);
     }
+    
+    public decideTeam(client: Client): TeamEntity {
+        const team = this.playerTeamMap.get(client) || (this.getAlivePlayers().length <= MIN_PLAYERS ? this.teams[this.teams.length - 1] : this.teams[0]); // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
+        this.playerTeamMap.set(client, team);
+        
+        return team;
+    }
 
     public spawnPlayer(tank: TankBody, client: Client) {
         const deathMixin = tank.onDeath.bind(tank); 
@@ -105,33 +112,16 @@ export default class TagArena extends ArenaEntity {
             else this.playerTeamMap.set(client, team);
         }
 
-        if (!this.playerTeamMap.has(client)) {
-            const team = this.getAlivePlayers().length <= MIN_PLAYERS ? this.teams[this.teams.length - 1] :
-                         this.teams[0]; // If there are not enough players to start the game, choose the team with least players. Otherwise choose the one with highest player count
-            const { x, y } = this.findPlayerSpawnLocation();
+        const team = this.decideTeam(client);
+        TeamEntity.setTeam(team, tank);
 
-            tank.positionData.values.x = x;
-            tank.positionData.values.y = y;
-            tank.relationsData.values.team = team;
-            tank.styleData.values.color = team.teamData.teamColor;
-
-            this.playerTeamMap.set(client, team)
-            return;
-        }
-
-        const team = this.playerTeamMap.get(client) || this.teams[0];
-
-        this.playerTeamMap.set(client, team);
-
-        tank.relationsData.values.team = team;
-        tank.styleData.values.color = team.teamData.values.teamColor;
+        const success = this.attemptFactorySpawn(tank);
+        if (success) return; // This player was spawned from a factory instead
 
         const { x, y } = this.findPlayerSpawnLocation();
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
-
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
     }
 
     public updateScoreboard() {

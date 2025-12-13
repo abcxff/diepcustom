@@ -37,14 +37,18 @@ export default class MothershipArena extends ArenaEntity {
 
     /** All team entities in game */
     public teams: TeamEntity[] = [];
+
     /** Motherships in game */
     public motherships: Mothership[] = [];
 
-    /** Maps clients to their mothership */
-    public playerTeamMotMap: WeakMap<Client, Mothership> = new WeakMap();
+    /** Maps clients to their team */
+    public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
 
     public constructor(game: GameServer) {
         super(game);
+
+        this.updateBounds(arenaSize * 2, arenaSize * 2);
+
         this.shapeScoreRewardMultiplier = 3.0;
 
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
@@ -59,41 +63,34 @@ export default class MothershipArena extends ArenaEntity {
     
             mot.relationsData.values.team = team;
             mot.styleData.values.color = team.teamData.values.teamColor;
-            mot.positionData.values.x = Math.cos(randAngle) * arenaSize * 0.75;
-            mot.positionData.values.y = Math.sin(randAngle) * arenaSize * 0.75;
+            mot.positionData.values.x = Math.cos(randAngle) * arenaSize * 0.8;
+            mot.positionData.values.y = Math.sin(randAngle) * arenaSize * 0.8;
 
             randAngle += PI2 / TEAM_COLORS.length;
         }
+    }
+    
+    public decideTeam(client: Client): TeamEntity {
+        const team =  this.playerTeamMap.get(client) || randomFrom(this.teams);
+        this.playerTeamMap.set(client, team);
 
-        this.updateBounds(arenaSize * 2, arenaSize * 2);
+        return team;
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
-        if (!this.motherships.length && !this.playerTeamMotMap.has(client)) {
-            const team = randomFrom(this.teams);
-            const { x, y } = this.findPlayerSpawnLocation();
+        const team = this.decideTeam(client);
+        TeamEntity.setTeam(team, tank);
 
-            tank.positionData.values.x = x;
-            tank.positionData.values.y = y;
-            tank.relationsData.values.team = team;
-            tank.styleData.values.color = team.teamData.teamColor;
-            return;
-        }
-
-        const mothership = this.playerTeamMotMap.get(client) || randomFrom(this.motherships);
-        this.playerTeamMotMap.set(client, mothership);
-
-        tank.relationsData.values.team = mothership.relationsData.values.team;
-        tank.styleData.values.color = mothership.styleData.values.color;
+        const success = this.attemptFactorySpawn(tank);
+        if (success) return; // This player was spawned from a factory instead
 
         // TODO: Possess mothership if its unpossessed
         const { x, y } = this.findPlayerSpawnLocation();
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
-
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
     }
+
     public updateScoreboard() {
         this.motherships.sort((m1, m2) => m2.healthData.values.health - m1.healthData.values.health);
 
@@ -113,6 +110,7 @@ export default class MothershipArena extends ArenaEntity {
        
         this.arenaData.scoreboardAmount = length;
     }
+
     public updateArenaState() {
         // backwards to preserve
         for (let i = this.motherships.length; i --> 0;) {

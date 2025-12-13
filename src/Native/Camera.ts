@@ -37,6 +37,9 @@ import { maxPlayerLevel } from "../config";
 export class CameraEntity extends Entity {
     /** Always existant camera field group. Present in all GUI/camera entities. */
     public cameraData: CameraGroup = new CameraGroup(this);
+    
+    /** Always existant relations field group. Present in all GUI/camera entities. */
+    public relationsData: RelationsGroup = new RelationsGroup(this);
 
     /** The current size of the tank the camera is in charge of. Calculated with level stuff */
     public sizeFactor: number = 1;
@@ -121,9 +124,6 @@ export default class ClientCamera extends CameraEntity {
     public client: Client;
     /** All entities in the view of the camera. Represented by id. */
     private view: Entity[] = [];
-
-    /** Always existant relations field group. Present in all GUI/camera entities. */
-    public relationsData: RelationsGroup = new RelationsGroup(this);
 
     /** Calculates the amount of stats available at a specific level. */
     public static calculateStatCount(level: number) {

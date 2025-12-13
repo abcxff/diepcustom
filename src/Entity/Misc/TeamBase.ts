@@ -19,7 +19,7 @@
 import GameServer from "../../Game";
 
 import { HealthFlags, PhysicsFlags, StyleFlags } from "../../Const/Enums";
-import { TeamGroupEntity } from "./TeamEntity";
+import { TeamEntity, TeamGroupEntity } from "./TeamEntity";
 import LivingEntity from "../Live";
 import BaseDrones from "./BaseDrones";
 /**
@@ -33,6 +33,8 @@ export default class TeamBase extends LivingEntity {
         this.setGlobalEntity();
 
         this.relationsData.values.team = team;
+
+        if (team instanceof TeamEntity) team.base = this;
 
         this.positionData.values.x = x;
         this.positionData.values.y = y;

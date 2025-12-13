@@ -18,7 +18,7 @@
 
 import * as util from "../util";
 import GameServer from "../Game";
-import Vector from "../Physics/Vector";
+import Vector, { VectorAbstract } from "../Physics/Vector";
 
 import { PhysicsGroup, PositionGroup, RelationsGroup, StyleGroup } from "../Native/FieldGroups";
 import { Entity } from "../Native/Entity";
@@ -203,6 +203,34 @@ export default class ObjectEntity extends Entity {
 
             return dX*dX + dY*dY <= rSum*rSum;
         }
+    }
+    
+    /** Returns a random position inside the given entity. */
+    public static getRandomPosition(entity: ObjectEntity): VectorAbstract {
+        if (entity.isChild) util.warn("Attached entities are not fully supported by physics engine for now");
+
+        const pos = {
+            x: entity.positionData.values.x,
+            y: entity.positionData.values.y
+        }
+
+        const isRect = entity.physicsData.values.sides === 2;
+        
+        if (isRect) { // Rectangular hitbox
+            const xOffset = (Math.random() - 0.5) * entity.physicsData.values.size,
+            yOffset = (Math.random() - 0.5) * entity.physicsData.values.width;
+
+            pos.x += xOffset;
+            pos.y += yOffset;
+        } else { // Circular hitbox
+            const radius = Math.random() * entity.physicsData.values.size;
+            const angle = Math.random() * util.PI2;
+            
+            pos.x += Math.cos(angle) * radius;
+            pos.y += Math.sin(angle) * radius;
+        }
+
+        return pos;
     }
 
     /** Calls the deletion animation, unless animate is set to false, in that case it instantly deletes. */

@@ -17,6 +17,9 @@
 */
 
 import GameServer from "../../Game";
+import TeamBase from "./TeamBase";
+import ObjectEntity from "../Object";
+import TankBody from "../Tank/TankBody";
 
 import { Color } from "../../Const/Enums";
 import { Entity } from "../../Native/Entity";
@@ -51,6 +54,9 @@ export class TeamEntity extends Entity implements TeamGroupEntity {
 
     /** Used for notifications in team based gamemodes */
     public teamName: string;
+    
+    /** The team's spawn base. */
+    public base: TeamBase | null = null;
 
     public constructor(game: GameServer, color: Color, name: string = ColorsTeamName[color] || "UNKNOWN") {
         super(game);
@@ -63,5 +69,17 @@ export class TeamEntity extends Entity implements TeamGroupEntity {
         if (!entity) return false;
 
         return !!entity.teamData;
+    }
+    
+    public static setTeam(team: TeamGroupEntity, entity: ObjectEntity) {
+        if (!Entity.exists(entity)) return;
+
+        entity.relationsData.values.team = team;
+
+        entity.styleData.values.color = team.teamData.values.teamColor;
+        
+        if (TankBody.isTank(entity)) {
+            entity.cameraEntity.relationsData.values.team = team;
+        }
     }
 }

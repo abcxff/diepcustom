@@ -18,6 +18,7 @@
 
 import Client from "../Client";
 import { Color, ColorsHexCode, ArenaFlags, ValidScoreboardIndex, ClientBound } from "../Const/Enums";
+import ObjectEntity from "../Entity/Object";
 import Dominator from "../Entity/Misc/Dominator";
 import TeamBase from "../Entity/Misc/TeamBase";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
@@ -81,26 +82,25 @@ export default class DominationArena extends ArenaEntity {
         NE.prefix = "NE ";
         this.dominators.push(SE, SW, NW, NE);
     }
-
-    public spawnPlayer(tank: TankBody, client: Client) {
-        tank.positionData.values.y = arenaSize * Math.random() - arenaSize;
-
-        const xOffset = (Math.random() - 0.5) * baseSize,
-              yOffset = (Math.random() - 0.5) * baseSize;
-
-        const team = this.playerTeamMap.get(client) || randomFrom(this.teams);
-        const teamBase: TeamBase = this.game.entities.inner.find((entity) => entity instanceof TeamBase && entity.relationsData.values.team === team) as TeamBase;
-
-        tank.relationsData.values.team = teamBase.relationsData.values.team;
-        tank.styleData.values.color = teamBase.styleData.values.color;
-        tank.positionData.values.x = teamBase.positionData.values.x + xOffset;
-        tank.positionData.values.y = teamBase.positionData.values.y + yOffset;
+    
+    public decideTeam(client: Client): TeamEntity {
+        const team =  this.playerTeamMap.get(client) || randomFrom(this.teams);
         this.playerTeamMap.set(client, team);
 
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        return team;
+    }
+
+    public spawnPlayer(tank: TankBody, client: Client) {
+        const team = this.decideTeam(client);
+        const teamBase = team.base as TeamBase;
+        TeamEntity.setTeam(team, tank);
+        
+        const pos = ObjectEntity.getRandomPosition(teamBase);
+        tank.positionData.values.x = pos.x;
+        tank.positionData.values.y = pos.y;
     }
     
-    public getTeamDominatorCount(team: TeamEntity) {
+    public getTeamDominatorCount(team: TeamEntity): number {
         let doms: number = 0;
         for (const dominator of this.dominators) {
             if (dominator.relationsData.values.team === team) doms++;
