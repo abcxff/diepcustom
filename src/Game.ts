@@ -147,7 +147,7 @@ export default class GameServer {
         this.arena = new ArenaClass(this);
 
         this._tickInterval = setInterval(() => {
-            if (this.clients.size) this.tickLoop();
+            if (this.clients.size) this.tickLoop(); // Don't tick empty games
         }, config.mspt);
     }
 
@@ -158,6 +158,10 @@ export default class GameServer {
     /** Broadcasts a player count packet. */
     public broadcastPlayerCount() {
         this.broadcast().vu(ClientBound.PlayerCount).vu(GameServer.globalPlayerCount).send();
+    }
+    /** Sends a notification to all clients connected to this game server. */
+    public broadcastMessage(text: string, color = 0x000000, time = 5000, id = "") {
+        this.broadcast().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
 
     /** Ends the game instance. */
