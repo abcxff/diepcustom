@@ -314,7 +314,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         tank.positionData.values.y = y;
     }
     
-    public attemptFactorySpawn(tank: TankBody) {
+    public attemptFactorySpawn(tank: TankBody): boolean {
         if (Math.random() > factorySpawnChance) return false;
 
         const team = tank.relationsData.values.team;
