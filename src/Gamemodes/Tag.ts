@@ -48,7 +48,8 @@ const ENABLE_DOMINATOR = false;
  */
 export class TagShapeManager extends ShapeManager {
     protected get wantedShapes() {
-        const ratio = Math.ceil(Math.pow(this.game.arena.width / 2500, 2));
+        const size = (this.game.arena.width + this.game.arena.height) / 2;
+        const ratio = Math.ceil(Math.pow(size / 2500, 2));
 
         return Math.floor(12.5 * ratio);
     }
@@ -61,9 +62,12 @@ export default class TagArena extends ArenaEntity {
     static override GAMEMODE_ID: string = "tag";
 
     protected shapes: ShapeManager = new TagShapeManager(this);
-	
+
     /** All team entities in game */
     public teams: TeamEntity[] = [];
+    
+    /** Maps teams to their total score. */
+    public teamScoreMap: Map<TeamEntity, number> = new Map();
 
     /** Maps clients to their team */
     public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
@@ -75,6 +79,7 @@ export default class TagArena extends ArenaEntity {
         this.arenaData.values.flags |= ArenaFlags.hiddenScores;
         const teamOrder = TEAM_COLORS.slice();
         shuffleArray(teamOrder);
+
         for (const teamColor of teamOrder) {
             const team = new TeamEntity(this.game, teamColor);
             this.teams.push(team);
@@ -115,6 +120,8 @@ export default class TagArena extends ArenaEntity {
         const team = this.decideTeam(client);
         TeamEntity.setTeam(team, tank);
 
+        this.updateTeamScores(); // update team counts
+
         const success = this.attemptFactorySpawn(tank);
         if (success) return; // This player was spawned from a factory instead
 
@@ -128,9 +135,9 @@ export default class TagArena extends ArenaEntity {
         const length = Math.min(10, this.teams.length);
         for (let i = 0; i < length; ++i) {
             const team = this.teams[i];
-            const playerCount = this.getTeamPlayers(team).length;
-            if (team.teamData.values.teamColor === Color.Tank) this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = Color.ScoreboardBar;
-            else this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = team.teamData.values.teamColor;
+            const playerCount = this.getTeamScore(team);
+
+            this.arenaData.values.scoreboardColors[i as ValidScoreboardIndex] = team.teamData.values.teamColor;
             this.arenaData.values.scoreboardNames[i as ValidScoreboardIndex] = team.teamName;
             this.arenaData.values.scoreboardTanks[i as ValidScoreboardIndex] = -1;
             this.arenaData.values.scoreboardScores[i as ValidScoreboardIndex] = playerCount;
@@ -139,24 +146,38 @@ export default class TagArena extends ArenaEntity {
        
         this.arenaData.scoreboardAmount = Math.min(10, length);
     }
+
+    public getTeamScore(team: TeamEntity): number {
+        return this.teamScoreMap.get(team) || 0;
+    }
+
+    public updateTeamScores() {
+        for (let i = 0; i < this.teams.length; ++i) {
+            const team = this.teams[i];
+
+            this.teamScoreMap.set(team, this.getTeamPlayers(team).length);
+        }
+        this.teams.sort((t1, t2) => this.getTeamScore(t2) - this.getTeamScore(t1));
+    }
 	
     public updateArenaState() {
-        this.teams.sort((t1, t2) => this.getTeamPlayers(t2).length - this.getTeamPlayers(t1).length);
+        this.updateTeamScores();
+
         const length = Math.min(10, this.teams.length);
         const arenaPlayerCount = this.getAlivePlayers().length; // Only count alive players for win condition
-        const leaderTeam = this.teams[0]; // Most players are in this team
+        const leaderTeam = this.teams[0]; // Most players are on this team
+
         for (let i = 0; i < length; ++i) {
             const team = this.teams[i];
 			
             if (this.getTeamPlayers(leaderTeam).length === arenaPlayerCount && arenaPlayerCount >= MIN_PLAYERS) { // If all alive players are in the leading team, it has won since all other team's players have died
                 if (this.state === ArenaState.OPEN) {
-                    this.game.broadcast()
-                        .u8(ClientBound.Notification)
-                        .stringNT(`${leaderTeam.teamName} HAS WON THE GAME!`)
-                        .u32(ColorsHexCode[leaderTeam.teamData.values.teamColor])
-                        .float(-1)
-                        .stringNT("").send();
-						
+                    this.game.broadcastMessage(
+                        `${leaderTeam.teamName} HAS WON THE GAME!`,
+                        ColorsHexCode[leaderTeam.teamData.values.teamColor],
+                        -1
+                    )
+
                     this.state = ArenaState.OVER;
                     setTimeout(() => {
                         this.close();
@@ -178,8 +199,12 @@ export default class TagArena extends ArenaEntity {
         if ((this.game.tick % scoreboardUpdateInterval) === 0) {
             this.updateScoreboard();
         }
+    }
 
-        if ((this.game.tick % SHRINK_INTERVAL) === 0 && this.width > MIN_SIZE) {
+    public tick(tick: number) {
+        super.tick(tick);
+
+        if ((tick % SHRINK_INTERVAL) === 0 && this.width > MIN_SIZE) {
             this.updateBounds(this.width - SHRINK_AMOUNT, this.height - SHRINK_AMOUNT);
         }
     }
