@@ -69,7 +69,9 @@ export default class Teams2Arena extends ArenaEntity {
         const success = this.attemptFactorySpawn(tank);
         if (success) return; // This player was spawned from a factory instead
 
-        const base = team.base as TeamBase;
+        const base = team.base;
+        if (!base) return super.spawnPlayer(tank, client);
+
         const pos = ObjectEntity.getRandomPosition(base);
         tank.positionData.x = pos.x;
         tank.positionData.y = pos.y;

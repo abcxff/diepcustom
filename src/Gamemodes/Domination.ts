@@ -92,9 +92,11 @@ export default class DominationArena extends ArenaEntity {
 
     public spawnPlayer(tank: TankBody, client: Client) {
         const team = this.decideTeam(client);
-        const teamBase = team.base as TeamBase;
         TeamEntity.setTeam(team, tank);
         
+        const teamBase = team.base;
+        if (!teamBase) return super.spawnPlayer(tank, client);
+
         const pos = ObjectEntity.getRandomPosition(teamBase);
         tank.positionData.values.x = pos.x;
         tank.positionData.values.y = pos.y;
