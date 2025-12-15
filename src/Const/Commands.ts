@@ -18,28 +18,36 @@
 
 import Client from "../Client"
 import { AccessLevel, maxPlayerLevel } from "../config";
+
+import ObjectEntity from "../Entity/Object";
+import LivingEntity from "../Entity/Live";
+
 import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import Defender from "../Entity/Boss/Defender";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import Guardian from "../Entity/Boss/Guardian";
 import Summoner from "../Entity/Boss/Summoner";
-import LivingEntity from "../Entity/Live";
+
 import ArenaCloser from "../Entity/Misc/ArenaCloser";
 import FallenAC from "../Entity/Misc/Boss/FallenAC";
-import Mothership from "../Entity/Misc/Mothership";
 import FallenSpike from "../Entity/Misc/Boss/FallenSpike";
 import FallenMegaTrapper from "../Entity/Misc/Boss/FallenMegaTrapper";
+
+import Mothership from "../Entity/Misc/Mothership";
 import Dominator from "../Entity/Misc/Dominator";
-import ObjectEntity from "../Entity/Object";
+
 import AbstractShape from "../Entity/Shape/AbstractShape";
 import Crasher from "../Entity/Shape/Crasher";
 import Pentagon from "../Entity/Shape/Pentagon";
 import Square from "../Entity/Shape/Square";
 import Triangle from "../Entity/Shape/Triangle";
+
 import AutoTurret from "../Entity/Tank/AutoTurret";
 import Bullet from "../Entity/Tank/Projectile/Bullet";
 import TankBody from "../Entity/Tank/TankBody";
+
+import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { AIState } from "../Entity/AI";
 import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
@@ -60,6 +68,7 @@ export const enum CommandID {
     gameGodmode = "game_godmode",
     gameAnnounce = "game_announce",
     gameGoldenName = "game_golden_name",
+    gameNeutral = "game_neutral",
     adminSummon = "admin_summon",
     adminKillAll = "admin_kill_all",
     adminKillEntity = "admin_kill_entity",
@@ -152,6 +161,12 @@ export const commandDefinitions = {
     game_golden_name: {
         id: CommandID.gameGoldenName,
         description: "Toggles the golden nickname color that appears upon using cheats",
+        permissionLevel: AccessLevel.FullAccess,
+        isCheat: false
+    },
+     game_neutral: {
+        id: CommandID.gameNeutral,
+        description: "Sets your tank's team to the neutral team",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
@@ -297,6 +312,15 @@ export const commandCallbacks = {
     },
     game_golden_name: (client: Client, activeArg?: string) => {
         client.setHasCheated(!client.hasCheated());
+    },
+    game_neutral: (client: Client) => {
+        const team = client.camera?.game.arena;
+        const player = client.camera?.cameraData.values.player;
+
+        if (!team || !player) return;
+        if (!ObjectEntity.isObject(player)) return;
+        
+        TeamEntity.setTeam(team, player);
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;
