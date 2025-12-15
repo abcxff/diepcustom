@@ -233,9 +233,14 @@ export const commandCallbacks = {
     game_teleport: (client: Client, xArg: string, yArg: string) => {
         const player = client.camera?.cameraData.player;
         if (!Entity.exists(player) || !ObjectEntity.isObject(player)) return;
+
+        if (!xArg || !yArg) return;
+
         const x = xArg.match(RELATIVE_POS_REGEX) ? player.positionData.x + parseInt(xArg.slice(1) || "0", 10) : parseInt(xArg, 10);
         const y = yArg.match(RELATIVE_POS_REGEX) ? player.positionData.y + parseInt(yArg.slice(1) || "0", 10) : parseInt(yArg, 10);
+        
         if (isNaN(x) || isNaN(y)) return;
+
         player.positionData.x = x;
         player.positionData.y = y;
         player.setVelocity(0, 0);
