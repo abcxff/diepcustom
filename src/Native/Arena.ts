@@ -329,14 +329,8 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
             }
         }
 
-        if (factories.length === 0) { // No factories on this team, spawn as usual
-            const  { x, y } = this.findPlayerSpawnLocation();
-            tank.positionData.values.x = x;
-            tank.positionData.values.y = y;
+        if (factories.length === 0) return false; // No available factories on this team, spawn as usual
 
-            return false;
-        }
-            
         const factory = randomFrom(factories);
 
         const { x, y } = factory.getWorldPosition();
