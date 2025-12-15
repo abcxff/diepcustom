@@ -76,7 +76,7 @@ export class TeamEntity extends Entity implements TeamGroupEntity {
 
         entity.relationsData.values.team = team;
 
-        entity.styleData.values.color = team.teamData.values.teamColor;
+        entity.styleData.color = team.teamData.values.teamColor;
         
         if (TankBody.isTank(entity)) {
             entity.cameraEntity.relationsData.values.team = team;
