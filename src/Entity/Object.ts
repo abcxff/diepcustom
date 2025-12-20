@@ -259,7 +259,11 @@ export default class ObjectEntity extends Entity {
         
         if (this.physicsData.values.flags & PhysicsFlags.showsOnMap) {
             const globalEntities = this.game.entities.globalEntities;
-            util.removeFast(globalEntities, globalEntities.indexOf(this.id));
+            const id = this.id;
+
+            if (!globalEntities.includes(id)) return;
+
+            util.removeFast(globalEntities, globalEntities.indexOf(id));
         }
 
         super.delete();
