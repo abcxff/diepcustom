@@ -26,7 +26,7 @@ import TankBody from "../Entity/Tank/TankBody";
 import GameServer from "../Game";
 import ArenaEntity, { ArenaState } from "../Native/Arena";
 import { Entity } from "../Native/Entity";
-import { randomFrom } from "../util";
+import { randomFrom, getRandomPosition } from "../util";
 
 const arenaSize = 11150;
 const baseSize = arenaSize / (3 + 1/3); // 3345, must scale with arena size
@@ -97,7 +97,7 @@ export default class DominationArena extends ArenaEntity {
         const teamBase = team.base;
         if (!teamBase) return super.spawnPlayer(tank, client);
 
-        const pos = ObjectEntity.getRandomPosition(teamBase);
+        const pos = getRandomPosition(teamBase);
         tank.positionData.values.x = pos.x;
         tank.positionData.values.y = pos.y;
     }

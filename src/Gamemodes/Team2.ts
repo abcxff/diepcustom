@@ -26,7 +26,7 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
-import { randomFrom } from "../util";
+import { randomFrom, getRandomPosition } from "../util";
 
 const arenaSize = 11150;
 const baseWidth = arenaSize / (3 + 1/3) * 0.6; // 2007
@@ -72,7 +72,7 @@ export default class Teams2Arena extends ArenaEntity {
         const base = team.base;
         if (!base) return super.spawnPlayer(tank, client);
 
-        const pos = ObjectEntity.getRandomPosition(base);
+        const pos = getRandomPosition(base);
         tank.positionData.x = pos.x;
         tank.positionData.y = pos.y;
     }

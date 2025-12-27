@@ -19,6 +19,8 @@
 import chalk from "chalk";
 import { inspect } from "util";
 import { doVerboseLogs } from "./config";
+import { VectorAbstract } from "./Physics/Vector";
+import ObjectEntity from "./Entity/Object";
 
 /** Logs data prefixed with the Date. */
 export const log = (...args: any[]) => {
@@ -71,14 +73,39 @@ export const constrain = (value: number, min: number, max: number): number => {
     return Math.max(min, Math.min(max, value));
 }
 
-/** 2π */
+/** 2PI / TAU */
 export const PI2 = Math.PI * 2;
 
 /**
- * Normalize angle (ex: 4π-> 0π, 3π -> 1π)
+ * Normalize angle (ex: 4PI-> 0PI, 3PI -> 1PI)
  */
 export const normalizeAngle = (angle: number): number => {
     return ((angle % PI2) + PI2) % PI2;
+}
+
+/**
+ * Returns a random position inside the given entity. Might not work correctly with attach entities
+ */
+export const getRandomPosition = (entity: ObjectEntity): VectorAbstract => {
+    const pos = entity.getWorldPosition();
+
+    const isRect = entity.physicsData.values.sides === 2;
+        
+    if (isRect) { // Rectangular hitbox
+        const xOffset = (Math.random() - 0.5) * entity.physicsData.values.size,
+        yOffset = (Math.random() - 0.5) * entity.physicsData.values.width;
+
+        pos.x += xOffset;
+        pos.y += yOffset;
+    } else { // Circular hitbox
+        const radius = Math.random() * entity.physicsData.values.size;
+        const angle = Math.random() * PI2;
+
+        pos.x += Math.cos(angle) * radius;
+        pos.y += Math.sin(angle) * radius;
+    }
+
+    return pos;
 }
 
 /**
