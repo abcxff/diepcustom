@@ -1,5 +1,5 @@
 /*
-    DiepCustom - custom tank game server that shares diep.io's WebSocket protocol
+    DiepCustom - custom tank game server that shares diep.io"s WebSocket protocol
     Copyright (C) 2022 ABCxFF (github.com/ABCxFF)
 
     This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ import { BarrelAddon, BarrelAddonById } from "./BarrelAddons";
 import { Swarm } from "./Projectile/Swarm";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
 /**
- * Class that determines when barrels can shoot, and when they can't.
+ * Class that determines when barrels can shoot, and when they can"t.
  */
 export class ShootCycle {
     /** The barrel this cycle is keeping track of. */
@@ -61,7 +61,7 @@ export class ShootCycle {
             this.reloadTime = this.barrelEntity.barrelData.reloadTime = reloadTime;
         }
 
-        const alwaysShoot = (this.barrelEntity.definition.forceFire) || (this.barrelEntity.definition.bullet.type === 'drone') || (this.barrelEntity.definition.bullet.type === 'minion');
+        const alwaysShoot = (this.barrelEntity.definition.forceFire) || (this.barrelEntity.definition.bullet.type === "drone") || (this.barrelEntity.definition.bullet.type === "minion");
 
         if (this.pos >= reloadTime) {
             // When its not shooting dont shoot, unless its a drone
@@ -70,7 +70,7 @@ export class ShootCycle {
                 return;
             }
             // When it runs out of drones, dont shoot
-            if (typeof this.barrelEntity.definition.droneCount === 'number' && this.barrelEntity.droneCount >= this.barrelEntity.definition.droneCount) {
+            if (typeof this.barrelEntity.definition.droneCount === "number" && this.barrelEntity.droneCount >= this.barrelEntity.definition.droneCount) {
                 this.pos = reloadTime;
                 return;
             }
@@ -105,7 +105,7 @@ export default class Barrel extends ObjectEntity {
     /** Number of drones that this barrel shot that are still alive. */
     public droneCount = 0;
 
-    /** The barrel's addons */
+    /** The barrel"s addons */
     public addons: BarrelAddon[] = [];
 
     /** Always existant barrel field group, present on all barrels. */
@@ -169,32 +169,32 @@ export default class Barrel extends ObjectEntity {
             case "rocket":
                 new Rocket(this, this.tank, tankDefinition, angle);
                 break;
-            case 'bullet': {
+            case "bullet": {
                 projectile = new Bullet(this, this.tank, tankDefinition, angle);
 
                 if (tankDefinition && (tankDefinition.id === Tank.ArenaCloser || tankDefinition.id === DevTank.Squirrel)) projectile.positionData.flags |= PositionFlags.canMoveThroughWalls;
                 break;
             }
-            case 'trap':
+            case "trap":
                 projectile = new Trap(this, this.tank, tankDefinition, angle);
                 break;
-            case 'drone':
+            case "drone":
                 projectile = new Drone(this, this.tank, tankDefinition, angle);
                 break;
-            case 'necrodrone':
+            case "necrodrone":
                 projectile = new NecromancerSquare(this, this.tank, tankDefinition, angle);
                 break;
-            case 'swarm':
+            case "swarm":
                 projectile = new Swarm(this, this.tank, tankDefinition, angle);
                 break;
-            case 'minion':
+            case "minion":
                 projectile = new Minion(this, this.tank, tankDefinition, angle);
                 break;
-            case 'flame':
+            case "flame":
                 projectile = new Flame(this, this.tank, tankDefinition, angle);
                 break;
-            case 'wall': {
-                const w = projectile = new MazeWall(this.game, Math.round(this.tank.inputs.mouse.x / 50) * 50, Math.round(this.tank.inputs.mouse.y / 50) * 50, 250, 250);
+            case "wall": {
+                const w = projectile = new MazeWall(this.game.arena, Math.round(this.tank.inputs.mouse.x / 50) * 50, Math.round(this.tank.inputs.mouse.y / 50) * 50, 250, 250);
                 setTimeout(() => {
                     w.delete();
                 }, 60 * 1000);
@@ -204,7 +204,7 @@ export default class Barrel extends ObjectEntity {
                 projectile = new CrocSkimmer(this, this.tank, tankDefinition, angle);
                 break;
             default:
-                util.log('Ignoring attempt to spawn projectile of type ' + this.definition.bullet.type);
+                util.log("Ignoring attempt to spawn projectile of type " + this.definition.bullet.type);
                 break;
         }
 

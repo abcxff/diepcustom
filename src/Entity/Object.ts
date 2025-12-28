@@ -95,11 +95,11 @@ export default class ObjectEntity extends Entity {
     /** Used to determine the parent of all parents. */
     public rootParent: ObjectEntity = this;
 
-    /** Entity tags. */
+    /** Entity bit flag tags. */
     public entityTags: number = 0;
     
     /** Entity type ID. */
-    public arenaMobID: string = ""
+    public arenaMobID: string | null = null;
 
     /** Velocity used for physics. */
     public velocity = new Vector();

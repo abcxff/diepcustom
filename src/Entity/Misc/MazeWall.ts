@@ -16,16 +16,17 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import GameServer from "../../Game";
+import ArenaEntity from "../../Native/Arena";
 import ObjectEntity from "../Object";
 
 import { PhysicsFlags, Color } from "../../Const/Enums";
+
 /**
  * Only used for maze walls and nothing else.
  */
 export default class MazeWall extends ObjectEntity {
     public static newFromBounds(
-        game: GameServer,
+        arena: ArenaEntity,
         minX: number,
         minY: number,
         maxX: number,
@@ -40,11 +41,11 @@ export default class MazeWall extends ObjectEntity {
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
 
-        return new MazeWall(game, centerX, centerY, width, height);
+        return new MazeWall(arena, centerX, centerY, width, height);
     }
 
-    public constructor(game: GameServer, x: number, y: number, width: number, height: number) {
-        super(game);
+    public constructor(arena: ArenaEntity, x: number, y: number, width: number, height: number) {
+        super(arena.game);
 
         this.setGlobalEntity();
 
@@ -58,7 +59,7 @@ export default class MazeWall extends ObjectEntity {
         this.physicsData.values.pushFactor = 2;
         this.physicsData.values.absorbtionFactor = 0;
 
-        this.relationsData.values.team = this.game.arena;
+        this.relationsData.values.team = arena;
 
         this.styleData.values.borderWidth = 10;
         this.styleData.values.color = Color.Box;
