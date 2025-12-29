@@ -50,7 +50,7 @@ export const countdownDuration = 10 * tps;
 export const shinyChance: number = 1 / 1_000_000;
 
 /** Chance for a player to spawn out of an allied factory. */
-export const factorySpawnChance: number = 0.5;
+export const factorySpawnChance: number = 0.05;
 
 /** Is hosting a rest api */
 export const enableApi: boolean = true;
