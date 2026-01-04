@@ -143,7 +143,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
             // If there is any tank within 1000 units, find a new position
             const entity = this.game.entities.collisionManager.getFirstMatch(pos.x, pos.y, 1000, 1000, (entity) => {
-                if (!TankBody.isTank(entity) || !AbstractBoss.isBoss(entity)) return false;
+                if (!(TankBody.isTank(entity) || AbstractBoss.isBoss(entity))) return false;
 
                 const dX = entity.positionData.values.x - pos.x;
                 const dY = entity.positionData.values.y - pos.y;
