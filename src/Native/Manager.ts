@@ -175,9 +175,8 @@ export default class EntityManager {
             }
         }
     }
-    
+
     public hibernateEntities() {
-        let entitySleepCount = 0; // remove this, just for testing
         for (let id = 1; id <= this.lastId; ++id) {
             const entity = this.inner[id] as ObjectEntity;
             if (!entity || entity.hash === 0 || !entity.isPhysical || !entity.canSleep) continue;
@@ -186,35 +185,15 @@ export default class EntityManager {
                 const camera = client.camera;
                 if (!camera) continue;
 
-                const cameraData = camera.cameraData.values;
-
-                const fov = cameraData.FOV;
-                const width = (1920 / fov) + ClientCamera.VISION_BUFFER;
-                const height = (1080 / fov) + ClientCamera.VISION_BUFFER;
-
-                const l = cameraData.cameraX - width;
-                const r = cameraData.cameraX + width;
-                const t = cameraData.cameraY - height;
-                const b = cameraData.cameraY + height;
-
-                const entityWidth = entity.physicsData.values.sides === 2 ? entity.physicsData.values.size / 2 : entity.physicsData.values.size;
-                const entitySize = entity.physicsData.values.sides === 2 ? entity.physicsData.values.width / 2 : entity.physicsData.values.size;
-
-                if (entity.positionData.values.x - entityWidth < r &&
-                    entity.positionData.values.y + entitySize > t &&
-                    entity.positionData.values.x + entityWidth > l &&
-                    entity.positionData.values.y - entitySize < b
-                ) {
+                if (camera["view"].includes(entity)) {
                     entity.isSleeping = false;
                     continue;
                 }
 
                 entity.setVelocity(0, 0);
                 entity.isSleeping = true;
-                entitySleepCount++; // remove this, just for testing
             }
         }
-        console.log(entitySleepCount, "entities going to sleep");  // remove this, just for testing
     }
 
     /** Ticks all entities in the game. */

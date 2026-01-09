@@ -123,7 +123,7 @@ export default class ClientCamera extends CameraEntity {
     /** Client interface. */
     public client: Client;
     /** All entities in the view of the camera. Represented by id. */
-    public view: Entity[] = [];
+    private view: Entity[] = [];
 
     public static VISION_BUFFER: number = 200;
 
