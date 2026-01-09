@@ -177,6 +177,8 @@ export default class EntityManager {
     }
 
     public hibernateEntities() {
+        const checkedEntities = [];
+
         for (let id = 1; id <= this.lastId; ++id) {
             const entity = this.inner[id] as ObjectEntity;
             if (!entity || entity.hash === 0 || !entity.isPhysical || !entity.canSleep) continue;
@@ -187,11 +189,14 @@ export default class EntityManager {
 
                 if (camera["view"].includes(entity)) {
                     entity.isSleeping = false;
+                    checkedEntities.push(entity);
                     continue;
                 }
 
-                entity.setVelocity(0, 0);
-                entity.isSleeping = true;
+                if (!checkedEntities.includes(entity) && !entity.deletionAnimation) {
+                    // entity.setVelocity(0, 0);
+                    entity.isSleeping = true;
+                }
             }
         }
     }
