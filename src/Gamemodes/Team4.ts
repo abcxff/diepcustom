@@ -45,7 +45,6 @@ export default class Teams4Arena extends ArenaEntity {
     public greenTeamEntity: TeamEntity;
     /** Purple TeamBASE entity */
     public purpleTeamEntity: TeamEntity;
-
     /** Maps clients to their teams */
     public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
 
@@ -61,8 +60,8 @@ export default class Teams4Arena extends ArenaEntity {
         
         new TeamBase(game, this.blueTeamEntity, -arenaSize + baseSize / 2,  -arenaSize + baseSize / 2, baseSize, baseSize);
         new TeamBase(game, this.redTeamEntity, arenaSize - baseSize / 2, arenaSize - baseSize / 2, baseSize, baseSize);
-        new TeamBase(game, this.purpleTeamEntity, -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
-        new TeamBase(game, this.greenTeamEntity, arenaSize - baseSize / 2, -arenaSize + baseSize / 2, baseSize, baseSize);
+        new TeamBase(game, this.purpleTeamEntity, arenaSize - baseSize / 2, -arenaSize + baseSize / 2, baseSize, baseSize);
+        new TeamBase(game, this.greenTeamEntity, -arenaSize + baseSize / 2,  arenaSize - baseSize / 2, baseSize, baseSize);
     }
 
     public decideTeam(client: Client): TeamEntity {
