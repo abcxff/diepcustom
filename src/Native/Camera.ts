@@ -123,7 +123,9 @@ export default class ClientCamera extends CameraEntity {
     /** Client interface. */
     public client: Client;
     /** All entities in the view of the camera. Represented by id. */
-    private view: Entity[] = [];
+    public view: Entity[] = [];
+
+    public static VISION_BUFFER: number = 200;
 
     /** Calculates the amount of stats available at a specific level. */
     public static calculateStatCount(level: number) {
@@ -175,8 +177,8 @@ export default class ClientCamera extends CameraEntity {
         const creations: Entity[] = [];
 
         const fov = this.cameraData.values.FOV;
-        const width = (1920 / fov) / 1.5;
-        const height = (1080 / fov) / 1.5;
+        const width = (1920 / fov) + ClientCamera.VISION_BUFFER;
+        const height = (1080 / fov) + ClientCamera.VISION_BUFFER;
 
         // TODO(speed)
         const entitiesNearRange = this.game.entities.collisionManager.retrieve(this.cameraData.values.cameraX, this.cameraData.values.cameraY, width, height);
@@ -206,6 +208,7 @@ export default class ClientCamera extends CameraEntity {
                 ) {
                     if (entity !== this.cameraData.values.player && entity.styleData.values.opacity !== 0) { // Invisible tanks shouldn't be sent
                         entitiesInRange.push(entity);
+                        entity.isSleeping = false; // Force wake up if visible
                     }
                 }
             }

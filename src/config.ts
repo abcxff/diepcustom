@@ -43,6 +43,8 @@ export const host: string = process.env.SERVER_INFO || "unknown";
 /** Runtime mode. */
 export const mode: string = process.env.NODE_ENV || "production";
 
+export const entitySleepCheckInterval = 15 * tps;
+
 /** How long the countdown should last until the game is started. By default it is 10 seconds. Set to 0 if you wish to disable this. */
 export const countdownDuration = 10 * tps;
 

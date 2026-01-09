@@ -141,6 +141,7 @@ export default class AbstractBoss extends LivingEntity {
         this.healthData.values.health = this.healthData.values.maxHealth = 3000;
 
         this.entityTags |= EntityTags.isBoss;
+        this.canSleep = false;
     }
     
     public static isBoss(entity: Entity | null | undefined): entity is AbstractBoss {

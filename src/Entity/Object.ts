@@ -86,6 +86,10 @@ export default class ObjectEntity extends Entity {
     /** When set to true (the default), physics are applied to the entity. */
     public isPhysical: boolean = true;
 
+    public isSleeping: boolean = false;
+    
+    public canSleep: boolean = true;
+
     /** Set to true of the entity has a parent. */
     public isChild: boolean = false;
 
@@ -132,8 +136,12 @@ export default class ObjectEntity extends Entity {
 
     /** Whether or not two objects are touching */
     public static isColliding(objA: ObjectEntity, objB: ObjectEntity): boolean {
+        if (objA.isSleeping && objB.isSleeping) return false;
+
         if (objA === objB) return false;
+
         if (!objA.isPhysical || !objB.isPhysical) return false;
+
         const physicsA = objA.physicsData.values;
         const physicsB = objB.physicsData.values;
         const relationsA = objA.relationsData.values;
@@ -214,6 +222,7 @@ export default class ObjectEntity extends Entity {
         } else if (!this.deletionAnimation) { // if we aren't already deleting
             this.deletionAnimation = new DeletionAnimation(this);
         }
+        this.isSleeping = false;
     }
 
     /** Extends Entity.delete, but removes child from parent. */

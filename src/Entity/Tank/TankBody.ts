@@ -102,6 +102,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.setTank(Tank.Basic);
 
         this.entityTags |= EntityTags.isTank;
+        this.canSleep = false;
     }
     
     public static isTank(entity: Entity | null | undefined): entity is TankBody {
