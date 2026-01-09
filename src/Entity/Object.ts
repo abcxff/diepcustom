@@ -215,14 +215,13 @@ export default class ObjectEntity extends Entity {
 
     /** Calls the deletion animation, unless animate is set to false, in that case it instantly deletes. */
     public destroy(animate = true) {
-        if (!animate) {
+        if (!animate || this.isSleeping) {
             if (this.deletionAnimation) this.deletionAnimation = null;
 
             this.delete();
         } else if (!this.deletionAnimation) { // if we aren't already deleting
             this.deletionAnimation = new DeletionAnimation(this);
         }
-        this.isSleeping = false;
     }
 
     /** Extends Entity.delete, but removes child from parent. */

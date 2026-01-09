@@ -108,6 +108,7 @@ export default class LivingEntity extends ObjectEntity {
         this.healthData.health -= amount;
 
         if (this.healthData.health <= 0.0001) {
+            this.destroy(true);
             this.healthData.health = 0;
 
             let killer: ObjectEntity = source;
@@ -134,8 +135,6 @@ export default class LivingEntity extends ObjectEntity {
         super.applyPhysics();
 
         if (this.healthData.values.health <= 0) {
-            this.destroy(true);
-
             this.damagedEntities.length = 0;
             return;
         }
