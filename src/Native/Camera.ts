@@ -177,8 +177,8 @@ export default class ClientCamera extends CameraEntity {
         const creations: Entity[] = [];
 
         const fov = this.cameraData.values.FOV;
-        const width = (1920 / fov) + ClientCamera.VISION_BUFFER;
-        const height = (1080 / fov) + ClientCamera.VISION_BUFFER;
+        const width = (1920 / fov) / 2 + ClientCamera.VISION_BUFFER;
+        const height = (1080 / fov) / 2 + ClientCamera.VISION_BUFFER;
 
         // TODO(speed)
         const entitiesNearRange = this.game.entities.collisionManager.retrieve(this.cameraData.values.cameraX, this.cameraData.values.cameraY, width, height);
