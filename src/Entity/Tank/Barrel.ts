@@ -1,5 +1,5 @@
 /*
-    DiepCustom - custom tank game server that shares diep.io"s WebSocket protocol
+    DiepCustom - custom tank game server that shares diep.io's WebSocket protocol
     Copyright (C) 2022 ABCxFF (github.com/ABCxFF)
 
     This program is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@ import { BarrelAddon, BarrelAddonById } from "./BarrelAddons";
 import { Swarm } from "./Projectile/Swarm";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
 /**
- * Class that determines when barrels can shoot, and when they can"t.
+ * Class that determines when barrels can shoot, and when they can't.
  */
 export class ShootCycle {
     /** The barrel this cycle is keeping track of. */
