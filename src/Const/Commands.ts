@@ -209,7 +209,7 @@ export const commandCallbacks = {
     game_set_level: (client: Client, levelArg: string) => {
         const level = parseInt(levelArg);
         const player = client.camera?.cameraData.player;
-        if (isNaN(level) || !Entity.exists(player) || !TankBody.isTank(player)) return;
+        if (!isFinite(level) || !Entity.exists(player) || !TankBody.isTank(player)) return;
         const finalLevel = client.accessLevel == AccessLevel.FullAccess ? level : Math.min(maxPlayerLevel, level);
         client.camera?.setLevel(finalLevel);
     },
@@ -217,7 +217,7 @@ export const commandCallbacks = {
         const score = parseInt(scoreArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (isNaN(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (!isFinite(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.score = score;
     },
     game_set_stat_max: (client: Client, statIdArg: string, statMaxArg: string) => {
@@ -225,7 +225,7 @@ export const commandCallbacks = {
         const statMax = parseInt(statMaxArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statMax) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (statId < 0 || statId >= StatCount || !isFinite(statId) || !isFinite(statMax) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         const clampedStatMax = Math.max(statMax, 0);
         camera.statLimits[statId as Stat] = clampedStatMax;
         camera.statLevels[statId as Stat] = Math.min(camera.statLevels[statId as Stat], clampedStatMax);
@@ -235,14 +235,14 @@ export const commandCallbacks = {
         const statPoints = parseInt(statPointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statPoints) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (statId < 0 || statId >= StatCount || !isFinite(statId) || !isFinite(statPoints) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statLevels[statId as Stat] = statPoints;
     },
     game_add_upgrade_points: (client: Client, pointsArg: string) => {
         const points = parseInt(pointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (isNaN(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (!isFinite(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statsAvailable += points;
     },
     game_teleport: (client: Client, xArg: string, yArg: string) => {
@@ -254,7 +254,7 @@ export const commandCallbacks = {
         const x = xArg.match(RELATIVE_POS_REGEX) ? player.positionData.x + parseInt(xArg.slice(1) || "0", 10) : parseInt(xArg, 10);
         const y = yArg.match(RELATIVE_POS_REGEX) ? player.positionData.y + parseInt(yArg.slice(1) || "0", 10) : parseInt(yArg, 10);
         
-        if (isNaN(x) || isNaN(y)) return;
+        if (!isFinite(x) || !isFinite(y)) return;
 
         player.positionData.x = x;
         player.positionData.y = y;
@@ -355,11 +355,11 @@ export const commandCallbacks = {
             ["Triangle", Triangle]
         ] as [string, typeof ObjectEntity][]).get(entityArg);
 
-        if (isNaN(count) || count < 0 || !game || !TEntity) return;
+        if (!isFinite(count) || count < 0 || !game || !TEntity) return;
 
         for (let i = 0; i < count; ++i) {
             const boss = new TEntity(game);
-            if (!isNaN(x) && !isNaN(y)) {
+            if (isFinite(x) && isFinite(y)) {
                 boss.positionData.x = x;
                 boss.positionData.y = y;
             }

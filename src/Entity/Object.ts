@@ -18,7 +18,7 @@
 
 import * as util from "../util";
 import GameServer from "../Game";
-import Vector, { VectorAbstract } from "../Physics/Vector";
+import Vector from "../Physics/Vector";
 
 import { PhysicsGroup, PositionGroup, RelationsGroup, StyleGroup } from "../Native/FieldGroups";
 import { Entity } from "../Native/Entity";

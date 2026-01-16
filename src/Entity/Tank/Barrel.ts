@@ -105,7 +105,7 @@ export default class Barrel extends ObjectEntity {
     /** Number of drones that this barrel shot that are still alive. */
     public droneCount = 0;
 
-    /** The barrel"s addons */
+    /** The barrel's addons */
     public addons: BarrelAddon[] = [];
 
     /** Always existant barrel field group, present on all barrels. */

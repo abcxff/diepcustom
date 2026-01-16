@@ -24,7 +24,7 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import ShapeManager from "../Misc/ShapeManager";
 import { ArenaFlags, ClientBound } from "../Const/Enums";
-import { tps, countdownDuration, scoreboardUpdateInterval } from "../config";
+import { countdownDuration, scoreboardUpdateInterval } from "../config";
 
 const MIN_PLAYERS = 4; // 6 in Diep.io
 
