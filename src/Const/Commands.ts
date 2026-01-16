@@ -217,7 +217,7 @@ export const commandCallbacks = {
         const score = parseInt(scoreArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (!isFinite(score) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (!isFinite(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.score = score;
     },
     game_set_stat_max: (client: Client, statIdArg: string, statMaxArg: string) => {
@@ -242,7 +242,7 @@ export const commandCallbacks = {
         const points = parseInt(pointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (!isFinite(points) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (!isFinite(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statsAvailable += points;
     },
     game_teleport: (client: Client, xArg: string, yArg: string) => {
