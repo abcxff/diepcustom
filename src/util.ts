@@ -98,7 +98,7 @@ export const getRandomPosition = (entity: ObjectEntity): VectorAbstract => {
         pos.x += xOffset;
         pos.y += yOffset;
     } else { // Circular hitbox
-        const radius = Math.random() * entity.physicsData.values.size;
+        const radius = Math.sqrt(Math.random()) * entity.physicsData.values.size;
         const angle = Math.random() * PI2;
 
         pos.x += Math.cos(angle) * radius;
