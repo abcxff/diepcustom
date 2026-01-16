@@ -20,7 +20,6 @@ import GameServer from "../Game";
 import ArenaEntity from "../Native/Arena";
 import Client from "../Client";
 
-import ObjectEntity from "../Entity/Object";
 import TeamBase from "../Entity/Misc/TeamBase";
 import TankBody from "../Entity/Tank/TankBody";
 

@@ -32,7 +32,7 @@ import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 
 import Client from "../Client";
 
-import { countdownDuration, bossSpawningInterval, factorySpawnChance, scoreboardUpdateInterval } from "../config";
+import { countdownDuration, factorySpawnChance, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
     /** Countdown, waiting for players screen */

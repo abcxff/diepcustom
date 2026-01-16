@@ -18,7 +18,6 @@
 
 import Client from "../Client";
 import { Color, ColorsHexCode, ArenaFlags, ValidScoreboardIndex, ClientBound } from "../Const/Enums";
-import ObjectEntity from "../Entity/Object";
 import Dominator from "../Entity/Misc/Dominator";
 import TeamBase from "../Entity/Misc/TeamBase";
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
@@ -94,6 +93,9 @@ export default class DominationArena extends ArenaEntity {
         const team = this.decideTeam(client);
         TeamEntity.setTeam(team, tank);
         
+        const success = this.attemptFactorySpawn(tank);
+        if (success) return;
+
         const teamBase = team.base;
         if (!teamBase) return super.spawnPlayer(tank, client);
 
