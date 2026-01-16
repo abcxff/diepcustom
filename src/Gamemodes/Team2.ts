@@ -25,7 +25,7 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { Color } from "../Const/Enums";
-import { randomFrom } from "../util";
+import { randomFrom, getRandomPosition } from "../util";
 
 const arenaSize = 11150;
 const baseWidth = arenaSize / (3 + 1/3) * 0.6; // 2007
@@ -37,30 +37,42 @@ export default class Teams2Arena extends ArenaEntity {
     static override GAMEMODE_ID: string = "teams";
 
     /** Blue Team entity */
-    public blueTeamBase: TeamBase;
+    public blueTeamEntity: TeamEntity;
     /** Red Team entity */
-    public redTeamBase: TeamBase;
+    public redTeamEntity: TeamEntity;
     /** Maps clients to their teams */
-    public playerTeamMap: WeakMap<Client, TeamBase> = new WeakMap();
+    public playerTeamMap: WeakMap<Client, TeamEntity> = new WeakMap();
     
     public constructor(game: GameServer) {
         super(game);
         this.updateBounds(arenaSize * 2, arenaSize * 2);
-        this.blueTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamBlue), -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
-        this.redTeamBase = new TeamBase(game, new TeamEntity(this.game, Color.TeamRed), arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
+
+        this.blueTeamEntity = new TeamEntity(this.game, Color.TeamBlue);
+        this.redTeamEntity = new TeamEntity(this.game, Color.TeamRed);
+
+        new TeamBase(game, this.blueTeamEntity, -arenaSize + baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
+        new TeamBase(game, this.redTeamEntity, arenaSize - baseWidth / 2, 0, arenaSize * 2, baseWidth, true, 12, 2);
+    }
+
+    public decideTeam(client: Client): TeamEntity {
+        const team =  this.playerTeamMap.get(client) || randomFrom([this.blueTeamEntity, this.redTeamEntity]);
+        this.playerTeamMap.set(client, team);
+
+        return team;
     }
 
     public spawnPlayer(tank: TankBody, client: Client) {
-        tank.positionData.values.y = 2 * arenaSize * Math.random() - arenaSize;
-
-        const xOffset = (Math.random() - 0.5) * baseWidth;
+        const team = this.decideTeam(client);
+        TeamEntity.setTeam(team, tank);
         
-        const base = this.playerTeamMap.get(client) || randomFrom([this.blueTeamBase, this.redTeamBase]);
-        tank.relationsData.values.team = base.relationsData.values.team;
-        tank.styleData.values.color = base.styleData.values.color;
-        tank.positionData.values.x = base.positionData.values.x + xOffset;
-        this.playerTeamMap.set(client, base);
+        const success = this.attemptFactorySpawn(tank);
+        if (success) return; // This player was spawned from a factory instead
 
-        if (client.camera) client.camera.relationsData.team = tank.relationsData.values.team;
+        const base = team.base;
+        if (!base) return super.spawnPlayer(tank, client);
+
+        const pos = getRandomPosition(base);
+        tank.positionData.x = pos.x;
+        tank.positionData.y = pos.y;
     }
 }

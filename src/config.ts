@@ -44,10 +44,13 @@ export const host: string = process.env.SERVER_INFO || "unknown";
 export const mode: string = process.env.NODE_ENV || "production";
 
 /** How long the countdown should last until the game is started. By default it is 10 seconds. Set to 0 if you wish to disable this. */
-export const countdownTicks = 10 * tps;
+export const countdownDuration = 10 * tps;
 
-/** Chance for a shape to spawn as shiny (green) */
+/** Chance for a shape to spawn as shiny (green). */
 export const shinyChance: number = 1 / 1_000_000;
+
+/** Chance for a player to spawn out of an allied factory. */
+export const factorySpawnChance: number = 0.05;
 
 /** Is hosting a rest api */
 export const enableApi: boolean = true;

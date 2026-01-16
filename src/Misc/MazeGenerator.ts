@@ -239,7 +239,7 @@ export default class MazeGenerator {
     ): MazeWall {
         const { x: minX, y: minY } = this.scaleGridToArenaPosition(arena, gridX, gridY);
         const { x: maxX, y: maxY } = this.scaleGridToArenaPosition(arena, gridX + gridW, gridY + gridH);
-        return MazeWall.newFromBounds(arena.game, minX, minY, maxX, maxY);
+        return MazeWall.newFromBounds(arena, minX, minY, maxX, maxY);
     }
 
     /** Allows for easier (x, y) based getting of maze cells */

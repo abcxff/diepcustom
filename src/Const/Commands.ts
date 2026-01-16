@@ -18,28 +18,36 @@
 
 import Client from "../Client"
 import { AccessLevel, maxPlayerLevel } from "../config";
+
+import ObjectEntity from "../Entity/Object";
+import LivingEntity from "../Entity/Live";
+
 import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import Defender from "../Entity/Boss/Defender";
 import FallenBooster from "../Entity/Boss/FallenBooster";
 import FallenOverlord from "../Entity/Boss/FallenOverlord";
 import Guardian from "../Entity/Boss/Guardian";
 import Summoner from "../Entity/Boss/Summoner";
-import LivingEntity from "../Entity/Live";
+
 import ArenaCloser from "../Entity/Misc/ArenaCloser";
 import FallenAC from "../Entity/Misc/Boss/FallenAC";
-import Mothership from "../Entity/Misc/Mothership";
 import FallenSpike from "../Entity/Misc/Boss/FallenSpike";
 import FallenMegaTrapper from "../Entity/Misc/Boss/FallenMegaTrapper";
+
+import Mothership from "../Entity/Misc/Mothership";
 import Dominator from "../Entity/Misc/Dominator";
-import ObjectEntity from "../Entity/Object";
+
 import AbstractShape from "../Entity/Shape/AbstractShape";
 import Crasher from "../Entity/Shape/Crasher";
 import Pentagon from "../Entity/Shape/Pentagon";
 import Square from "../Entity/Shape/Square";
 import Triangle from "../Entity/Shape/Triangle";
+
 import AutoTurret from "../Entity/Tank/AutoTurret";
 import Bullet from "../Entity/Tank/Projectile/Bullet";
 import TankBody from "../Entity/Tank/TankBody";
+
+import { TeamEntity } from "../Entity/Misc/TeamEntity";
 import { AIState } from "../Entity/AI";
 import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
@@ -60,6 +68,7 @@ export const enum CommandID {
     gameGodmode = "game_godmode",
     gameAnnounce = "game_announce",
     gameGoldenName = "game_golden_name",
+    gameNeutral = "game_neutral",
     adminSummon = "admin_summon",
     adminKillAll = "admin_kill_all",
     adminKillEntity = "admin_kill_entity",
@@ -155,6 +164,12 @@ export const commandDefinitions = {
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
+     game_neutral: {
+        id: CommandID.gameNeutral,
+        description: "Sets your tank's team to the neutral team",
+        permissionLevel: AccessLevel.FullAccess,
+        isCheat: false
+    },
     admin_summon: {
         id: CommandID.adminSummon,
         usage: "[entityName] [?count] [?x] [?y]",
@@ -194,7 +209,7 @@ export const commandCallbacks = {
     game_set_level: (client: Client, levelArg: string) => {
         const level = parseInt(levelArg);
         const player = client.camera?.cameraData.player;
-        if (isNaN(level) || !Entity.exists(player) || !TankBody.isTank(player)) return;
+        if (!isFinite(level) || !Entity.exists(player) || !TankBody.isTank(player)) return;
         const finalLevel = client.accessLevel == AccessLevel.FullAccess ? level : Math.min(maxPlayerLevel, level);
         client.camera?.setLevel(finalLevel);
     },
@@ -202,7 +217,7 @@ export const commandCallbacks = {
         const score = parseInt(scoreArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (isNaN(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (!isFinite(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.score = score;
     },
     game_set_stat_max: (client: Client, statIdArg: string, statMaxArg: string) => {
@@ -210,7 +225,7 @@ export const commandCallbacks = {
         const statMax = parseInt(statMaxArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statMax) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (statId < 0 || statId >= StatCount || !isFinite(statId) || !isFinite(statMax) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         const clampedStatMax = Math.max(statMax, 0);
         camera.statLimits[statId as Stat] = clampedStatMax;
         camera.statLevels[statId as Stat] = Math.min(camera.statLevels[statId as Stat], clampedStatMax);
@@ -220,22 +235,27 @@ export const commandCallbacks = {
         const statPoints = parseInt(statPointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (statId < 0 || statId >= StatCount || isNaN(statId) || isNaN(statPoints) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (statId < 0 || statId >= StatCount || !isFinite(statId) || !isFinite(statPoints) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statLevels[statId as Stat] = statPoints;
     },
     game_add_upgrade_points: (client: Client, pointsArg: string) => {
         const points = parseInt(pointsArg);
         const camera = client.camera?.cameraData;
         const player = client.camera?.cameraData.player;
-        if (isNaN(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
+        if (!isFinite(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
         camera.statsAvailable += points;
     },
     game_teleport: (client: Client, xArg: string, yArg: string) => {
         const player = client.camera?.cameraData.player;
         if (!Entity.exists(player) || !ObjectEntity.isObject(player)) return;
+
+        if (!xArg || !yArg) return;
+
         const x = xArg.match(RELATIVE_POS_REGEX) ? player.positionData.x + parseInt(xArg.slice(1) || "0", 10) : parseInt(xArg, 10);
         const y = yArg.match(RELATIVE_POS_REGEX) ? player.positionData.y + parseInt(yArg.slice(1) || "0", 10) : parseInt(yArg, 10);
-        if (isNaN(x) || isNaN(y)) return;
+        
+        if (!isFinite(x) || !isFinite(y)) return;
+
         player.positionData.x = x;
         player.positionData.y = y;
         player.setVelocity(0, 0);
@@ -293,6 +313,15 @@ export const commandCallbacks = {
     game_golden_name: (client: Client, activeArg?: string) => {
         client.setHasCheated(!client.hasCheated());
     },
+    game_neutral: (client: Client) => {
+        const team = client.camera?.game.arena;
+        const player = client.camera?.cameraData.values.player;
+
+        if (!team || !player) return;
+        if (!ObjectEntity.isObject(player)) return;
+        
+        TeamEntity.setTeam(team, player);
+    },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;
         let x = parseInt(xArg || "0", 10);
@@ -326,11 +355,11 @@ export const commandCallbacks = {
             ["Triangle", Triangle]
         ] as [string, typeof ObjectEntity][]).get(entityArg);
 
-        if (isNaN(count) || count < 0 || !game || !TEntity) return;
+        if (!isFinite(count) || count < 0 || !game || !TEntity) return;
 
         for (let i = 0; i < count; ++i) {
             const boss = new TEntity(game);
-            if (!isNaN(x) && !isNaN(y)) {
+            if (isFinite(x) && isFinite(y)) {
                 boss.positionData.x = x;
                 boss.positionData.y = y;
             }

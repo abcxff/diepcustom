@@ -26,13 +26,13 @@ import AbstractBoss from "../Entity/Boss/AbstractBoss";
 import { VectorAbstract } from "../Physics/Vector";
 import { ArenaGroup, TeamGroup } from "./FieldGroups";
 import { Entity } from "./Entity";
-import { Color, ArenaFlags, CameraFlags, ValidScoreboardIndex } from "../Const/Enums";
-import { PI2, saveToLog } from "../util";
-import { TeamGroupEntity } from "../Entity/Misc/TeamEntity";
+import { Color, ArenaFlags, CameraFlags, Tank, ValidScoreboardIndex } from "../Const/Enums";
+import { PI2, randomFrom, saveToLog } from "../util";
+import { TeamEntity, TeamGroupEntity } from "../Entity/Misc/TeamEntity";
 
 import Client from "../Client";
 
-import { countdownTicks, bossSpawningInterval, scoreboardUpdateInterval } from "../config";
+import { countdownDuration, factorySpawnChance, scoreboardUpdateInterval } from "../config";
 
 export const enum ArenaState {
     /** Countdown, waiting for players screen */
@@ -95,7 +95,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
         this.arenaData.values.flags = ArenaFlags.gameReadyStart;
         this.arenaData.values.playersNeeded = 0;
-        this.arenaData.values.ticksUntilStart = countdownTicks;
+        this.arenaData.values.ticksUntilStart = countdownDuration;
 
         this.teamData.values.teamColor = Color.Neutral;
     }
@@ -143,7 +143,7 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
 
             // If there is any tank within 1000 units, find a new position
             const entity = this.game.entities.collisionManager.getFirstMatch(pos.x, pos.y, 1000, 1000, (entity) => {
-                if (!TankBody.isTank(entity) || !AbstractBoss.isBoss(entity)) return false;
+                if (!(TankBody.isTank(entity) || AbstractBoss.isBoss(entity))) return false;
 
                 const dX = entity.positionData.values.x - pos.x;
                 const dY = entity.positionData.values.y - pos.y;
@@ -305,10 +305,43 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
      * Allows the arena to decide how players are spawned into the game.
      */
     public spawnPlayer(tank: TankBody, client: Client) {
+        const success = this.attemptFactorySpawn(tank);
+        if (success) return; // This player was spawned from a factory instead
+
         const { x, y } = this.findPlayerSpawnLocation();
 
         tank.positionData.values.x = x;
         tank.positionData.values.y = y;
+    }
+    
+    public attemptFactorySpawn(tank: TankBody): boolean {
+        if (Math.random() > factorySpawnChance) return false;
+
+        const team = tank.relationsData.values.team;
+        if (!TeamEntity.isTeam(team)) return false;
+
+        const teammates = this.getTeamPlayers(team);
+        const factories: TankBody[] = [];
+
+        for (const teammate of teammates) {
+            if (teammate.currentTank === Tank.Factory && !teammate.deletionAnimation) {
+                factories.push(teammate);
+            }
+        }
+
+        if (factories.length === 0) return false; // No available factories on this team, spawn as usual
+
+        const factory = randomFrom(factories);
+
+        const { x, y } = factory.getWorldPosition();
+        const barrel = factory.barrels[0];
+        const shootAngle = barrel.definition.angle + factory.positionData.values.angle;
+
+        tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * factory.sizeFactor;
+        tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * factory.sizeFactor;
+        tank.addVelocity(shootAngle, 25);
+
+        return true;
     }
 
     /**

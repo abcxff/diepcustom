@@ -89,7 +89,7 @@ export default class Mothership extends TankBody {
         this.game.broadcast()
             .u8(ClientBound.Notification)
             // If mothership has a team name, use it, otherwise just say has destroyed a mothership
-            .stringNT(`${killerTeamIsATeam ? (killerTeam.teamName || "a mysterious group") : (killer.nameData?.values.name || "an unnamed tank")} has destroyed ${teamIsATeam ? team.teamName + "'s" : "a"} Mothership!`)
+            .stringNT(`${killerTeamIsATeam ? (killerTeam.teamName || "a mysterious group") : (killer.nameData?.values.name || "an unnamed tank")} has destroyed ${teamIsATeam ? (team.teamName || "a mysterious group") + "'s" : "a"} Mothership!`)
             .u32(killerTeamIsATeam ? ColorsHexCode[killerTeam.teamData.values.teamColor] : 0x000000)
             .float(-1)
             .stringNT("").send();   

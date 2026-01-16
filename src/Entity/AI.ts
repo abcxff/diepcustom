@@ -88,7 +88,7 @@ export class AI {
     /** The current game. */
     public game: GameServer;
     /** The AI's target. */
-    public target: Entity & { positionData: PositionGroup, physicsData: PhysicsGroup, relationsData: RelationsGroup, velocity: Vector } | null = null;
+    public target: ObjectEntity | null = null;
     /** The speed at which the ai's owner can move. */
     public movementSpeed = 1;
     /** The speed at which the ai can reach the target. */
@@ -168,9 +168,9 @@ export class AI {
                 chunk ^= bitValue;
                 const id = 32 * i + bitIdx;
 
-                const entity = this.game.entities.inner[id] as ObjectEntity;
+                const entity = this.game.entities.inner[id];
                 if (!entity || entity.hash === 0) continue;
-                if (!entity.positionData || !entity.relationsData || !entity.physicsData) continue;
+                if (!ObjectEntity.isObject(entity)) continue;
 
                 if (!entity.isPhysical) continue;
                 // Check if the target is living
@@ -197,7 +197,7 @@ export class AI {
             }
         }
 
-        return this.target = closestEntity as Entity & { positionData: PositionGroup, physicsData: PhysicsGroup, relationsData: RelationsGroup, velocity: Vector };
+        return this.target = closestEntity;
     }
 
     /** Aims and predicts at the target. */

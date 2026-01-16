@@ -24,7 +24,7 @@ import TankBody from "../Entity/Tank/TankBody";
 
 import ShapeManager from "../Misc/ShapeManager";
 import { ArenaFlags, ClientBound } from "../Const/Enums";
-import { tps, countdownTicks, scoreboardUpdateInterval } from "../config";
+import { countdownDuration, scoreboardUpdateInterval } from "../config";
 
 const MIN_PLAYERS = 4; // 6 in Diep.io
 
@@ -104,7 +104,7 @@ export default class SurvivalArena extends ArenaEntity {
             if (this.arenaData.values.playersNeeded <= 0) {
                 this.arenaData.flags |= ArenaFlags.gameReadyStart;
             } else {
-                this.arenaData.ticksUntilStart = countdownTicks; // Reset countdown
+                this.arenaData.ticksUntilStart = countdownDuration; // Reset countdown
                 if (this.arenaData.flags & ArenaFlags.gameReadyStart) this.arenaData.flags &= ~ArenaFlags.gameReadyStart;
             }
         }

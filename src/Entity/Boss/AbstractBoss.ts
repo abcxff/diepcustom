@@ -163,12 +163,10 @@ export default class AbstractBoss extends LivingEntity {
      * Will set game.arena.boss to null, so that the next boss can spawn
      */
     public onDeath(killer: LivingEntity) {
-        let killerName: string;
+        let killerName: string = "an unnamed tank";
 
         if (TankBody.isTank(killer) || AbstractBoss.isBoss(killer)) {
-            killerName = killer.nameData.values.name;
-        } else {
-            killerName = "an unnamed tank";
+            killerName = killer.nameData.values.name || "an unnamed tank";
         }
 
         this.game.broadcast()
