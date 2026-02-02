@@ -37,10 +37,13 @@ export default class ArenaCloser extends TankBody {
         const inputs = new Inputs();
         const camera = new CameraEntity(game);
 
-        camera.setLevel(300);
-        camera.sizeFactor = (ArenaCloser.BASE_SIZE / 50);
-
         super(game, camera, inputs);
+
+        camera.cameraData.values.player = this;
+        camera.setLevel(300);
+
+        this.scaleFactor = 1;
+        this.scale(175 / 50);
 
         this.relationsData.values.team = game.arena;
 
@@ -68,7 +71,6 @@ export default class ArenaCloser extends TankBody {
         this.styleData.values.color = Color.Neutral;
         this.positionData.values.flags |= PositionFlags.canMoveThroughWalls;
         this.physicsData.values.flags |= PhysicsFlags.canEscapeArena;
-        camera.cameraData.values.player = this;
 
         for (let i = Stat.MovementSpeed; i < Stat.BodyDamage; ++i) camera.cameraData.values.statLevels.values[i] = 7;
 
@@ -77,6 +79,7 @@ export default class ArenaCloser extends TankBody {
     }
 
     public tick(tick: number) {
+                console.log(this.physicsData.values.size);
         this.inputs = this.ai.inputs;
 
         if (this.ai.state === AIState.idle) {
@@ -89,7 +92,6 @@ export default class ArenaCloser extends TankBody {
         }
 
         super.tick(tick);
-
         this.ai.movementSpeed = this.cameraEntity.cameraData.movementSpeed = 80;
     }
 }

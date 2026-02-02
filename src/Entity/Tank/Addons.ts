@@ -97,9 +97,6 @@ export class Addon {
 
             const tickBase = base.tick;
             base.tick = (tick: number) => {
-                base.positionData.y = this.owner.physicsData.values.size * Math.sin(angle) * ROT_OFFSET;
-                base.positionData.x = this.owner.physicsData.values.size * Math.cos(angle) * ROT_OFFSET;
-
                 tickBase.call(base, tick);
 
                 if (base.ai.state === AIState.idle) base.positionData.angle = angle + rotator.positionData.values.angle;
@@ -260,13 +257,13 @@ class LauncherAddon extends Addon {
         launcher.physicsData.values.flags |= PhysicsFlags.isTrapezoid;
         launcher.physicsData.values.sides = 2;
 
-        launcher.tick = () => {
+        /*launcher.tick = () => {
             const size = this.owner.physicsData.values.size;
 
             launcher.physicsData.size = sizeRatio * size;
             launcher.physicsData.width = widthRatio * size;
             launcher.positionData.x = launcher.physicsData.values.size / 2;
-        }
+        }*/
     }
 }
 /** Centered Auto Turret addon. */

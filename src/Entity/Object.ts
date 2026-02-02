@@ -50,8 +50,7 @@ class DeletionAnimation {
             case 5:
                 this.entity.styleData.opacity = 1 - (1 / 6);
             default:
-                this.entity.physicsData.size *= 1.1;
-                this.entity.physicsData.width *= 1.1;
+                this.entity.scale(1.1);
                 this.entity.styleData.opacity -= 1 / 6;
                 if (this.entity.styleData.values.opacity < 0) this.entity.styleData.opacity = 0;
                 break;
@@ -94,6 +93,9 @@ export default class ObjectEntity extends Entity {
 
     /** Used to determine the parent of all parents. */
     public rootParent: ObjectEntity = this;
+
+    /** Entity size multiplier */
+    public scaleFactor: number = 1;
 
     /** Entity bit flag tags. */
     public entityTags: number = 0;
@@ -387,6 +389,22 @@ export default class ObjectEntity extends Entity {
             this.positionData.y = arena.values.topY - padding;
         } else if (this.positionData.values.y > arena.values.bottomY + padding) {
             this.positionData.y = arena.values.bottomY + padding;
+        }
+    }
+
+    public scale(value: number) {
+        this.scaleFactor *= value;
+
+        this.physicsData.size *= value;
+        this.physicsData.width *= value;
+
+        if (this.isChild) {
+            this.positionData.x *= value;
+            this.positionData.y *= value;
+        }
+        
+        for (const entity of this.children) {
+            entity.scale(value);
         }
     }
 

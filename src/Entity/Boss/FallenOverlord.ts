@@ -34,15 +34,12 @@ export default class FallenOverlord extends AbstractBoss {
         this.nameData.values.name = "Fallen Overlord";
 
         for (const barrelDefinition of TankDefinitions[Tank.Overlord].barrels) {
-
             const def = Object.assign({}, barrelDefinition, { droneCount: 7, reload: 0.36 });
             def.bullet = Object.assign({}, def.bullet, { sizeRatio: 0.5, speed: 1.7, damage: 0.56, health: 12.5 });
             this.barrels.push(new Barrel(this, def));
         }
-    }
 
-    public get sizeFactor() {
-        return this.physicsData.values.size / 50;
+        this.scale(Math.pow(1.01, 75 - 1)); // Level 75 size
     }
 
     public tick(tick: number) {

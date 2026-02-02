@@ -97,7 +97,8 @@ export default class AutoTurret extends ObjectEntity {
 
         this.physicsData.values.sides = 1;
         this.baseSize = baseSize;
-        this.physicsData.values.size = this.baseSize * this.sizeFactor;
+        this.physicsData.values.size = this.baseSize * this.owner.rootParent.scaleFactor;
+        this.scaleFactor = this.owner.rootParent.scaleFactor;
 
         this.styleData.values.color = Color.Barrel;
         this.styleData.values.flags |= StyleFlags.showsAboveParent;
@@ -133,7 +134,7 @@ export default class AutoTurret extends ObjectEntity {
 
         if (this.ai.state === AIState.hasTarget) this.ai.passiveRotation = Math.random() < .5 ? AI.PASSIVE_ROTATION : -AI.PASSIVE_ROTATION;
 
-        this.physicsData.size = this.baseSize * this.sizeFactor;
+        this.scaleFactor = this.owner.rootParent.scaleFactor;
 
         this.ai.aimSpeed = this.turret.bulletAccel;
         // Top Speed

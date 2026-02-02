@@ -78,7 +78,6 @@ const DEFENDER_SIZE = 150;
  * Class which represents the boss "Defender"
  */
 export default class Defender extends AbstractBoss {
-
     /** Defender's trap launchers */
     private trappers: Barrel[] = [];
     /** See AbstractBoss.movementSpeed */
@@ -116,19 +115,7 @@ export default class Defender extends AbstractBoss {
             base.positionData.values.x = this.physicsData.values.size * Math.cos(angle) * offset;
 
             base.physicsData.values.flags |= PositionFlags.absoluteRotation;
-
-            const tickBase = base.tick;
-            base.tick = (tick: number) => {
-                base.positionData.y = this.physicsData.values.size * Math.sin(angle) * offset;
-                base.positionData.x = this.physicsData.values.size * Math.cos(angle) * offset;
-
-                tickBase.call(base, tick);
-            }
         }
-    }
-
-    public get sizeFactor() {
-        return (this.physicsData.values.size / Math.SQRT1_2) / DEFENDER_SIZE;
     }
 
     public tick(tick: number) {

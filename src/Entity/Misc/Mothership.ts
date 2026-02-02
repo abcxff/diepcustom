@@ -44,8 +44,6 @@ export default class Mothership extends TankBody {
         const inputs = new Inputs();
         const camera = new CameraEntity(game);
 
-        camera.setLevel(140);
-
         super(game, camera, inputs);
 
         this.relationsData.values.team = game.arena;
@@ -55,12 +53,10 @@ export default class Mothership extends TankBody {
         this.ai = new AI(this, true);
         this.ai.inputs = inputs;
         this.ai.viewRange = 2000;
-        
-        this.positionData.values.x = 0;
-        this.positionData.values.y = 0;
-        
+
+        camera.cameraData.values.player = this;
         this.setTank(Tank.Mothership);
-        
+        camera.setLevel(140);
         this.nameData.values.name = "Mothership"
         
         this.scoreReward = 0;
