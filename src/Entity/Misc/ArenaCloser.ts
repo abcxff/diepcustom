@@ -43,7 +43,7 @@ export default class ArenaCloser extends TankBody {
         camera.setLevel(300);
 
         this.scaleFactor = 1;
-        this.scale(175 / 50);
+        this.scale(ArenaCloser.BASE_SIZE / this.baseSize);
 
         this.relationsData.values.team = game.arena;
 
@@ -79,7 +79,6 @@ export default class ArenaCloser extends TankBody {
     }
 
     public tick(tick: number) {
-                console.log(this.physicsData.values.size);
         this.inputs = this.ai.inputs;
 
         if (this.ai.state === AIState.idle) {

@@ -49,7 +49,7 @@ export default class Drone extends Bullet {
         this.usePosAngle = true;
         
         this.ai = new AI(this);
-        this.ai.viewRange = 850 * tank.sizeFactor;
+        this.ai.viewRange = 900;
         this.ai.targetFilter = (targetPos) => (targetPos.x - this.tank.positionData.values.x) ** 2 + (targetPos.y - this.tank.positionData.values.y) ** 2 <= this.ai.viewRange ** 2; // (1000 ** 2) 1000 radius
         this.canControlDrones = typeof this.barrelEntity.definition.canControlDrones === 'boolean' && this.barrelEntity.definition.canControlDrones;
         this.physicsData.values.sides = 3;

@@ -337,8 +337,8 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
         const barrel = factory.barrels[0];
         const shootAngle = barrel.definition.angle + factory.positionData.values.angle;
 
-        tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * factory.sizeFactor;
-        tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * factory.sizeFactor;
+        tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * factory.scaleFactor;
+        tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * factory.scaleFactor;
         tank.addVelocity(shootAngle, 25);
 
         return true;

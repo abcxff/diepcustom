@@ -36,12 +36,12 @@ const MountedTurretDefinition: BarrelDefinition = {
     ...AutoTurretDefinition,
     bullet: {
         ...AutoTurretDefinition.bullet,
-        speed: 2.3,
-        damage: 1.3,
+        speed: 2.46,
+        damage: 1.2,
         health: 5.75,
         color: Color.Neutral
     }
-};
+}
 
 /**
  * Definitions (stats and data) of the trap launcher on Defender

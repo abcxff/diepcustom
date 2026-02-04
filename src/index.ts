@@ -155,7 +155,7 @@ app.listen(PORT, (success) => {
     // RULES(0): No two game servers should share the same endpoint
     //
     // NOTES(0): As of now, both servers run on the same process (and thread) here
-    const ffa = new GameServer(FFAArena, "FFA");
+    const ffa = new GameServer("dom", "FFA");
     const sbx = new GameServer(SandboxArena, "Sandbox");
     
     games.push(ffa, sbx);
