@@ -43,9 +43,6 @@ export class CameraEntity extends Entity {
 
     /** Entity being spectated if any (deathscreen). */
     public spectatee: ObjectEntity | null = null;
-    
-        /** The current size of the tank the camera is in charge of. Calculated with level stuff */
-    public sizeFactor: number = 1;
 
     /** Used to set the current camera's level. Should be the only way used to set level. */
     public setLevel(level: number) {
@@ -61,8 +58,8 @@ export class CameraEntity extends Entity {
         if (isMaxLevel) this.cameraData.score = levelScore;
 
         if (TankBody.isTank(player)) {
-            const sizeFactor = Math.pow(1.01, level - previousLevel);
-            player.scale(sizeFactor);
+            const scaleFactor = Math.pow(1.01, level - previousLevel);
+            player.scale(scaleFactor);
 
             if (isMaxLevel) {
                 player.scoreData.score = levelScore;
