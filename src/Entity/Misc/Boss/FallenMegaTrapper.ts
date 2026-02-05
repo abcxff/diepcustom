@@ -41,6 +41,7 @@ export default class FallenMegaTrapper extends AbstractBoss {
             def.bullet = Object.assign({}, def.bullet, { speed: 1.7, damage: 20, health: 20, });
             this.barrels.push(new Barrel(this, def));
         }
+        this.scale(Math.pow(1.01, 75 - 1)); // Level 75 size
         this.ai.aimSpeed = this.barrels[0].bulletAccel;
 
     }

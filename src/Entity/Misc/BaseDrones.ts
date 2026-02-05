@@ -32,8 +32,8 @@ import { CameraEntity } from "../../Native/Camera";
 const DroneSpawnerDefinition = (count: number): BarrelDefinition => ({
     angle: 0,
     offset: 0,
-    size: 95 / 5,
-    width: 42 / 5,
+    size: 95,
+    width: 42,
     delay: 0,
     reload: 0,
     recoil: 0,
@@ -91,9 +91,5 @@ export default class BaseDrones extends ObjectEntity implements BarrelBase {
         this.droneSpawner = new Barrel(this, DroneSpawnerDefinition(droneCount));
         this.droneSpawner.styleData.values.flags = this.styleData.values.flags ^= StyleFlags.isVisible;
        
-    }
-
-    public get sizeFactor() {
-        return 5; // Large drone AI range, hacky
     }
 }

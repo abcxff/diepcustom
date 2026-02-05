@@ -73,33 +73,33 @@ export default class Skimmer extends Bullet implements BarrelBase {
     /** The direction the bullet will rotating in. */
     private rotationPerTick = Skimmer.BASE_ROTATION;
 
-
     public constructor(barrel: Barrel, tank: BarrelBase, tankDefinition: TankDefinition | null, shootAngle: number, direction: number) {
         super(barrel, tank, tankDefinition, shootAngle);
+        
+        this.scaleFactor = this.physicsData.values.size / 50;
 
         this.rotationPerTick = direction;
 
         this.cameraEntity = tank.cameraEntity;
 
-        const skimmerBarrels: Barrel[] = this.skimmerBarrels =[];
+        const skimmerBarrels: Barrel[] = this.skimmerBarrels = [];
 
-        const s1 = new class extends Barrel {
-            // Keep the width constant
-            protected resize() {
-                super.resize();
-                this.physicsData.values.width = this.definition.width
-                // this.physicsData.state.width = 0;
-            }
-        }(this, {...SkimmerBarrelDefinition});
+        const s1 = new Barrel(this, SkimmerBarrelDefinition);
+        const s1Scale = s1.scale.bind(s1);
+        s1.scale = (value: number) => {
+            s1Scale(value);
+            if (!this.deletionAnimation) s1.physicsData.width = s1.definition.width;
+        }
+
         const s2Definition = {...SkimmerBarrelDefinition};
         s2Definition.angle += Math.PI
-        const s2 = new class extends Barrel {
-            // Keep the width constant
-            protected resize() {
-                super.resize();
-                this.physicsData.width = this.definition.width
-            }
-        }(this, s2Definition);
+
+        const s2 = new Barrel(this, s2Definition);
+        const s2Scale = s2.scale.bind(s2);
+        s2.scale = (value: number) => {
+            s2Scale(value);
+            if (!this.deletionAnimation) s2.physicsData.width = s2.definition.width;
+        }
 
         s1.styleData.values.color = this.styleData.values.color;
         s2.styleData.values.color = this.styleData.values.color;
@@ -108,6 +108,8 @@ export default class Skimmer extends Bullet implements BarrelBase {
 
         this.inputs = new Inputs();
         this.inputs.flags |= InputFlags.leftclick;
+        
+        this.scale(1); // Updates barrels
     }
 
     public get sizeFactor() {

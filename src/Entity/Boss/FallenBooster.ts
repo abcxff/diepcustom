@@ -41,10 +41,7 @@ export default class FallenBooster extends AbstractBoss {
             def.bullet = Object.assign({}, def.bullet, { speed: 1.7, health: 6.25, damage:def.bullet.damage * 0.8 });
             this.barrels.push(new Barrel(this, def));
         }
-    }
-
-    public get sizeFactor() {
-        return this.physicsData.values.size / 50;
+        this.scale(Math.pow(1.01, 75 - 1)); // Level 75 size
     }
 
     protected moveAroundMap() {

@@ -16,17 +16,21 @@
     along with this program. If not, see <https://www.gnu.org/licenses/>
 */
 
-import { Color, ColorsHexCode, NameFlags, StyleFlags, EntityTags, Tank, ClientBound } from "../../Const/Enums";
 import ArenaEntity from "../../Native/Arena";
 import ClientCamera, { CameraEntity } from "../../Native/Camera";
+
 import { Entity } from "../../Native/Entity";
 import { AI, AIState, Inputs } from "../AI";
+
 import ObjectEntity from "../Object";
 import LivingEntity from "../Live";
 import Bullet from "../Tank/Projectile/Bullet";
 import TankBody from "../Tank/TankBody";
 import TeamBase from "./TeamBase";
+
 import { TeamEntity } from "./TeamEntity";
+import { Color, ColorsHexCode, NameFlags, StyleFlags, EntityTags, Tank, ClientBound } from "../../Const/Enums";
+import { randomFrom } from "../../util";
 
 /**
  * Dominator Tank
@@ -34,6 +38,9 @@ import { TeamEntity } from "./TeamEntity";
 export default class Dominator extends TankBody {
     /** Size of a dominator */
     public static SIZE = 160;
+    
+    /** All dominator tank classes */
+    public static DOMINATOR_CLASSES: Tank[] = [Tank.DominatorD, Tank.DominatorG, Tank.DominatorT];
 
     /** The AI that controls how the Dominator aims. */
     public ai: AI;
@@ -44,22 +51,20 @@ export default class Dominator extends TankBody {
     public prefix: string | null = "";
 
     public constructor(arena: ArenaEntity, base: TeamBase, pTankId: Tank | null = null) {
-        let tankId: Tank;
-        if (pTankId === null) {
-            const r = Math.random() * 3;
-
-            if (r < 1) tankId = Tank.DominatorD;
-            else if (r < 2) tankId = Tank.DominatorG;
-            else tankId = Tank.DominatorT;
-        } else tankId = pTankId;
+        const tankId = pTankId || randomFrom(Dominator.DOMINATOR_CLASSES);
 
         const inputs = new Inputs();
         const camera = new CameraEntity(arena.game);
 
-        camera.setLevel(75);
-        camera.sizeFactor = (Dominator.SIZE / 50);
-
         super(arena.game, camera, inputs);
+
+        camera.cameraData.values.player = this;
+        camera.setLevel(75);
+
+        this.scaleFactor = 1;
+        this.scale(Dominator.SIZE / this.baseSize);
+
+        this.setTank(tankId);
 
         this.relationsData.values.team = arena;
         this.physicsData.values.size = Dominator.SIZE;
@@ -73,7 +78,6 @@ export default class Dominator extends TankBody {
         this.ai.viewRange = 2000;
         this.ai.doAimPrediction = true;
 
-        this.setTank(tankId);
         const def = (this.definition = Object.assign({}, this.definition));
         def.speed = camera.cameraData.values.movementSpeed = 0;
         this.nameData.values.name = "Dominator";
@@ -118,7 +122,7 @@ export default class Dominator extends TankBody {
             this.styleData.color = killerTeam.teamData.values.teamColor
             this.game.broadcast()
                 .u8(ClientBound.Notification)
-                .stringNT(`The ${this.prefix}${this.nameData.values.name} is now controlled by ${killerTeam.teamName}`)
+                .stringNT(`The ${this.prefix}${this.nameData.values.name} is now controlled by ${killerTeam.teamName || "a mysterious group"}`)
                 .u32(ColorsHexCode[killerTeam.teamData.values.teamColor])
                 .float(7500)
                 .stringNT("").send();
@@ -127,9 +131,12 @@ export default class Dominator extends TankBody {
                 const camera = client.camera;
                 if (!camera) continue;
 
-                if (camera.relationsData.values.team === this.relationsData.values.team) client.notify(`Press H to take control of the ${this.nameData.values.name}`, ColorsHexCode[killerTeam.teamData.values.teamColor])
+                if (camera.relationsData.values.team === this.relationsData.values.team) {
+                    client.notify(`Press H to take control of the ${this.nameData.values.name}`, ColorsHexCode[killerTeam.teamData.values.teamColor]);
+                }
             }
         } else {
+            // set to neutral team
             this.relationsData.team = this.game.arena
             this.styleData.color = this.game.arena.teamData.teamColor;
             
@@ -142,7 +149,7 @@ export default class Dominator extends TankBody {
         }
 
         this.base.styleData.color = this.styleData.values.color;
-        this.base.relationsData.team = this.relationsData.values.team;;
+        this.base.relationsData.team = this.relationsData.values.team;
 
         this.healthData.health = this.healthData.values.maxHealth;
 

@@ -75,8 +75,8 @@ export default class FactoryTestArena extends ArenaEntity {
         const barrel = this.nimdac.barrels[0];
         const shootAngle = barrel.definition.angle + this.nimdac.positionData.values.angle
 
-        tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size * 0.5) - Math.sin(shootAngle) * barrel.definition.offset * this.nimdac.sizeFactor;
-        tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size * 0.5) + Math.cos(shootAngle) * barrel.definition.offset * this.nimdac.sizeFactor;
+        tank.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size * 0.5) - Math.sin(shootAngle) * barrel.definition.offset * this.nimdac.scaleFactor;
+        tank.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size * 0.5) + Math.cos(shootAngle) * barrel.definition.offset * this.nimdac.scaleFactor;
         tank.addVelocity(shootAngle, 40);
     }
 

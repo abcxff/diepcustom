@@ -35,8 +35,8 @@ export default class FallenSpike extends AbstractBoss {
 
         // Sharp
         this.damagePerTick *= 2;
-
         if (AddonById.spike) new AddonById['spike'](this);
+        this.scale(Math.pow(1.01, 75 - 1)); // Level 75 size
     }
 
     public get sizeFactor() {

@@ -79,6 +79,7 @@ export default class Minion extends Drone implements BarrelBase {
 
         this.physicsData.values.sides = 1;
         this.physicsData.values.size *= 1.2;
+        this.scaleFactor = this.physicsData.values.size / 50;
         
         if (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) this.physicsData.values.flags ^= PhysicsFlags.noOwnTeamCollision;
         if (this.physicsData.values.flags & PhysicsFlags.canEscapeArena) this.physicsData.values.flags ^= PhysicsFlags.canEscapeArena;
@@ -91,10 +92,6 @@ export default class Minion extends Drone implements BarrelBase {
         this.ai.movementSpeed = this.ai.aimSpeed = this.baseAccel;
 
         this.arenaMobID = "factoryDrone";
-    }
-
-    public get sizeFactor() {
-        return this.physicsData.values.size / 50;
     }
 
     /** This allows for factory to hook in before the entity moves. */

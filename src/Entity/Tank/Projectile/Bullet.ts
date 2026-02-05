@@ -65,7 +65,7 @@ export default class Bullet extends LivingEntity {
         tank.rootParent.styleData.zIndex = barrel.game.entities.zIndex++;
 
         const bulletDefinition = barrel.definition.bullet;
-        const sizeFactor = tank.sizeFactor;
+        const scaleFactor = tank.scaleFactor;
         const statLevels = tank.cameraEntity.cameraData?.values.statLevels.values;
 
         this.relationsData.values.team = barrel.relationsData.values.team;
@@ -97,8 +97,8 @@ export default class Bullet extends LivingEntity {
 
         const {x, y} = tank.getWorldPosition();
         
-        this.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * sizeFactor + Math.cos(shootAngle) * (barrel.definition.distance || 0);
-        this.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * sizeFactor + Math.sin(shootAngle) * (barrel.definition.distance || 0);
+        this.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * scaleFactor + Math.cos(shootAngle) * (barrel.definition.distance || 0);
+        this.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * scaleFactor + Math.sin(shootAngle) * (barrel.definition.distance || 0);
         this.positionData.values.angle = shootAngle;
     }
 

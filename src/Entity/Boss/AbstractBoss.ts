@@ -134,7 +134,7 @@ export default class AbstractBoss extends LivingEntity {
         this.styleData.values.color = Color.Fallen;
 
         this.physicsData.values.sides = 1;
-        this.physicsData.values.size = 50 * Math.pow(1.01, 75 - 1);
+        this.physicsData.values.size = 50;
 
         this.reloadTime = 15 * Math.pow(0.914, 7);
 

@@ -32,7 +32,7 @@ const RocketBarrelDefinition: BarrelDefinition = {
     angle: Math.PI,
     offset: 0,
     size: 70,
-    width: 72,
+    width: 36,
     delay: 0,
     reload: 0.15,
     recoil: 3.3,
@@ -65,23 +65,27 @@ export default class Rocket extends Bullet implements BarrelBase {
     /** The inputs for when to shoot or not. (Rocket) */
     public inputs = new Inputs();
 
-
     public constructor(barrel: Barrel, tank: BarrelBase, tankDefinition: TankDefinition | null, shootAngle: number) {
         super(barrel, tank, tankDefinition, shootAngle);
+
+        this.scaleFactor = this.physicsData.values.size / 50;
         
         this.cameraEntity = tank.cameraEntity;
 
-        const rocketBarrel = this.rocketBarrel = new Barrel(this, {...RocketBarrelDefinition});
+        const rocketBarrel = new Barrel(this, RocketBarrelDefinition);
+        const rocketScale = rocketBarrel.scale.bind(rocketBarrel);
+        rocketBarrel.scale = (value: number) => {
+            rocketScale(value);
+            if (!this.deletionAnimation) rocketBarrel.physicsData.width = rocketBarrel.definition.width;
+        }
         rocketBarrel.styleData.values.color = this.styleData.values.color;
-    }
+        this.rocketBarrel = rocketBarrel;
 
-    public get sizeFactor() {
-        return this.physicsData.values.size / 50;
+        this.scale(1); // Update barrels
     }
 
     public tick(tick: number) {
         this.reloadTime = this.tank.reloadTime;
-        if (!this.deletionAnimation && this.rocketBarrel) this.rocketBarrel.definition.width = ((this.barrelEntity.definition.width / 2) * RocketBarrelDefinition.width) / this.physicsData.values.size;
 
         super.tick(tick);
 

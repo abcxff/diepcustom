@@ -36,6 +36,7 @@ export default class FallenAC extends AbstractBoss {
         for (const barrelDefinition of TankDefinitions[Tank.ArenaCloser].barrels) {
             this.barrels.push(new Barrel(this, barrelDefinition));
         }
+        this.scale(Math.pow(1.01, 75 - 1)); // Level 75 size
     }
 
     public get sizeFactor() {

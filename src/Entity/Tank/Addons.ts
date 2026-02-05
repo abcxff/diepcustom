@@ -97,12 +97,9 @@ export class Addon {
 
             const tickBase = base.tick;
             base.tick = (tick: number) => {
-                base.positionData.y = this.owner.physicsData.values.size * Math.sin(angle) * ROT_OFFSET;
-                base.positionData.x = this.owner.physicsData.values.size * Math.cos(angle) * ROT_OFFSET;
+                if (base.ai.state === AIState.idle) base.positionData.angle = angle + rotator.positionData.values.angle;
 
                 tickBase.call(base, tick);
-
-                if (base.ai.state === AIState.idle) base.positionData.angle = angle + rotator.positionData.values.angle;
             }
 
             rotator.turrets.push(base);
@@ -111,7 +108,6 @@ export class Addon {
         return rotator;
     }
 }
-
 
 const AutoTurretMiniDefinition: BarrelDefinition = {
     angle: 0,
@@ -134,7 +130,7 @@ const AutoTurretMiniDefinition: BarrelDefinition = {
         sizeRatio: 1,
         absorbtionFactor: 1
     }
-};
+}
 
 /**
  * A smasher-like guard object.
@@ -149,20 +145,18 @@ export class GuardObject extends ObjectEntity implements BarrelBase {
 
     /** Helps the class determine size ratio as well as who is the owner */
     protected owner: BarrelBase;
-    /** To store the size ratio (in compared to the owner) */
-    public sizeRatio: number;
     /** Radians per tick, how many radians the guard will rotate in a tick */
     public radiansPerTick: number;
 
-    public constructor(game: GameServer, owner: BarrelBase, sides: number, sizeRatio: number, offsetAngle: number, radiansPerTick: number) {
+    public constructor(game: GameServer, owner: BarrelBase, sides: number, scaleFactor: number, offsetAngle: number, radiansPerTick: number) {
         super(game);
 
         this.owner = owner;
         this.inputs = owner.inputs;
         this.cameraEntity = owner.cameraEntity;
         // It's weird, but it's how it works
-        sizeRatio *= Math.SQRT1_2
-        this.sizeRatio = sizeRatio;
+        scaleFactor *= Math.SQRT1_2
+        this.scaleFactor = scaleFactor;
         this.radiansPerTick = radiansPerTick;
 
         this.setParent(owner);
@@ -174,14 +168,7 @@ export class GuardObject extends ObjectEntity implements BarrelBase {
         this.positionData.values.angle = offsetAngle;
         this.physicsData.values.sides = sides;
         this.reloadTime = owner.reloadTime;
-        this.physicsData.values.size = owner.physicsData.values.size * sizeRatio;
-    }
-
-    /**
-     * Size factor, used for calculation of the turret and base size.
-     */
-    get sizeFactor() {
-        return this.owner.sizeFactor;
+        this.physicsData.values.size = owner.physicsData.values.size * scaleFactor;
     }
 
     /**
@@ -195,7 +182,6 @@ export class GuardObject extends ObjectEntity implements BarrelBase {
 
     public tick(tick: number): void {
         this.reloadTime = this.owner.reloadTime;
-        this.physicsData.size = this.sizeRatio * this.owner.physicsData.values.size;
         this.positionData.angle += this.radiansPerTick;
         // It won't ever do any collisions, so no need to tick the object
         // super.tick(tick);
@@ -213,6 +199,7 @@ class SpikeAddon extends Addon {
         this.createGuard(3, 1.3, Math.PI / 2, 0.17);
     }
 }
+
 /** Dominator's Base addon. */
 class DomBaseAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -221,6 +208,7 @@ class DomBaseAddon extends Addon {
         this.createGuard(6, 1.24, 0, 0);
     }
 }
+
 /** Smasher addon. */
 class SmasherAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -229,6 +217,7 @@ class SmasherAddon extends Addon {
         this.createGuard(6, 1.15, 0, .1);
     }
 }
+
 /** Landmine addon. */
 class LandmineAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -238,6 +227,7 @@ class LandmineAddon extends Addon {
         this.createGuard(6, 1.15, 0, .05);
     }
 }
+
 /** The thing underneath Rocketeer and Twister addon. */
 class LauncherAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -259,16 +249,9 @@ class LauncherAddon extends Addon {
         launcher.styleData.values.color = Color.Barrel;
         launcher.physicsData.values.flags |= PhysicsFlags.isTrapezoid;
         launcher.physicsData.values.sides = 2;
-
-        launcher.tick = () => {
-            const size = this.owner.physicsData.values.size;
-
-            launcher.physicsData.size = sizeRatio * size;
-            launcher.physicsData.width = widthRatio * size;
-            launcher.positionData.x = launcher.physicsData.values.size / 2;
-        }
     }
 }
+
 /** Centered Auto Turret addon. */
 class AutoTurretAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -287,6 +270,7 @@ class AutoSmasherAddon extends Addon {
         new AutoTurret(owner);
     }
 }
+
 /** 5 Auto Turrets */
 class Auto5Addon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -295,6 +279,7 @@ class Auto5Addon extends Addon {
         this.createAutoTurrets(5);
     }
 }
+
 /** 3 Auto Turrets */
 class Auto3Addon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -303,6 +288,7 @@ class Auto3Addon extends Addon {
         this.createAutoTurrets(3);
     }
 }
+
 /** The thing above ranger's barrel. */
 class PronouncedAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -326,16 +312,9 @@ class PronouncedAddon extends Addon {
         pronounce.styleData.values.color = Color.Barrel;
         pronounce.physicsData.values.flags |= PhysicsFlags.isTrapezoid;
         pronounce.physicsData.values.sides = 2;
-
-        pronounce.tick = () => {
-            const size = this.owner.physicsData.values.size;
-
-            pronounce.physicsData.size = sizeRatio * size;
-            pronounce.physicsData.width = widthRatio * size;
-            pronounce.positionData.x = offsetRatio * size;
-        }
     }
 }
+
 /** The thing above Gunner + Destroyer Dominator's barrel. */
 class PronouncedDomAddon extends Addon {
     public constructor(owner: BarrelBase) {
@@ -359,14 +338,6 @@ class PronouncedDomAddon extends Addon {
         pronounce.styleData.values.color = Color.Barrel;
         pronounce.physicsData.values.flags |= PhysicsFlags.isTrapezoid;
         pronounce.physicsData.values.sides = 2;
-
-        pronounce.tick = () => {
-            const size = this.owner.physicsData.values.size;
-
-            pronounce.physicsData.size = sizeRatio * size;
-            pronounce.physicsData.width = widthRatio * size;
-            pronounce.positionData.x = offsetRatio * size;
-        }
     }
 }
 /** Weird spike addon. Based on the arrasio Original. */
