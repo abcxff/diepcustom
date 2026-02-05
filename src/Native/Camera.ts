@@ -207,7 +207,7 @@ export default class ClientCamera extends CameraEntity {
                     entity.positionData.values.x + width > l &&
                     entity.positionData.values.y - size < b
                 ) {
-                    if (entity !== this.cameraData.values.player && entity.styleData.values.opacity !== 0) { // Invisible tanks shouldn't be sent
+                    if (entity !== this.cameraData.values.player && !(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) { // Invisible tanks shouldn't be sent
                         entitiesInRange.push(entity);
                     }
                 }
