@@ -20,7 +20,7 @@ import { ClientInputs } from "../../Client";
 import { tps } from "../../config";
 import { Color, Tank, Stat, ColorsHexCode, ClientBound, TeamFlags } from "../../Const/Enums";
 import GameServer from "../../Game";
-import ArenaEntity, { ArenaState } from "../../Native/Arena";
+import { ArenaState } from "../../Native/Arena";
 import { CameraEntity } from "../../Native/Camera";
 import { AI, AIState, Inputs } from "../AI";
 import Live from "../Live";
