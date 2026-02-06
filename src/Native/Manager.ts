@@ -184,7 +184,7 @@ export default class EntityManager {
             // Alternatively, Entity.exists(entity), though this is probably faster.
             if (!entity || entity.hash === 0) continue;
             
-            if (entity instanceof CameraEntity) {
+            if (entity.cameraData) { // Cameras are ticked later
                 continue;
             } else if (ObjectEntity.isObject(entity)) {
                 if (entity.isPhysical) {
