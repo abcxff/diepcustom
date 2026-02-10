@@ -57,6 +57,8 @@ export class CameraEntity extends Entity {
 
         if (isMaxLevel) this.cameraData.score = levelScore;
 
+        if (this.getClient()?.inputs.isPossessing) return; // TODO rework possession logic
+
         if (TankBody.isTank(player)) {
             const scaleFactor = Math.pow(1.01, level - previousLevel);
             player.scale(scaleFactor);
