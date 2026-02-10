@@ -215,10 +215,6 @@ export default class Barrel extends ObjectEntity {
         }
     }
 
-    /** Resizes the barrel; when the tank gets bigger, the barrel must as well. */
-    protected resize() {
-    }
-
     public tick(tick: number) {
                 this.bulletAccel = (20 + (this.tank.cameraEntity.cameraData?.values.statLevels.values[Stat.BulletSpeed] || 0) * 3) * this.definition.bullet.speed;
         this.relationsData.values.team = this.tank.relationsData.values.team;
