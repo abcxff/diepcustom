@@ -126,13 +126,13 @@ export default class Barrel extends ObjectEntity {
         this.relationsData.values.owner = owner;
         this.relationsData.values.team = owner.relationsData.values.team;
 
-        const sizeFactor = this.tank.sizeFactor;
-        const size = this.physicsData.values.size = this.definition.size * sizeFactor;
+        const scaleFactor = this.tank.scaleFactor;
+        const size = this.physicsData.values.size = this.definition.size * scaleFactor;
 
-        this.physicsData.values.width = this.definition.width * sizeFactor;
+        this.physicsData.values.width = this.definition.width * scaleFactor;
         this.positionData.values.angle = this.definition.angle + (this.definition.trapezoidDirection);
-        this.positionData.values.x = Math.cos(this.definition.angle) * (size / 2 + ((this.definition.distance ?? 0) * sizeFactor)) - Math.sin(this.definition.angle) * this.definition.offset * sizeFactor;
-        this.positionData.values.y = Math.sin(this.definition.angle) * (size / 2 + ((this.definition.distance ?? 0) * sizeFactor)) + Math.cos(this.definition.angle) * this.definition.offset * sizeFactor;
+        this.positionData.values.x = Math.cos(this.definition.angle) * (size / 2 + ((this.definition.distance ?? 0) * scaleFactor)) - Math.sin(this.definition.angle) * this.definition.offset * scaleFactor;
+        this.positionData.values.y = Math.sin(this.definition.angle) * (size / 2 + ((this.definition.distance ?? 0) * scaleFactor)) + Math.cos(this.definition.angle) * this.definition.offset * scaleFactor;
 
         // addons are below barrel, use StyleFlags.aboveParent to go above parent
         if (barrelDefinition.addon) {
@@ -215,23 +215,8 @@ export default class Barrel extends ObjectEntity {
         }
     }
 
-    /** Resizes the barrel; when the tank gets bigger, the barrel must as well. */
-    protected resize() {
-        const sizeFactor = this.tank.sizeFactor;
-        const size = this.physicsData.size = this.definition.size * sizeFactor;
-
-        this.physicsData.width = this.definition.width * sizeFactor;
-        this.positionData.angle = this.definition.angle + (this.definition.trapezoidDirection);
-        this.positionData.x = Math.cos(this.definition.angle) * (size / 2 + (this.definition.distance || 0)) - Math.sin(this.definition.angle) * this.definition.offset * sizeFactor;
-        this.positionData.y = Math.sin(this.definition.angle) * (size / 2 + (this.definition.distance || 0)) + Math.cos(this.definition.angle) * this.definition.offset * sizeFactor;
-
-        // Updates bullet accel too
-        this.bulletAccel = (20 + (this.tank.cameraEntity.cameraData?.values.statLevels.values[Stat.BulletSpeed] || 0) * 3) * this.definition.bullet.speed;
-    }
-
     public tick(tick: number) {
-        this.resize();
-
+                this.bulletAccel = (20 + (this.tank.cameraEntity.cameraData?.values.statLevels.values[Stat.BulletSpeed] || 0) * 3) * this.definition.bullet.speed;
         this.relationsData.values.team = this.tank.relationsData.values.team;
 
         if (!this.tank.rootParent.deletionAnimation){

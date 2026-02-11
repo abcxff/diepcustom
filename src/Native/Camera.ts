@@ -41,25 +41,31 @@ export class CameraEntity extends Entity {
     /** Always existant relations field group. Present in all GUI/camera entities. */
     public relationsData: RelationsGroup = new RelationsGroup(this);
 
-    /** The current size of the tank the camera is in charge of. Calculated with level stuff */
-    public sizeFactor: number = 1;
-
     /** Entity being spectated if any (deathscreen). */
     public spectatee: ObjectEntity | null = null;
 
     /** Used to set the current camera's level. Should be the only way used to set level. */
     public setLevel(level: number) {
         const previousLevel = this.cameraData.values.level;
-        this.cameraData.level = level;
-        this.sizeFactor = Math.pow(1.01, level - 1);
-        this.cameraData.levelbarMax = level < maxPlayerLevel ? 1 : 0; // quick hack, not correct values
-        if (level <= maxPlayerLevel) {
-            this.cameraData.score = levelToScore(level);
 
-            const player = this.cameraData.values.player;
-            if (TankBody.isTank(player)) {
-                player.scoreData.score = this.cameraData.values.score;
-                player.scoreReward = this.cameraData.values.score;
+        this.cameraData.level = level;
+        this.cameraData.levelbarMax = level < maxPlayerLevel ? 1 : 0; // quick hack, not correct values
+        
+        const levelScore = levelToScore(level);
+        const isMaxLevel = level <= maxPlayerLevel;
+        const player = this.cameraData.values.player;
+
+        if (isMaxLevel) this.cameraData.score = levelScore;
+
+        if (this.getClient()?.inputs.isPossessing) return; // TODO rework possession logic
+
+        if (TankBody.isTank(player)) {
+            const scaleFactor = Math.pow(1.01, level - previousLevel);
+            player.scale(scaleFactor);
+
+            if (isMaxLevel) {
+                player.scoreData.score = levelScore;
+                player.scoreReward = levelScore;
             }
         }
 
@@ -69,7 +75,6 @@ export class CameraEntity extends Entity {
 
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor || 1);
     }
-
     /** Returns the camera's client if it exists */
     public getClient(): Client | null {
         return null;
@@ -204,7 +209,7 @@ export default class ClientCamera extends CameraEntity {
                     entity.positionData.values.x + width > l &&
                     entity.positionData.values.y - size < b
                 ) {
-                    if (entity !== this.cameraData.values.player && entity.styleData.values.opacity !== 0) { // Invisible tanks shouldn't be sent
+                    if (entity !== this.cameraData.values.player && !(entity.styleData.values.opacity === 0 && !entity.deletionAnimation)) { // Invisible tanks shouldn't be sent
                         entitiesInRange.push(entity);
                     }
                 }

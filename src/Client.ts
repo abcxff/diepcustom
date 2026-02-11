@@ -494,6 +494,7 @@ export default class Client {
             this.camera.cameraData.FOV = 0.35;
         } else {
             this.camera.setLevel(30);
+            this.camera.cameraData.FOV = 0.35;
         }
 
         this.camera.cameraData.statsAvailable = 0;
@@ -541,9 +542,9 @@ export default class Client {
 
         const tank = camera.cameraData.player = camera.relationsData.owner = camera.relationsData.parent = new TankBody(this.game, camera, this.inputs);
         tank.setTank(Tank.Basic);
+        tank.nameData.values.name = name;
         this.game.arena.spawnPlayer(tank, this);
         camera.setLevel(camera.cameraData.values.respawnLevel);
-        tank.nameData.values.name = name;
 
         if (this.hasCheated()) this.setHasCheated(true);
 

@@ -50,7 +50,7 @@ export const AutoTurretDefinition: BarrelDefinition = {
         sizeRatio: 1,
         absorbtionFactor: 1
     }
-};
+}
 
 /**
  * Auto Turret Barrel + Barrel Base
@@ -62,13 +62,17 @@ export default class AutoTurret extends ObjectEntity {
     public nameData: NameGroup = new NameGroup(this);
 
     /** Barrel's owner (Tank-like object). */
-    private owner: BarrelBase;
+    public owner: BarrelBase;
+
     /** Actual turret / barrel. */
     public turret: Barrel;
+
     /** The AI controlling the turret. */
     public ai: AI;
+
     /** The AI's inputs, for determining whether to shoot or not. */
     public inputs: Inputs;
+
     /** Camera entity / team of the turret. */
     public cameraEntity: CameraEntity;
 
@@ -83,21 +87,22 @@ export default class AutoTurret extends ObjectEntity {
     public constructor(owner: BarrelBase, turretDefinition: BarrelDefinition = AutoTurretDefinition, baseSize: number = 25) {
         super(owner.game);
 
+        this.owner = owner;
         this.cameraEntity = owner.cameraEntity;
+
         this.ai = new AI(this);
         this.ai.doAimPrediction = true;
         this.inputs = this.ai.inputs;
-
-        this.owner = owner;
         
         this.setParent(owner);
         this.relationsData.values.owner = owner;
-
         this.relationsData.values.team = owner.relationsData.values.team;
 
-        this.physicsData.values.sides = 1;
         this.baseSize = baseSize;
-        this.physicsData.values.size = this.baseSize * this.sizeFactor;
+        this.physicsData.values.sides = 1;
+        this.physicsData.values.size = this.baseSize * this.owner.rootParent.scaleFactor;
+
+        this.scaleFactor = this.owner.rootParent.scaleFactor;
 
         this.styleData.values.color = Color.Barrel;
         this.styleData.values.flags |= StyleFlags.showsAboveParent;
@@ -109,13 +114,6 @@ export default class AutoTurret extends ObjectEntity {
 
         this.turret = new Barrel(this, turretDefinition);
         this.turret.physicsData.values.flags |= PhysicsFlags.doChildrenCollision;
-    }
-    
-    /**
-     * Size factor, used for calculation of the turret and base size.
-     */
-    public get sizeFactor() {
-        return this.owner.sizeFactor;
     }
 
     /**
@@ -133,8 +131,6 @@ export default class AutoTurret extends ObjectEntity {
 
         if (this.ai.state === AIState.hasTarget) this.ai.passiveRotation = Math.random() < .5 ? AI.PASSIVE_ROTATION : -AI.PASSIVE_ROTATION;
 
-        this.physicsData.size = this.baseSize * this.sizeFactor;
-
         this.ai.aimSpeed = this.turret.bulletAccel;
         // Top Speed
         this.ai.movementSpeed = 0;
@@ -142,8 +138,9 @@ export default class AutoTurret extends ObjectEntity {
         this.reloadTime = this.owner.reloadTime;
 
         let useAI = !(this.influencedByOwnerInputs && (this.owner.inputs.attemptingRepel() || this.owner.inputs.attemptingShot()));
+
         if (!useAI) {
-            const {x, y} = this.getWorldPosition();
+            const { x, y } = this.getWorldPosition();
             let flip = this.owner.inputs.attemptingRepel() ? -1 : 1;
             const deltaPos = {x: (this.owner.inputs.mouse.x - x) * flip, y: (this.owner.inputs.mouse.y - y) * flip}
 
@@ -161,7 +158,7 @@ export default class AutoTurret extends ObjectEntity {
                 this.turret.attemptingShot = false;
             } else {
                 // Uh. Yeah
-                const {x, y} = this.getWorldPosition();
+                const { x, y } = this.getWorldPosition();
                 this.positionData.angle = Math.atan2(this.ai.inputs.mouse.y - y, this.ai.inputs.mouse.x - x);
             }
         }

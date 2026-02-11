@@ -113,7 +113,7 @@ export class AI {
         this._aiHash = (AI._aiHashCounter++) % 16384;
 
         this.inputs.mouse.set({
-            x: 20,
+            x: 0,
             y: 0
         });
 

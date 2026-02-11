@@ -39,10 +39,9 @@ import { AccessLevel, maxPlayerLevel } from "../../config";
 
 /**
  * Abstract type of entity which barrels can connect to.
- * - `sizeFactor` is required and must be a `number`
  * - `cameraEntity` is required and must be a `Camera`
  */
-export type BarrelBase = ObjectEntity & { sizeFactor: number, cameraEntity: CameraEntity, reloadTime: number, inputs: Inputs };
+export type BarrelBase = ObjectEntity & { cameraEntity: CameraEntity, reloadTime: number, inputs: Inputs };
 
 /**
  * The Tank Body, which could also be called the Player class, converts defined
@@ -110,11 +109,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         return !!(entity.entityTags & EntityTags.isTank);
     }
 
-    /** The active change in size from the base size to the current. Contributes to barrel and addon sizes. */
-    public get sizeFactor() {
-        return this.physicsData.values.size / this.baseSize;
-    }
-
     /** The current tank type / tank id. */
     public get currentTank() {
         return this._currentTank;
@@ -154,6 +148,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
 
         // Size ratios
         this.baseSize = tank.baseSizeOverride ?? tank.sides === 4 ? Math.SQRT2 * 32.5 : tank.sides === 16 ? Math.SQRT2 * 25 : 50;
+        this.physicsData.size = this.baseSize * this.scaleFactor;
         this.physicsData.absorbtionFactor = this.isInvulnerable ? 0 : tank.absorbtionFactor;
         if (tank.absorbtionFactor === 0) this.positionData.flags |= PositionFlags.canMoveThroughWalls;
         else if (this.positionData.flags & PositionFlags.canMoveThroughWalls) this.positionData.flags ^= PositionFlags.canMoveThroughWalls;
@@ -184,6 +179,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         // Yeah, yeah why not
         this.cameraEntity.cameraData.tankOverride = tank.name;
         camera.setFieldFactor(tank.fieldFactor);
+        
+        this.scale(1); // Update addons and etc
     }
     /** See LivingEntity.onKill */
     public onKill(entity: LivingEntity) {
@@ -288,8 +285,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 if (client && client.accessLevel < AccessLevel.FullAccess) this.setInvulnerability(false);
             }
         }
-        if (!this.deletionAnimation && !this.inputs.deleted) this.physicsData.size = this.baseSize * this.cameraEntity.sizeFactor;
-        else this.regenPerTick = 0;
+
+        if (this.deletionAnimation || this.inputs.deleted) this.regenPerTick = 0;
 
         super.tick(tick);
 
