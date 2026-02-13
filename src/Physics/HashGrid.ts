@@ -218,7 +218,7 @@ export default class HashGrid implements CollisionManager {
                     const [entA, entB] = eidA < eidB ? [entityA, entityB] : [entityB, entityA];
                     
                     // Triangular matrix index: row * (row - 1) / 2 + col, where row > col
-                    const triangularIndex = (idB * (idB - 1) / 2 + idA);
+                    const triangularIndex = Math.floor(idB * (idB - 1) / 2) + idA;
                     const arrayIndex = triangularIndex >>> 5;
                     const bitIndex = triangularIndex & 31;
                     const bitMask = 1 << bitIndex;
