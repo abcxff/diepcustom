@@ -179,16 +179,23 @@ export default class EntityManager {
         this.collisionManager.forEachCollisionPair(this.handleCollision);
 
         for (let id = 0; id <= this.lastId; ++id) {
-            const entity = this.inner[id] as ObjectEntity;
+            const entity = this.inner[id];
 
             // Alternatively, Entity.exists(entity), though this is probably faster.
             if (!entity || entity.hash === 0) continue;
             
-            if (entity.isPhysical) {
-                entity.applyPhysics();
-            }
+            if (entity.cameraData) { // Cameras are ticked later
+                continue;
+            } else if (ObjectEntity.isObject(entity)) {
+                if (entity.isPhysical) {
+                    entity.applyPhysics();
+                }
 
-            if (!entity.isChild) {
+                if (!entity.isChild) {
+                    entity.tick(tick);
+                }
+            } else {
+                // Not an object entity (arena)
                 entity.tick(tick);
             }
         }

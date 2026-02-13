@@ -41,7 +41,7 @@ export default class HashGrid implements CollisionManager {
     private hashMap: number[][] = [];
     private gameLeftX: number = 0;
     private gameTopY: number = 0
-    private collisionPairsSeen = new Uint32Array(MAX_ENTITY_COUNT * MAX_ENTITY_COUNT / 32)
+    private collisionPairsSeen = new Uint32Array(MAX_ENTITY_COUNT * (MAX_ENTITY_COUNT - 1) / 2 / 32)
 
     public constructor(game: GameServer) {
         this.game = game;
@@ -50,7 +50,7 @@ export default class HashGrid implements CollisionManager {
     public preTick(tick: number): void {
         const widthInCells = (this.game.arena.width + (CELL_SIZE - 1)) >> CELL_SHIFT;
         const heightInCells = (this.game.arena.height + (CELL_SIZE - 1)) >> CELL_SHIFT;
-        this.hashMul = widthInCells >> CELL_SHIFT;
+        this.hashMul = widthInCells;
         this.hashMap = Array(widthInCells * heightInCells);
         this.queryIdMap.fill(0);
         this.lastQueryId = 0;
@@ -65,7 +65,7 @@ export default class HashGrid implements CollisionManager {
     }
 
     public insert(entity: ObjectEntity) {
-        if (this.isLocked) throw new Error("HashGrid is locked! Cannot insert entity outside of tick");
+        if (this.isLocked) throw new Error("HashGrid is locked! Cannot insert() entity outside of tick");
         const { sides, size, width } = entity.physicsData.values;
         const { x, y } = entity.positionData.values;
         const isLine = sides === 2;
@@ -98,7 +98,7 @@ export default class HashGrid implements CollisionManager {
         halfWidth: number,
         halfHeight: number
     ): PackedEntitySet {
-        if (this.isLocked) throw new Error("HashGrid is locked! Cannot insert entity outside of tick");
+        if (this.isLocked) throw new Error("HashGrid is locked! Cannot retrieve() entity outside of tick");
         const result = this.resultSet;
         result.clear();
 
@@ -140,7 +140,7 @@ export default class HashGrid implements CollisionManager {
         halfHeight: number,
         predicate: (entity: ObjectEntity) => boolean
     ): ObjectEntity | null {
-        if (this.isLocked) throw new Error("HashGrid is locked! Cannot insert entity outside of tick");
+        if (this.isLocked) throw new Error("HashGrid is locked! Cannot getFirstMatch() outside of tick");
 
         const startX = (centerX - halfWidth - this.gameLeftX) >> CELL_SHIFT;
         const startY = (centerY - halfHeight - this.gameTopY) >> CELL_SHIFT;
@@ -180,9 +180,9 @@ export default class HashGrid implements CollisionManager {
 
     // No longer used
     public retrieveEntitiesByEntity(entity: ObjectEntity): PackedEntitySet {
-        if (this.isLocked) throw new Error("HashGrid is locked! Cannot insert entity outside of tick");
+        if (this.isLocked) throw new Error("HashGrid is locked! Cannot retrieveEntitiesByEntity() outside of tick");
         const { sides, size, width } = entity.physicsData.values;
-        const { x, y } = entity.positionData;
+        const { x, y } = entity.positionData.values;
         const isLine = sides === 2;
         const halfWidth = isLine ? size / 2 : size;
         const halfHeight = isLine ? width / 2 : size;
@@ -192,7 +192,7 @@ export default class HashGrid implements CollisionManager {
     public forEachCollisionPair(
         callback: (entityA: ObjectEntity, entityB: ObjectEntity) => void
     ): void {
-        if (this.isLocked) throw new Error("HashGrid is locked! Cannot insert entity outside of tick");
+        if (this.isLocked) throw new Error("HashGrid is locked! Cannot forEachCollisionPair() entity outside of tick");
 
         const collisionsSeen = this.collisionPairsSeen;
         collisionsSeen.fill(0);
@@ -213,27 +213,20 @@ export default class HashGrid implements CollisionManager {
                     const entityB = this.game.entities.inner[eidB] as ObjectEntity;
                     if (!entityB || entityB.hash === 0) continue;
 
-                    if (eidA < eidB) {
-                        // Prevent extra-cell duplicates
-                        const pairHash = (eidA << MAX_ENTITY_ID_BITS) | eidB;
-                        const pairHashIndex = pairHash >>> 5;
-                        const pairHashBit = 1 << (pairHash & 31);
-                        if ((collisionsSeen[pairHashIndex] & pairHashBit) !== 0) continue;
-                        collisionsSeen[pairHashIndex] |= pairHashBit;
+                    // Ensure eidA < eidB for triangular matrix indexing
+                    const [idA, idB] = eidA < eidB ? [eidA, eidB] : [eidB, eidA];
+                    const [entA, entB] = eidA < eidB ? [entityA, entityB] : [entityB, entityA];
+                    
+                    // Triangular matrix index: row * (row - 1) / 2 + col, where row > col
+                    const triangularIndex = Math.floor(idB * (idB - 1) / 2) + idA;
+                    const arrayIndex = triangularIndex >>> 5;
+                    const bitIndex = triangularIndex & 31;
+                    const bitMask = 1 << bitIndex;
+                    
+                    if ((collisionsSeen[arrayIndex] & bitMask) !== 0) continue;
+                    collisionsSeen[arrayIndex] |= bitMask;
 
-                        // Ensure (x, y) -> x.id < y.id
-                        callback(entityA, entityB);
-                    } else {
-                        // Prevent extra-cell duplicates
-                        const pairHash = (eidB << MAX_ENTITY_ID_BITS) | eidA;
-                        const pairHashIndex = pairHash >>> 5;
-                        const pairHashBit = 1 << (pairHash & 31);
-                        if ((collisionsSeen[pairHashIndex] & pairHashBit) !== 0) continue;
-                        collisionsSeen[pairHashIndex] |= pairHashBit;
-
-                        // Ensure (x, y) -> x.id < y.id
-                        callback(entityB, entityA);
-                    }
+                    callback(entA, entB);
                 }
             }
         }
