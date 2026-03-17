@@ -181,10 +181,11 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         camera.setFieldFactor(tank.fieldFactor);
         
         this.scale(1); // Update addons and etc
+        this.calculateStatData();
     }
     /** See LivingEntity.onKill */
     public onKill(entity: LivingEntity) {
-        if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.scoreData.score = this.cameraEntity.cameraData.score += entity.scoreReward;
+        if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.cameraEntity.addScore(entity.scoreReward);
 
         if ((entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName))) {
             const client = this.cameraEntity.getClient();
@@ -243,6 +244,30 @@ export default class TankBody extends LivingEntity implements BarrelBase {
 
         super.receiveDamage(source, amount);
 
+    }
+    
+    public calculateStatData() {
+        // Damage
+        this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] + 5 + (this.definition.bodyDamage ?? 0);
+
+        // Max Health
+        const maxHealthCache = this.healthData.values.maxHealth;
+
+        this.healthData.maxHealth = this.definition.maxHealth + 2 * (this.cameraEntity.cameraData.values.level - 1) + this.cameraEntity.cameraData.values.statLevels.values[Stat.MaxHealth] * 20;
+        if (this.healthData.values.health === maxHealthCache) this.healthData.health = this.healthData.maxHealth; // just in case
+        else if (this.healthData.values.maxHealth !== maxHealthCache) {
+            this.healthData.health *= this.healthData.values.maxHealth / maxHealthCache
+        }
+
+        // Regen
+        this.regenPerTick = (this.healthData.values.maxHealth * 4 * this.cameraEntity.cameraData.values.statLevels.values[Stat.HealthRegen] + this.healthData.values.maxHealth) / 25000;
+
+        // Reload
+        this.reloadTime = 15 * Math.pow(0.914, this.cameraEntity.cameraData.values.statLevels.values[Stat.Reload]);
+
+        // Movement speed
+        this.cameraEntity.cameraData.movementSpeed =
+        this.definition.speed * 2.55 * Math.pow(1.07, this.cameraEntity.cameraData.values.statLevels.values[Stat.MovementSpeed]) / Math.pow(1.015, this.cameraEntity.cameraData.values.level - 1);
     }
 
     /** See LivingEntity.onDeath */
@@ -325,31 +350,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
 
             this.styleData.opacity = util.constrain(this.styleData.values.opacity, 0, 1);
         }
-
-
-        // Update stat related
-        updateStats: {
-            // Damage
-            this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] + 5;
-            if (this._currentTank === Tank.Spike) this.damagePerTick += 2;
-
-            // Max Health
-            const maxHealthCache = this.healthData.values.maxHealth;
-
-            this.healthData.maxHealth = this.definition.maxHealth + 2 * (this.cameraEntity.cameraData.values.level - 1) + this.cameraEntity.cameraData.values.statLevels.values[Stat.MaxHealth] * 20;
-            if (this.healthData.values.health === maxHealthCache) this.healthData.health = this.healthData.maxHealth; // just in case
-            else if (this.healthData.values.maxHealth !== maxHealthCache) {
-                this.healthData.health *= this.healthData.values.maxHealth / maxHealthCache
-            }
-
-            // Regen
-            this.regenPerTick = (this.healthData.values.maxHealth * 4 * this.cameraEntity.cameraData.values.statLevels.values[Stat.HealthRegen] + this.healthData.values.maxHealth) / 25000;
-
-            // Reload
-            this.reloadTime = 15 * Math.pow(0.914, this.cameraEntity.cameraData.values.statLevels.values[Stat.Reload]);
-        }
-
-        this.scoreData.score = this.cameraEntity.cameraData.values.score;
 
         if ((this.styleData.values.flags & StyleFlags.isFlashing) && (this.game.tick >= this.cameraEntity.cameraData.values.spawnTick + 374 || this.inputs.attemptingShot() || this.inputs.movement.magnitude > 0)) {
             this.styleData.flags ^= StyleFlags.isFlashing;
