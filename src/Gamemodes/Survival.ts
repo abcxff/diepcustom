@@ -27,7 +27,7 @@ import { ArenaFlags, ClientBound } from "../Const/Enums";
 import { countdownDuration, scoreboardUpdateInterval } from "../config";
 
 const MIN_PLAYERS = 4; // 6 in Diep.io
-const SCORE_PER_TICK = 0.25;
+const SCORE_PER_TICK = 0.2;
 
 /**
  * Manage shape count
