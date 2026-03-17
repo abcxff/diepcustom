@@ -62,6 +62,7 @@ export class CameraEntity extends Entity {
         if (TankBody.isTank(player)) {
             const scaleFactor = Math.pow(1.01, level - previousLevel);
             player.scale(scaleFactor);
+            player.calculateStatData();
 
             if (isMaxLevel) {
                 player.scoreData.score = levelScore;
@@ -73,7 +74,7 @@ export class CameraEntity extends Entity {
         const statIncrease = ClientCamera.calculateStatCount(level) - ClientCamera.calculateStatCount(previousLevel);
         this.cameraData.statsAvailable += statIncrease;
 
-        this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor || 1);
+        this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor ?? 1);
     }
     /** Returns the camera's client if it exists */
     public getClient(): Client | null {
@@ -84,6 +85,60 @@ export class CameraEntity extends Entity {
     public setFieldFactor(fieldFactor: number) {
         this.cameraData.FOV = (.55 * fieldFactor) / Math.pow(1.01, (this.cameraData.values.level - 1) / 2);
     }
+    
+    public addScore(score: number) {
+        this.cameraData.score += score;
+        
+        const player = this.cameraData.values.player;
+        if (player?.scoreData) player.scoreData.score += score;
+
+        this.calculateLevelData();
+    }
+    
+    public setScore(score: number) {
+        this.cameraData.score = score;
+
+        const player = this.cameraData.values.player;
+        if (player?.scoreData) player.scoreData.score = score;
+
+        this.calculateLevelData();
+    }
+    
+    public addStat(statId: Stat, amount: number) {
+        this.cameraData.statLevels[statId] += amount;
+        
+        const player = this.cameraData.values.player;
+    
+        if (TankBody.isTank(player)) player.calculateStatData();
+    }
+    
+    public setStat(statId: Stat, amount: number) {
+        this.cameraData.statLevels[statId] = amount;
+        
+        const player = this.cameraData.values.player;
+    
+        if (TankBody.isTank(player)) player.calculateStatData();
+    }
+
+    public calculateLevelData() {
+        const player = this.cameraData.values.player;
+        if (!TankBody.isTank(player)) return;
+
+        const score = this.cameraData.values.score;
+        let newLevel = this.cameraData.values.level;
+        while (newLevel < levelToScoreTable.length && score - levelToScore(newLevel + 1) >= 0) newLevel += 1
+
+        if (newLevel !== this.cameraData.values.level) {
+            this.setLevel(newLevel);
+            this.cameraData.score = score;
+        }
+
+        if (newLevel < levelToScoreTable.length) {
+            const levelScore = levelToScore(this.cameraData.values.level)
+            this.cameraData.levelbarMax = levelToScore(this.cameraData.values.level + 1) - levelScore;
+            this.cameraData.levelbarProgress = score - levelScore;
+        }
+    }
 
     public tick(tick: number) {
         if (Entity.exists(this.cameraData.values.player)) {
@@ -91,28 +146,6 @@ export class CameraEntity extends Entity {
             if (!(this.cameraData.values.flags & CameraFlags.usesCameraCoords) && ObjectEntity.isObject(focus)) {
                 this.cameraData.cameraX = focus.rootParent.positionData.values.x;
                 this.cameraData.cameraY = focus.rootParent.positionData.values.y;
-            }
-
-            if (TankBody.isTank(this.cameraData.values.player)) {
-                // Update player related data
-                const player = this.cameraData.values.player as TankBody;
-
-                const score = this.cameraData.values.score;
-                let newLevel = this.cameraData.values.level;
-                while (newLevel < levelToScoreTable.length && score - levelToScore(newLevel + 1) >= 0) newLevel += 1
-
-                if (newLevel !== this.cameraData.values.level) {
-                    this.setLevel(newLevel);
-                    this.cameraData.score = score;
-                }
-
-                if (newLevel < levelToScoreTable.length) {
-                    const levelScore = levelToScore(this.cameraData.values.level)
-                    this.cameraData.levelbarMax = levelToScore(this.cameraData.values.level + 1) - levelScore;
-                    this.cameraData.levelbarProgress = score - levelScore;
-                }
-
-                this.cameraData.movementSpeed = player.definition.speed * 2.55 * Math.pow(1.07, this.cameraData.values.statLevels.values[Stat.MovementSpeed]) / Math.pow(1.015, this.cameraData.values.level - 1)
             }
         } else {
             this.cameraData.flags |= CameraFlags.usesCameraCoords;

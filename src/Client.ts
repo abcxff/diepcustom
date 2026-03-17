@@ -358,7 +358,7 @@ export default class Client {
 
                 if (camera.cameraData.values.statLevels.values[statId] >= statLimit) return;
 
-                camera.cameraData.statLevels[statId] += 1;
+                camera.addStat(statId, 1);
                 camera.cameraData.statsAvailable -= 1;
 
                 return;

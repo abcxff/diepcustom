@@ -151,6 +151,8 @@ export interface TankDefinition {
     absorbtionFactor: number;
     /** The base max health of the tank. */
     maxHealth: number;
+    /** Extra body damage addition, such as spike. */
+    bodyDamage?: number;
     /** The addon, if not empty, which is built before the barrels. */
     preAddon: addonId | null;
     /** The addon, if not empty, which is built after the barrels. */
