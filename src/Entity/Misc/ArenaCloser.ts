@@ -58,7 +58,7 @@ export default class ArenaCloser extends TankBody {
         def.maxHealth = 10000 - 598;
         // TODO(ABC):
         // Fix all the stats
-        def.speed = this.ai.movementSpeed = this.cameraEntity.cameraData.values.movementSpeed = 10;
+        def.speed = this.ai.movementSpeed = this.cameraEntity.cameraData.values.movementSpeed = 5;
 
         Object.defineProperty(this, "damagePerTick", {
             get() {
@@ -91,6 +91,6 @@ export default class ArenaCloser extends TankBody {
         }
 
         super.tick(tick);
-        this.ai.movementSpeed = this.cameraEntity.cameraData.movementSpeed = 10;
+        this.ai.movementSpeed = this.cameraEntity.cameraData.movementSpeed = 5;
     }
 }
