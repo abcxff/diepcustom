@@ -65,10 +65,8 @@ export default class Mothership extends TankBody {
 
         for (let i = Stat.MovementSpeed; i < Stat.HealthRegen; ++i) camera.setStat(i as Stat,  7);
         camera.setStat(Stat.HealthRegen, 1);
-
-        const def = (this.definition = Object.assign({}, this.definition));
-        // 418 is what the normal health increase for stat/level would be, so we just subtract it and force it 7k
-        def.maxHealth = 7000 - 418;
+        
+        this.healthData.values.health = this.healthData.values.maxHealth = 7000;
     }
 
     public onDeath(killer: Live): void {
@@ -129,6 +127,7 @@ export default class Mothership extends TankBody {
                 }
             }
         }
+
         const team = this.relationsData.values.team;
         if (team?.teamData) {
             team.teamData.mothershipX = this.positionData.values.x;
