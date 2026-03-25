@@ -137,6 +137,8 @@ export default class AutoTurret extends ObjectEntity {
 
         this.reloadTime = this.owner.reloadTime;
 
+        this.turret.calculateStatData();
+
         let useAI = !(this.influencedByOwnerInputs && (this.owner.inputs.attemptingRepel() || this.owner.inputs.attemptingShot()));
 
         if (!useAI) {
