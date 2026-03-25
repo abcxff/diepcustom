@@ -37,16 +37,17 @@ import CrocSkimmer from "./Projectile/CrocSkimmer";
 import { BarrelAddon, BarrelAddonById } from "./BarrelAddons";
 import { Swarm } from "./Projectile/Swarm";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
+
 /**
  * Class that determines when barrels can shoot, and when they can't.
  */
 export class ShootCycle {
     /** The barrel this cycle is keeping track of. */
-    private barrelEntity: Barrel;
+    public barrelEntity: Barrel;
     /** The current position in the cycle. */
-    private pos: number;
+    public pos: number;
     /** The last known reload time of the barrel. */
-    private reloadTime: number;
+    public reloadTime: number;
 
     public constructor(barrel: Barrel) {
         this.barrelEntity = barrel;
@@ -56,11 +57,6 @@ export class ShootCycle {
 
     public tick() {
         const reloadTime = this.barrelEntity.tank.reloadTime * this.barrelEntity.definition.reload;
-        if (reloadTime !== this.reloadTime) {
-            this.pos *= reloadTime / this.reloadTime;
-            this.reloadTime = this.barrelEntity.barrelData.reloadTime = reloadTime;
-        }
-
         const alwaysShoot = (this.barrelEntity.definition.forceFire) || (this.barrelEntity.definition.bullet.type === "drone") || (this.barrelEntity.definition.bullet.type === "minion");
 
         if (this.pos >= reloadTime) {
@@ -143,7 +139,7 @@ export default class Barrel extends ObjectEntity {
         this.barrelData.values.trapezoidDirection = barrelDefinition.trapezoidDirection;
         this.shootCycle = new ShootCycle(this);
 
-        this.bulletAccel = (20 + (owner.cameraEntity.cameraData?.values.statLevels.values[Stat.BulletSpeed] || 0) * 3) * barrelDefinition.bullet.speed;
+        this.calculateStatData();
     }
 
     /** Shoots a bullet from the barrel. */
@@ -214,9 +210,19 @@ export default class Barrel extends ObjectEntity {
             if (this.definition.bullet.color) projectile.styleData.values.color = this.definition.bullet.color;
         }
     }
+    
+    public calculateStatData() {
+        const reloadTime = this.tank.reloadTime * this.definition.reload;
+
+        if (reloadTime !== this.shootCycle.reloadTime) {
+            this.shootCycle.pos *= reloadTime / this.shootCycle.reloadTime;
+            this.shootCycle.reloadTime = this.barrelData.reloadTime = reloadTime;
+        }
+        
+        this.bulletAccel = (20 + (this.tank.cameraEntity.cameraData?.values.statLevels.values[Stat.BulletSpeed] || 0) * 3) * this.definition.bullet.speed;
+    }
 
     public tick(tick: number) {
-                this.bulletAccel = (20 + (this.tank.cameraEntity.cameraData?.values.statLevels.values[Stat.BulletSpeed] || 0) * 3) * this.definition.bullet.speed;
         this.relationsData.values.team = this.tank.relationsData.values.team;
 
         if (!this.tank.rootParent.deletionAnimation){
