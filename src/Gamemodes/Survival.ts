@@ -27,6 +27,7 @@ import { ArenaFlags, ClientBound } from "../Const/Enums";
 import { countdownDuration, scoreboardUpdateInterval } from "../config";
 
 const MIN_PLAYERS = 4; // 6 in Diep.io
+const SCORE_PER_TICK = 0.2;
 
 /**
  * Manage shape count
@@ -121,7 +122,7 @@ export default class SurvivalArena extends ArenaEntity {
     public tick(tick: number) {
         for (const client of this.game.clients) {
             const camera = client.camera;
-            if (camera && Entity.exists(camera.cameraData.values.player)) camera.cameraData.score += 0.2;
+            if (camera && Entity.exists(camera.cameraData.values.player)) camera.addScore(SCORE_PER_TICK);
         }
         super.tick(tick);
     }

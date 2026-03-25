@@ -78,8 +78,6 @@ const DEFENDER_SIZE = 150;
  * Class which represents the boss "Defender"
  */
 export default class Defender extends AbstractBoss {
-    /** Defender's trap launchers */
-    private trappers: Barrel[] = [];
     /** See AbstractBoss.movementSpeed */
     public movementSpeed = 0.2;
 
@@ -99,7 +97,7 @@ export default class Defender extends AbstractBoss {
         const offset = 60 / (DEFENDER_SIZE * Math.SQRT1_2);
         for (let i = 0; i < count; ++i) {
             // Add trap launcher
-            this.trappers.push(new Barrel(this, {
+            this.barrels.push(new Barrel(this, {
                 ...TrapperDefinition,
                 angle: PI2 * ((i / count) + 1 / (count * 2))
             }));

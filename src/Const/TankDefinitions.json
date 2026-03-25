@@ -6289,6 +6289,7 @@
         "absorbtionFactor": 1,
         "speed": 1,
         "maxHealth": 50,
+        "bodyDamage": 2,
         "preAddon": null,
         "postAddon": "spike",
         "sides": 1,

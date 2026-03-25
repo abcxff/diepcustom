@@ -92,12 +92,7 @@ export default class Dominator extends TankBody {
 
         this.base = base;
 
-        Object.defineProperty(this, "damagePerTick", {
-            get() {
-                return 10;
-            },
-            set() {}
-        });
+        this.damagePerTick = 10;
 
         if (this.styleData.values.flags & StyleFlags.isFlashing) { // Remove spawn shield
             this.styleData.values.flags ^= StyleFlags.isFlashing;

@@ -215,10 +215,11 @@ export const commandCallbacks = {
     },
     game_set_score: (client: Client, scoreArg: string) => {
         const score = parseInt(scoreArg);
-        const camera = client.camera?.cameraData;
-        const player = client.camera?.cameraData.player;
+        const camera = client.camera;
+        const cameraData = camera?.cameraData;
+        const player = cameraData?.player;
         if (!isFinite(score) || score > Number.MAX_SAFE_INTEGER || score < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
-        camera.score = score;
+        camera.setScore(score);
     },
     game_set_stat_max: (client: Client, statIdArg: string, statMaxArg: string) => {
         const statId = StatCount - parseInt(statIdArg);
@@ -233,17 +234,19 @@ export const commandCallbacks = {
     game_set_stat: (client: Client, statIdArg: string, statPointsArg: string) => {
         const statId = StatCount - parseInt(statIdArg);
         const statPoints = parseInt(statPointsArg);
-        const camera = client.camera?.cameraData;
-        const player = client.camera?.cameraData.player;
+        const camera = client.camera;
+        const cameraData = camera?.cameraData;
+        const player = camera?.cameraData.player;
         if (statId < 0 || statId >= StatCount || !isFinite(statId) || !isFinite(statPoints) || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
-        camera.statLevels[statId as Stat] = statPoints;
+        camera.setStat(statId as Stat, statPoints);
     },
     game_add_upgrade_points: (client: Client, pointsArg: string) => {
         const points = parseInt(pointsArg);
-        const camera = client.camera?.cameraData;
-        const player = client.camera?.cameraData.player;
-        if (!isFinite(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera) return;
-        camera.statsAvailable += points;
+        const camera = client.camera;
+        const cameraData = camera?.cameraData;
+        const player = cameraData?.player;
+        if (!isFinite(points) || points > Number.MAX_SAFE_INTEGER || points < Number.MIN_SAFE_INTEGER || !Entity.exists(player) || !TankBody.isTank(player) || !camera || !cameraData) return;
+        cameraData.statsAvailable += points;
     },
     game_teleport: (client: Client, xArg: string, yArg: string) => {
         const player = client.camera?.cameraData.player;
