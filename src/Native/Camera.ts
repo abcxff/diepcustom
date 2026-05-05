@@ -75,6 +75,7 @@ export class CameraEntity extends Entity {
         this.cameraData.statsAvailable += statIncrease;
 
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor ?? 1);
+        this.calculateLevelData();
     }
     /** Returns the camera's client if it exists */
     public getClient(): Client | null {
