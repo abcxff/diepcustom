@@ -170,19 +170,21 @@ export default class TagArena extends ArenaEntity {
         for (let i = 0; i < length; ++i) {
             const team = this.teams[i];
 			
-            if (this.getTeamPlayers(leaderTeam).length === arenaPlayerCount && arenaPlayerCount >= MIN_PLAYERS) { // If all alive players are in the leading team, it has won since all other team's players have died
-                if (this.state === ArenaState.OPEN) {
-                    this.game.broadcastMessage(
-                        `${leaderTeam.teamName} HAS WON THE GAME!`,
-                        ColorsHexCode[leaderTeam.teamData.values.teamColor],
-                        -1
-                    )
+            if (
+                this.state === ArenaState.OPEN &&
+                this.getTeamScore(leaderTeam) === arenaPlayerCount &&
+                arenaPlayerCount >= MIN_PLAYERS
+            ) { // If all alive players are on the leading team, it has won since all other team's players have died
+                this.game.broadcastMessage(
+                    `${leaderTeam.teamName} HAS WON THE GAME!`,
+                    ColorsHexCode[leaderTeam.teamData.values.teamColor],
+                    -1
+                )
 
-                    this.state = ArenaState.OVER;
-                    setTimeout(() => {
-                        this.close();
-                    }, 5000);
-                }
+                this.state = ArenaState.OVER;
+                setTimeout(() => {
+                    this.close();
+                }, 5000);
             }
         }
 
