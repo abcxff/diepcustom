@@ -105,7 +105,16 @@ export default class Writer {
         val |= 0;
         return this.vu((0 - (val < 0 ? 1 : 0)) ^ (val << 1)); // varsint trick
     }
+    private reserve(size: number) {
+        while (Writer.OUTPUT_BUFFER.length < this.at + size) {
+            const newBuffer = Buffer.alloc(Writer.OUTPUT_BUFFER.length + writtenBufferChunkSize);
+            newBuffer.set(Writer.OUTPUT_BUFFER, 0);
+
+            Writer.OUTPUT_BUFFER = newBuffer;
+        }
+    }
     public bytes(buffer: Uint8Array) {
+        this.reserve(buffer.byteLength);
         Writer.OUTPUT_BUFFER.set(buffer, this.at);
         this.at += buffer.byteLength;
         return this;

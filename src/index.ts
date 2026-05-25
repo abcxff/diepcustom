@@ -135,14 +135,12 @@ app.get("/*", (res, req) => {
                 break;
         }
 
-        res.writeHeader("Content-Type", contentType + "; charset=utf-8");
-
         if (file && fs.existsSync(file)) {
-            res.writeStatus("200 OK").end(fs.readFileSync(file));
+            res.writeStatus("200 OK").writeHeader("Content-Type", contentType + "; charset=utf-8").end(fs.readFileSync(file));
             return;
         }
 
-        res.writeStatus("404 Not Found").end(fs.readFileSync(config.clientLocation + "/404.html"));
+        res.writeStatus("404 Not Found").writeHeader("Content-Type", "text/html; charset=utf-8").end(fs.readFileSync(config.clientLocation + "/404.html"));
         return;
     } 
 });
