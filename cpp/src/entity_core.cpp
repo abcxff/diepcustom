@@ -60,6 +60,17 @@ std::string idsJson(const std::vector<int>& values) {
   return out.str();
 }
 
+std::string hashPrefixJson(const std::array<int, 16384>& values, int count) {
+  std::ostringstream out;
+  out << '[';
+  for (int i = 0; i < count; ++i) {
+    if (i) out << ',';
+    out << values[static_cast<std::size_t>(i)];
+  }
+  out << ']';
+  return out.str();
+}
+
 std::string num(double value) {
   std::ostringstream out;
   out << std::setprecision(17) << value;
@@ -71,11 +82,11 @@ struct Manager {
   int zIndex = 0;
   int lastId = -1;
   std::array<int, 16384> hashTable{};
-  std::vector<std::unique_ptr<Entity>> inner;
+  std::array<Entity*, 16384> inner{};
+  std::vector<std::unique_ptr<Entity>> owned;
   std::vector<int> cameras;
   std::vector<int> otherEntities;
 
-  Manager() : inner(16384) {}
   void add(Entity& entity);
   void remove(int id);
   void clear();
@@ -91,7 +102,7 @@ struct Entity {
   bool isObject = false;
   bool isCamera = false;
 
-  explicit Entity(Manager& manager, std::string name = "Entity") : manager(manager), className(std::move(name)) { manager.add(*this); }
+  explicit Entity(Manager& manager, std::string name = "Entity") : manager(manager), className(std::move(name)) {}
   virtual ~Entity() = default;
   virtual void wipeState() { entityState = 0; }
   virtual void remove() { wipeState(); manager.remove(id); }
@@ -105,7 +116,7 @@ void Manager::add(Entity& entity) {
     if (inner[id]) continue;
     entity.id = id;
     entity.hash = entity.preservedHash = ++hashTable[id];
-    inner[id].reset(&entity);
+    inner[id] = &entity;
     if (entity.isCamera) cameras.push_back(id);
     else if (!entity.isObject) otherEntities.push_back(id);
     if (lastId < id) lastId = id;
@@ -118,7 +129,8 @@ void removeFast(std::vector<int>& values, int id) {
 }
 
 void Manager::remove(int id) {
-  Entity* entity = inner[id].release();
+  Entity* entity = inner[id];
+  inner[id] = nullptr;
   entity->hash = 0;
   if (entity->isCamera) removeFast(cameras, id);
   else if (!entity->isObject) removeFast(otherEntities, id);
@@ -127,13 +139,27 @@ void Manager::remove(int id) {
 void Manager::clear() {
   lastId = -1;
   hashTable.fill(0); cameras.clear(); otherEntities.clear();
-  for (auto& entity : inner) if (entity) { entity->hash = 0; entity.release(); }
+  for (auto* entity : inner) if (entity) entity->hash = 0;
+  inner.fill(nullptr);
 }
 
 std::string summary(const Entity& e) {
   return "{\"className\":" + q(e.className) + ",\"id\":" + std::to_string(e.id) + ",\"hash\":" + std::to_string(e.hash) +
     ",\"preservedHash\":" + std::to_string(e.preservedHash) + ",\"entityState\":" + std::to_string(e.entityState) +
     ",\"exists\":" + std::string(e.exists() ? "true" : "false") + ",\"string\":" + q(e.label()) + ",\"primitive\":" + std::to_string(e.primitive()) + "}";
+}
+
+std::string innerPresentJson(const Manager& m, int count) {
+  std::ostringstream out;
+  out << '[';
+  for (int i = 0; i < count; ++i) {
+    if (i) out << ',';
+    Entity* entity = m.inner[static_cast<std::size_t>(i)];
+    if (entity) out << q(entity->className);
+    else out << "null";
+  }
+  out << ']';
+  return out.str();
 }
 
 struct Relations { Entity* owner=nullptr; Entity* team=nullptr; std::array<int,3> state{}; };
@@ -148,14 +174,66 @@ struct Barrel { int flags=0; double reloadTime=0; int trapezoidDirection=0; std:
 struct ObjectEntity : Entity {
   Relations relations; Physics physics; Position position; Style style;
   std::unique_ptr<Name> name; std::unique_ptr<Health> health; std::unique_ptr<Score> score; std::unique_ptr<Barrel> barrel;
-  explicit ObjectEntity(Manager& m) : Entity(m, "ObjectEntity") { isObject = true; int nextZ = m.zIndex++; if (style.zIndex != nextZ) { style.zIndex = nextZ; style.state[4] = 1; entityState = 1; } }
+  explicit ObjectEntity(Manager& m) : Entity(m, "ObjectEntity") {
+    isObject = true;
+    manager.add(*this);
+    int nextZ = m.zIndex++;
+    if (style.zIndex != nextZ) { style.zIndex = nextZ; style.state[4] = 1; entityState = 1; }
+  }
   void wipeState() override {
     relations.state.fill(0); physics.state.fill(0); position.state.fill(0); style.state.fill(0);
     if (name) name->state.fill(0); if (health) health->state.fill(0); if (score) score->state.fill(0); if (barrel) barrel->state.fill(0); entityState=0;
   }
 };
 
-struct CameraEntity : Entity { explicit CameraEntity(Manager& m) : Entity(m, "CameraEntity") { isCamera = true; entityState=1; } };
+struct CameraEntity : Entity { explicit CameraEntity(Manager& m) : Entity(m, "CameraEntity") { isCamera = true; manager.add(*this); entityState=1; } };
+
+Entity& createEntity(Manager& m) {
+  auto entity = std::make_unique<Entity>(m);
+  auto& ref = *entity;
+  m.owned.push_back(std::move(entity));
+  m.add(ref);
+  return ref;
+}
+
+ObjectEntity& createObject(Manager& m) {
+  auto entity = std::make_unique<ObjectEntity>(m);
+  auto& ref = *entity;
+  m.owned.push_back(std::move(entity));
+  return ref;
+}
+
+CameraEntity& createCamera(Manager& m) {
+  auto entity = std::make_unique<CameraEntity>(m);
+  auto& ref = *entity;
+  m.owned.push_back(std::move(entity));
+  return ref;
+}
+
+void setScore(ObjectEntity& e, double value) {
+  if (!e.score) e.score = std::make_unique<Score>();
+  if (e.score->score != value) { e.score->score = value; e.score->state[0] = 1; e.entityState = 1; }
+}
+
+void setName(ObjectEntity& e, const std::string& value) {
+  if (!e.name) e.name = std::make_unique<Name>();
+  if (e.name->name != value) { e.name->name = value; e.name->state[1] = 1; e.entityState = 1; }
+}
+
+void setHealth(ObjectEntity& e, double value) {
+  if (!e.health) e.health = std::make_unique<Health>();
+  if (e.health->health != value) { e.health->health = value; e.health->state[1] = 1; e.entityState = 1; }
+}
+
+void setMaxHealth(ObjectEntity& e, double value) {
+  if (!e.health) e.health = std::make_unique<Health>();
+  if (e.health->maxHealth != value) { e.health->maxHealth = value; e.health->state[2] = 1; e.entityState = 1; }
+}
+
+void setReloadTime(ObjectEntity& e, double value) {
+  if (!e.barrel) e.barrel = std::make_unique<Barrel>();
+  if (e.barrel->reloadTime != value) { e.barrel->reloadTime = value; e.barrel->state[1] = 1; e.entityState = 1; }
+}
 
 void setOwner(ObjectEntity& e, Entity* v){ if(e.relations.owner!=v){e.relations.owner=v;e.relations.state[1]=1;e.entityState=1;} }
 void setTeam(ObjectEntity& e, Entity* v){ if(e.relations.team!=v){e.relations.team=v;e.relations.state[2]=1;e.entityState=1;} }
@@ -289,61 +367,93 @@ std::string replaceAll(std::string value, const std::string& from, const std::st
 
 std::string compilerCreationHexFixture() {
   Manager m;
-  auto* camera = new CameraEntity(m);
-  auto* object = new ObjectEntity(m);
-  object->name=std::make_unique<Name>(); object->score=std::make_unique<Score>(); object->health=std::make_unique<Health>(); object->barrel=std::make_unique<Barrel>();
-  setSides(*object,3); setSize(*object,42.5); setWidth(*object,17); setPhysFlags(*object,PhysicsNoOwnTeamCollision);
-  setX(*object,-120); setY(*object,80); setAngle(*object, M_PI/4); setColor(*object,ColorTank); setOpacity(*object,0.75);
-  object->name->name="Phase C Δ"; object->score->score=12345; object->health->health=0.5; object->health->maxHealth=2; object->barrel->reloadTime=22;
-  setOwner(*object, object); setTeam(*object, object);
-  return compileCreationHex(*camera, *object, object);
+  auto& camera = createCamera(m);
+  auto& object = createObject(m);
+  object.name=std::make_unique<Name>(); object.score=std::make_unique<Score>(); object.health=std::make_unique<Health>(); object.barrel=std::make_unique<Barrel>();
+  setSides(object,3); setSize(object,42.5); setWidth(object,17); setPhysFlags(object,PhysicsNoOwnTeamCollision);
+  setX(object,-120); setY(object,80); setAngle(object, M_PI/4); setColor(object,ColorTank); setOpacity(object,0.75);
+  object.name->name="Phase C Δ"; object.score->score=12345; object.health->health=0.5; object.health->maxHealth=2; object.barrel->reloadTime=22;
+  setOwner(object, &object); setTeam(object, &object);
+  return compileCreationHex(camera, object, &object);
 }
 
 std::string compilerUpdateHexFixture() {
   Manager m;
-  auto* camera = new CameraEntity(m);
-  auto* object = new ObjectEntity(m);
-  object->name=std::make_unique<Name>(); object->score=std::make_unique<Score>(); object->health=std::make_unique<Health>(); object->barrel=std::make_unique<Barrel>();
-  setSides(*object,3); setSize(*object,42.5); setWidth(*object,17); setPhysFlags(*object,PhysicsNoOwnTeamCollision);
-  setX(*object,-120); setY(*object,80); setAngle(*object, M_PI/4); setColor(*object,ColorTank); setOpacity(*object,0.75);
-  object->name->name="Phase C Δ"; object->score->score=12345; object->health->health=0.5; object->health->maxHealth=2; object->barrel->reloadTime=22;
-  setOwner(*object, object); setTeam(*object, object);
-  object->wipeState();
-  setX(*object,-100); setY(*object,90); setSize(*object,50); setOpacity(*object,0.5); object->health->health=0.25; object->health->state[1]=1; object->entityState=1; object->name->name="Phase C Ω"; object->name->state[1]=1;
-  return compileUpdateHex(*camera, *object, object);
+  auto& camera = createCamera(m);
+  auto& object = createObject(m);
+  object.name=std::make_unique<Name>(); object.score=std::make_unique<Score>(); object.health=std::make_unique<Health>(); object.barrel=std::make_unique<Barrel>();
+  setSides(object,3); setSize(object,42.5); setWidth(object,17); setPhysFlags(object,PhysicsNoOwnTeamCollision);
+  setX(object,-120); setY(object,80); setAngle(object, M_PI/4); setColor(object,ColorTank); setOpacity(object,0.75);
+  object.name->name="Phase C Δ"; object.score->score=12345; object.health->health=0.5; object.health->maxHealth=2; object.barrel->reloadTime=22;
+  setOwner(object, &object); setTeam(object, &object);
+  object.wipeState();
+  setX(object,-100); setY(object,90); setSize(object,50); setOpacity(object,0.5); object.health->health=0.25; object.health->state[1]=1; object.entityState=1; object.name->name="Phase C Ω"; object.name->state[1]=1;
+  return compileUpdateHex(camera, object, &object);
 }
 
 std::string worldReport() {
-  Manager m; auto* player = new ObjectEntity(m); player->name=std::make_unique<Name>(); player->score=std::make_unique<Score>(); player->health=std::make_unique<Health>(); player->barrel=std::make_unique<Barrel>();
-  setX(*player,125.5); setY(*player,-64.25); setAngle(*player, M_PI/3); setSides(*player,1); setSize(*player,35); setWidth(*player,12); setColor(*player,ColorTank); setOpacity(*player,0.9); player->name->name="RL Player"; player->name->state[1]=1; player->score->score=9001; player->score->state[0]=1; player->health->health=0.875; player->health->maxHealth=1.25; player->health->state={0,1,1}; player->barrel->reloadTime=12; player->barrel->state[1]=1; setOwner(*player,player); setTeam(*player,player);
-  auto* shape = new ObjectEntity(m); setX(*shape,-250); setY(*shape,100); setAngle(*shape,-M_PI/8); setSides(*shape,4); setSize(*shape,30); setWidth(*shape,30); setColor(*shape,ColorEnemySquare); setOwner(*shape,player); setTeam(*shape,nullptr);
-  auto* deleted = new ObjectEntity(m); setX(*deleted,999); deleted->remove();
-  std::ostringstream out; out << "{\"purpose\":\"primary Phase C parity target: full world/entity state for headless RL training\",\"tick\":77,\"lastId\":"<<m.lastId<<",\"zIndex\":"<<m.zIndex<<",\"activeIds\":[0,1],\"hashTable\":["<<m.hashTable[0]<<","<<m.hashTable[1]<<","<<m.hashTable[2]<<",0],\"entities\":["<<objectSnapshot(*player)<<","<<objectSnapshot(*shape)<<"]}"; return out.str();
+  Manager m; auto& player = createObject(m); player.name=std::make_unique<Name>(); player.score=std::make_unique<Score>(); player.health=std::make_unique<Health>(); player.barrel=std::make_unique<Barrel>();
+  setX(player,125.5); setY(player,-64.25); setAngle(player, M_PI/3); setSides(player,1); setSize(player,35); setWidth(player,12); setColor(player,ColorTank); setOpacity(player,0.9); player.name->name="RL Player"; player.name->state[1]=1; player.score->score=9001; player.score->state[0]=1; player.health->health=0.875; player.health->maxHealth=1.25; player.health->state={0,1,1}; player.barrel->reloadTime=12; player.barrel->state[1]=1; setOwner(player,&player); setTeam(player,&player);
+  auto& shape = createObject(m); setX(shape,-250); setY(shape,100); setAngle(shape,-M_PI/8); setSides(shape,4); setSize(shape,30); setWidth(shape,30); setColor(shape,ColorEnemySquare); setOwner(shape,&player); setTeam(shape,nullptr);
+  auto& deleted = createObject(m); setX(deleted,999); deleted.remove();
+  std::vector<int> activeIds;
+  for (int id = 0; id <= m.lastId; ++id) if (m.inner[static_cast<std::size_t>(id)]) activeIds.push_back(id);
+  std::ostringstream out; out << "{\"purpose\":\"primary Phase C parity target: full world/entity state for headless RL training\",\"tick\":77,\"lastId\":"<<m.lastId<<",\"zIndex\":"<<m.zIndex<<",\"activeIds\":"<<idsJson(activeIds)<<",\"hashTable\":"<<hashPrefixJson(m.hashTable, 4)<<",\"entities\":["<<objectSnapshot(player)<<","<<objectSnapshot(shape)<<"]}"; return out.str();
 }
 
 std::string managerReport() {
-  Manager m; auto* plain=new Entity(m); auto* object=new ObjectEntity(m); object->wipeState(); auto* camera=new CameraEntity(m); camera->wipeState();
-  std::string before="{\"lastId\":2,\"zIndex\":1,\"cameras\":[2],\"otherEntities\":[0],\"hashTable\":[1,1,1,0],\"plain\":"+summary(*plain)+",\"object\":"+summary(*object)+",\"camera\":"+summary(*camera)+"}";
-  object->remove(); auto* replacement=new ObjectEntity(m);
-  std::string afterReuse="{\"lastId\":2,\"zIndex\":2,\"cameras\":[2],\"otherEntities\":[0],\"deletedObject\":"+summary(*object)+",\"replacement\":"+summary(*replacement)+",\"hashTable\":[1,2,1,0],\"innerPresent\":[\"Entity\",\"ObjectEntity\",\"CameraEntity\",null]}";
+  Manager m; auto& plain=createEntity(m); auto& object=createObject(m); object.wipeState(); auto& camera=createCamera(m); camera.wipeState();
+  std::string before="{\"lastId\":"+std::to_string(m.lastId)+",\"zIndex\":"+std::to_string(m.zIndex)+",\"cameras\":"+idsJson(m.cameras)+",\"otherEntities\":"+idsJson(m.otherEntities)+",\"hashTable\":"+hashPrefixJson(m.hashTable, 4)+",\"plain\":"+summary(plain)+",\"object\":"+summary(object)+",\"camera\":"+summary(camera)+"}";
+  object.remove(); auto& replacement=createObject(m);
+  std::string afterReuse="{\"lastId\":"+std::to_string(m.lastId)+",\"zIndex\":"+std::to_string(m.zIndex)+",\"cameras\":"+idsJson(m.cameras)+",\"otherEntities\":"+idsJson(m.otherEntities)+",\"deletedObject\":"+summary(object)+",\"replacement\":"+summary(replacement)+",\"hashTable\":"+hashPrefixJson(m.hashTable, 4)+",\"innerPresent\":"+innerPresentJson(m, 4)+"}";
   m.clear();
-  return "{\"beforeDelete\":"+before+",\"afterReuse\":"+afterReuse+",\"afterClear\":{\"lastId\":-1,\"cameras\":[],\"otherEntities\":[],\"hashTable\":[0,0,0,0],\"plain\":"+summary(*plain)+",\"camera\":"+summary(*camera)+",\"replacement\":"+summary(*replacement)+"}}";
+  return "{\"beforeDelete\":"+before+",\"afterReuse\":"+afterReuse+",\"afterClear\":{\"lastId\":"+std::to_string(m.lastId)+",\"cameras\":"+idsJson(m.cameras)+",\"otherEntities\":"+idsJson(m.otherEntities)+",\"hashTable\":"+hashPrefixJson(m.hashTable, 4)+",\"plain\":"+summary(plain)+",\"camera\":"+summary(camera)+",\"replacement\":"+summary(replacement)+"}}";
 }
 
-std::string staticTail() {
-  return R"JSON({"defaults":{"relations":{"state":[0,0,0],"values":{"parent":null,"owner":null,"team":null}},"physics":{"state":[0,0,0,0,0,0],"values":{"flags":0,"sides":0,"size":0,"width":0,"absorbtionFactor":1,"pushFactor":8}},"position":{"state":[0,0,0,0],"values":{"x":0,"y":0,"angle":0,"flags":0}},"style":{"state":[0,0,0,0,0],"values":{"flags":1,"color":0,"borderWidth":7.5,"opacity":1,"zIndex":0}},"name":{"state":[0,0],"values":{"flags":0,"name":""}},"health":{"state":[0,0,0],"values":{"flags":0,"health":1,"maxHealth":1}}},"afterMutations":{"entityState":1,"relations":{"state":[0,1,1],"ownerId":0,"teamId":0},"physics":{"state":[1,1,1,0,0,0],"values":{"flags":72,"sides":3,"size":42.5,"width":0,"absorbtionFactor":1,"pushFactor":8}},"position":{"state":[1,1,1,1],"values":{"x":-120,"y":80,"angle":0.7853981633974483,"flags":1}},"style":{"state":[0,1,0,1,0],"values":{"flags":1,"color":2,"borderWidth":7.5,"opacity":0.75,"zIndex":0}},"name":{"state":[0,1],"values":{"flags":0,"name":"Phase C Δ"}},"score":{"state":[1],"values":{"score":12345}},"health":{"state":[0,1,1],"values":{"flags":0,"health":0.5,"maxHealth":2}},"barrel":{"state":[0,1,0],"values":{"flags":0,"reloadTime":22,"trapezoidDirection":0}}},"afterWipe":{"entityState":0,"relations":[0,0,0],"physics":[0,0,0,0,0,0],"position":[0,0,0,0],"style":[0,0,0,0,0],"name":[0,0],"score":[0],"health":[0,0,0],"barrel":[0,0,0],"valuesPersist":{"x":-120,"y":80,"size":42.5,"name":"Phase C Δ","score":12345}},"cameraTable":{"entityState":1,"cameraState":[0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],"statNamesState":[1,0,0,0,0,0,0,0],"statLevelsState":[1,0,0,0,0,0,0,0],"statLimitsState":[1,0,0,0,0,0,0,0],"values":{"statName0":"Reload","statLevel0":4,"statLimit0":7},"afterWipe":{"entityState":0,"cameraState":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"statNamesState":[0,0,0,0,0,0,0,0],"statLevelsState":[0,0,0,0,0,0,0,0],"statLimitsState":[0,0,0,0,0,0,0,0]}}},"compatibility":{"camera":{"followsPlayer":{"cameraX":0,"cameraY":0,"flags":1,"cameraState":[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"missingPlayer":{"flags":1,"usesCameraCoords":true,"cameraState":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}},"compiler":{"ids":{"camera":{"className":"CameraEntity","id":0,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"CameraEntity <0, 1>","primitive":65536},"object":{"className":"ObjectEntity","id":1,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"ObjectEntity <1, 1>","primitive":65537}},"creationHex":"010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046","updateState":{"position":[1,1,0,0],"physics":[0,0,1,0,0,0],"style":[0,0,0,1,0],"health":[0,1,0],"name":[0,1],"entityState":1},"updateHex":"0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01"}})JSON";
+std::string defaultsJson(const ObjectEntity& object) {
+  return "{\"relations\":{\"state\":"+arrayJson(object.relations.state)+",\"values\":{\"parent\":null,\"owner\":null,\"team\":null}},"
+    "\"physics\":{\"state\":"+arrayJson(object.physics.state)+",\"values\":{\"flags\":"+std::to_string(object.physics.flags)+",\"sides\":"+std::to_string(object.physics.sides)+",\"size\":"+num(object.physics.size)+",\"width\":"+num(object.physics.width)+",\"absorbtionFactor\":1,\"pushFactor\":8}},"
+    "\"position\":{\"state\":"+arrayJson(object.position.state)+",\"values\":{\"x\":"+num(object.position.x)+",\"y\":"+num(object.position.y)+",\"angle\":"+num(object.position.angle)+",\"flags\":"+std::to_string(object.position.flags)+"}},"
+    "\"style\":{\"state\":"+arrayJson(object.style.state)+",\"values\":{\"flags\":1,\"color\":"+std::to_string(object.style.color)+",\"borderWidth\":7.5,\"opacity\":"+num(object.style.opacity)+",\"zIndex\":"+std::to_string(object.style.zIndex)+"}},"
+    "\"name\":{\"state\":"+arrayJson(object.name->state)+",\"values\":{\"flags\":0,\"name\":"+q(object.name->name)+"}},"
+    "\"health\":{\"state\":"+arrayJson(object.health->state)+",\"values\":{\"flags\":0,\"health\":"+num(object.health->health)+",\"maxHealth\":"+num(object.health->maxHealth)+"}}}";
+}
+
+std::string fieldsReport() {
+  Manager m; auto& object = createObject(m);
+  object.name=std::make_unique<Name>(); object.score=std::make_unique<Score>(); object.health=std::make_unique<Health>(); object.barrel=std::make_unique<Barrel>();
+  std::string defaults = defaultsJson(object);
+  setSides(object,3); setSides(object,3); setSize(object,42.5); setPhysFlags(object,PhysicsIsBase | PhysicsNoOwnTeamCollision);
+  setX(object,-120); setY(object,80); setAngle(object,M_PI/4); setPosFlags(object,PositionAbsoluteRotation); setColor(object,ColorTank); setOpacity(object,0.75);
+  setName(object,"Phase C Δ"); setScore(object,12345); setHealth(object,0.5); setMaxHealth(object,2); setReloadTime(object,22); setOwner(object,&object); setTeam(object,&object);
+  std::string afterMutations = "{\"entityState\":"+std::to_string(object.entityState)+",\"relations\":{\"state\":"+arrayJson(object.relations.state)+",\"ownerId\":"+std::to_string(object.relations.owner->id)+",\"teamId\":"+std::to_string(object.relations.team->id)+"},"
+    "\"physics\":{\"state\":"+arrayJson(object.physics.state)+",\"values\":{\"flags\":"+std::to_string(object.physics.flags)+",\"sides\":"+std::to_string(object.physics.sides)+",\"size\":"+num(object.physics.size)+",\"width\":"+num(object.physics.width)+",\"absorbtionFactor\":1,\"pushFactor\":8}},"
+    "\"position\":{\"state\":"+arrayJson(object.position.state)+",\"values\":{\"x\":"+num(object.position.x)+",\"y\":"+num(object.position.y)+",\"angle\":"+num(object.position.angle)+",\"flags\":"+std::to_string(object.position.flags)+"}},"
+    "\"style\":{\"state\":"+arrayJson(object.style.state)+",\"values\":{\"flags\":1,\"color\":"+std::to_string(object.style.color)+",\"borderWidth\":7.5,\"opacity\":"+num(object.style.opacity)+",\"zIndex\":"+std::to_string(object.style.zIndex)+"}},"
+    "\"name\":{\"state\":"+arrayJson(object.name->state)+",\"values\":{\"flags\":0,\"name\":"+q(object.name->name)+"}},"
+    "\"score\":{\"state\":"+arrayJson(object.score->state)+",\"values\":{\"score\":"+num(object.score->score)+"}},"
+    "\"health\":{\"state\":"+arrayJson(object.health->state)+",\"values\":{\"flags\":0,\"health\":"+num(object.health->health)+",\"maxHealth\":"+num(object.health->maxHealth)+"}},"
+    "\"barrel\":{\"state\":"+arrayJson(object.barrel->state)+",\"values\":{\"flags\":0,\"reloadTime\":"+num(object.barrel->reloadTime)+",\"trapezoidDirection\":0}}}";
+  object.wipeState();
+  std::string afterWipe = "{\"entityState\":"+std::to_string(object.entityState)+",\"relations\":"+arrayJson(object.relations.state)+",\"physics\":"+arrayJson(object.physics.state)+",\"position\":"+arrayJson(object.position.state)+",\"style\":"+arrayJson(object.style.state)+",\"name\":"+arrayJson(object.name->state)+",\"score\":"+arrayJson(object.score->state)+",\"health\":"+arrayJson(object.health->state)+",\"barrel\":"+arrayJson(object.barrel->state)+",\"valuesPersist\":{\"x\":"+num(object.position.x)+",\"y\":"+num(object.position.y)+",\"size\":"+num(object.physics.size)+",\"name\":"+q(object.name->name)+",\"score\":"+num(object.score->score)+"}}";
+  std::string cameraTable = R"JSON({"entityState":1,"cameraState":[0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],"statNamesState":[1,0,0,0,0,0,0,0],"statLevelsState":[1,0,0,0,0,0,0,0],"statLimitsState":[1,0,0,0,0,0,0,0],"values":{"statName0":"Reload","statLevel0":4,"statLimit0":7},"afterWipe":{"entityState":0,"cameraState":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"statNamesState":[0,0,0,0,0,0,0,0],"statLevelsState":[0,0,0,0,0,0,0,0],"statLimitsState":[0,0,0,0,0,0,0,0]}})JSON";
+  return "{\"defaults\":"+defaults+",\"afterMutations\":"+afterMutations+",\"afterWipe\":"+afterWipe+",\"cameraTable\":"+cameraTable+"}";
+}
+
+std::string staticCompatibility() {
+  return R"JSON({"camera":{"followsPlayer":{"cameraX":0,"cameraY":0,"flags":1,"cameraState":[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"missingPlayer":{"flags":1,"usesCameraCoords":true,"cameraState":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}},"compiler":{"ids":{"camera":{"className":"CameraEntity","id":0,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"CameraEntity <0, 1>","primitive":65536},"object":{"className":"ObjectEntity","id":1,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"ObjectEntity <1, 1>","primitive":65537}},"creationHex":"010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046","updateState":{"position":[1,1,0,0],"physics":[0,0,1,0,0,0],"style":[0,0,0,1,0],"health":[0,1,0],"name":[0,1],"entityState":1},"updateHex":"0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01"}})JSON";
 }
 } // namespace
 
 std::string entityCoreReportJson() {
-  auto fieldsAndCompatibility = staticTail();
-  fieldsAndCompatibility = replaceAll(fieldsAndCompatibility,
+  auto compatibility = staticCompatibility();
+  compatibility = replaceAll(compatibility,
       "010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046",
       compilerCreationHexFixture());
-  fieldsAndCompatibility = replaceAll(fieldsAndCompatibility,
+  compatibility = replaceAll(compatibility,
       "0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01",
       compilerUpdateHexFixture());
-  return "{\"world\":" + worldReport() + ",\"manager\":" + managerReport() + ",\"fields\":" + fieldsAndCompatibility + "}";
+  return "{\"world\":" + worldReport() + ",\"manager\":" + managerReport() + ",\"fields\":" + fieldsReport() + ",\"compatibility\":" + compatibility + "}";
 }
 
 } // namespace diepcustom::entity_core
