@@ -12,8 +12,13 @@ add_library(diepcustom_protocol
 add_library(diepcustom_physics
   cpp/src/physics.cpp
 )
+
+add_library(diepcustom_entity_core
+  cpp/src/entity_core.cpp
+)
 target_include_directories(diepcustom_physics PUBLIC cpp/include)
 target_include_directories(diepcustom_protocol PUBLIC cpp/include)
+target_include_directories(diepcustom_entity_core PUBLIC cpp/include)
 
 add_executable(protocol_golden_test cpp/tests/protocol_golden_test.cpp)
 target_link_libraries(protocol_golden_test PRIVATE diepcustom_protocol)
@@ -24,5 +29,9 @@ target_link_libraries(protocol_report PRIVATE diepcustom_protocol)
 add_executable(physics_report cpp/tests/physics_report.cpp)
 target_link_libraries(physics_report PRIVATE diepcustom_physics)
 
+add_executable(entity_core_report cpp/tests/entity_core_report.cpp)
+target_link_libraries(entity_core_report PRIVATE diepcustom_entity_core)
+
 enable_testing()
 add_test(NAME protocol_golden_test COMMAND protocol_golden_test)
+add_test(NAME entity_core_report_smoke COMMAND entity_core_report)
