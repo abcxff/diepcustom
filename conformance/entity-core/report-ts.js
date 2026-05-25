@@ -200,6 +200,109 @@ function cameraFollowReport() {
   };
 }
 
+
+function ref(entity) {
+  return Entity.exists(entity) ? { id: entity.id, hash: entity.hash } : null;
+}
+
+function groupSnapshot(entity) {
+  const snapshot = {};
+  if (entity.relationsData) {
+    snapshot.relations = {
+      state: state(entity.relationsData),
+      parent: ref(entity.relationsData.values.parent),
+      owner: ref(entity.relationsData.values.owner),
+      team: ref(entity.relationsData.values.team)
+    };
+  }
+  if (entity.physicsData) {
+    snapshot.physics = { state: state(entity.physicsData), values: { ...entity.physicsData.values } };
+  }
+  if (entity.positionData) {
+    snapshot.position = { state: state(entity.positionData), values: { ...entity.positionData.values } };
+  }
+  if (entity.styleData) {
+    snapshot.style = { state: state(entity.styleData), values: { ...entity.styleData.values } };
+  }
+  if (entity.nameData) {
+    snapshot.name = { state: state(entity.nameData), values: { ...entity.nameData.values } };
+  }
+  if (entity.healthData) {
+    snapshot.health = { state: state(entity.healthData), values: { ...entity.healthData.values } };
+  }
+  if (entity.scoreData) {
+    snapshot.score = { state: state(entity.scoreData), values: { ...entity.scoreData.values } };
+  }
+  if (entity.barrelData) {
+    snapshot.barrel = { state: state(entity.barrelData), values: { ...entity.barrelData.values } };
+  }
+  return snapshot;
+}
+
+function worldEntitySnapshot(entity) {
+  return {
+    ...entitySummary(entity),
+    groups: groupSnapshot(entity)
+  };
+}
+
+function fullWorldSnapshotReport() {
+  const game = createGame();
+  game.tick = 77;
+
+  const player = new ObjectEntity(game);
+  player.nameData = new NameGroup(player);
+  player.scoreData = new ScoreGroup(player);
+  player.healthData = new HealthGroup(player);
+  player.barrelData = new BarrelGroup(player);
+  player.positionData.x = 125.5;
+  player.positionData.y = -64.25;
+  player.positionData.angle = Math.PI / 3;
+  player.physicsData.sides = 1;
+  player.physicsData.size = 35;
+  player.physicsData.width = 12;
+  player.styleData.color = Color.Tank;
+  player.styleData.opacity = 0.9;
+  player.nameData.name = 'RL Player';
+  player.scoreData.score = 9001;
+  player.healthData.health = 0.875;
+  player.healthData.maxHealth = 1.25;
+  player.barrelData.reloadTime = 12;
+  player.relationsData.owner = player;
+  player.relationsData.team = player;
+
+  const shape = new ObjectEntity(game);
+  shape.positionData.x = -250;
+  shape.positionData.y = 100;
+  shape.positionData.angle = -Math.PI / 8;
+  shape.physicsData.sides = 4;
+  shape.physicsData.size = 30;
+  shape.physicsData.width = 30;
+  shape.styleData.color = Color.EnemySquare;
+  shape.relationsData.owner = player;
+  shape.relationsData.team = null;
+
+  const deleted = new ObjectEntity(game);
+  deleted.positionData.x = 999;
+  deleted.delete();
+
+  return {
+    purpose: 'primary Phase C parity target: full world/entity state for headless RL training',
+    tick: game.tick,
+    lastId: game.entities.lastId,
+    zIndex: game.entities.zIndex,
+    activeIds: game.entities.inner
+      .slice(0, game.entities.lastId + 1)
+      .map((entity, id) => Entity.exists(entity) ? id : null)
+      .filter((id) => id !== null),
+    hashTable: Array.from(game.entities.hashTable.slice(0, 4)),
+    entities: game.entities.inner
+      .slice(0, game.entities.lastId + 1)
+      .filter((entity) => Entity.exists(entity))
+      .map(worldEntitySnapshot)
+  };
+}
+
 function compilerReport() {
   const game = createGame();
   const camera = new CameraEntity(game);
@@ -258,4 +361,4 @@ function compilerReport() {
   };
 }
 
-process.stdout.write(`${JSON.stringify({ manager: managerLifecycleReport(), fields: fieldGroupReport(), camera: cameraFollowReport(), compiler: compilerReport() }, null, 2)}\n`);
+process.stdout.write(`${JSON.stringify({ world: fullWorldSnapshotReport(), manager: managerLifecycleReport(), fields: fieldGroupReport(), compatibility: { camera: cameraFollowReport(), compiler: compilerReport() } }, null, 2)}\n`);

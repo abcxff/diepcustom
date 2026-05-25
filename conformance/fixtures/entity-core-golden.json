@@ -1,4 +1,213 @@
 {
+  "world": {
+    "purpose": "primary Phase C parity target: full world/entity state for headless RL training",
+    "tick": 77,
+    "lastId": 2,
+    "zIndex": 3,
+    "activeIds": [
+      0,
+      1
+    ],
+    "hashTable": [
+      1,
+      1,
+      1,
+      0
+    ],
+    "entities": [
+      {
+        "className": "ObjectEntity",
+        "id": 0,
+        "hash": 1,
+        "preservedHash": 1,
+        "entityState": 1,
+        "exists": true,
+        "string": "ObjectEntity <0, 1>",
+        "primitive": 65536,
+        "groups": {
+          "relations": {
+            "state": [
+              0,
+              1,
+              1
+            ],
+            "parent": null,
+            "owner": {
+              "id": 0,
+              "hash": 1
+            },
+            "team": {
+              "id": 0,
+              "hash": 1
+            }
+          },
+          "physics": {
+            "state": [
+              0,
+              1,
+              1,
+              1,
+              0,
+              0
+            ],
+            "values": {
+              "flags": 0,
+              "sides": 1,
+              "size": 35,
+              "width": 12,
+              "absorbtionFactor": 1,
+              "pushFactor": 8
+            }
+          },
+          "position": {
+            "state": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "values": {
+              "x": 125.5,
+              "y": -64.25,
+              "angle": 1.0471975511965976,
+              "flags": 0
+            }
+          },
+          "style": {
+            "state": [
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            "values": {
+              "flags": 1,
+              "color": 2,
+              "borderWidth": 7.5,
+              "opacity": 0.9,
+              "zIndex": 0
+            }
+          },
+          "name": {
+            "state": [
+              0,
+              1
+            ],
+            "values": {
+              "flags": 0,
+              "name": "RL Player"
+            }
+          },
+          "health": {
+            "state": [
+              0,
+              1,
+              1
+            ],
+            "values": {
+              "flags": 0,
+              "health": 0.875,
+              "maxHealth": 1.25
+            }
+          },
+          "score": {
+            "state": [
+              1
+            ],
+            "values": {
+              "score": 9001
+            }
+          },
+          "barrel": {
+            "state": [
+              0,
+              1,
+              0
+            ],
+            "values": {
+              "flags": 0,
+              "reloadTime": 12,
+              "trapezoidDirection": 0
+            }
+          }
+        }
+      },
+      {
+        "className": "ObjectEntity",
+        "id": 1,
+        "hash": 1,
+        "preservedHash": 1,
+        "entityState": 1,
+        "exists": true,
+        "string": "ObjectEntity <1, 1>",
+        "primitive": 65537,
+        "groups": {
+          "relations": {
+            "state": [
+              0,
+              1,
+              0
+            ],
+            "parent": null,
+            "owner": {
+              "id": 0,
+              "hash": 1
+            },
+            "team": null
+          },
+          "physics": {
+            "state": [
+              0,
+              1,
+              1,
+              1,
+              0,
+              0
+            ],
+            "values": {
+              "flags": 0,
+              "sides": 4,
+              "size": 30,
+              "width": 30,
+              "absorbtionFactor": 1,
+              "pushFactor": 8
+            }
+          },
+          "position": {
+            "state": [
+              1,
+              1,
+              1,
+              0
+            ],
+            "values": {
+              "x": -250,
+              "y": 100,
+              "angle": -0.39269908169872414,
+              "flags": 0
+            }
+          },
+          "style": {
+            "state": [
+              0,
+              1,
+              0,
+              0,
+              1
+            ],
+            "values": {
+              "flags": 1,
+              "color": 8,
+              "borderWidth": 7.5,
+              "opacity": 1,
+              "zIndex": 1
+            }
+          }
+        }
+      }
+    ]
+  },
   "manager": {
     "beforeDelete": {
       "lastId": 2,
@@ -488,120 +697,122 @@
       }
     }
   },
-  "camera": {
-    "followsPlayer": {
-      "cameraX": 0,
-      "cameraY": 0,
-      "flags": 1,
-      "cameraState": [
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ]
-    },
-    "missingPlayer": {
-      "flags": 1,
-      "usesCameraCoords": true,
-      "cameraState": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-      ]
-    }
-  },
-  "compiler": {
-    "ids": {
-      "camera": {
-        "className": "CameraEntity",
-        "id": 0,
-        "hash": 1,
-        "preservedHash": 1,
-        "entityState": 1,
-        "exists": true,
-        "string": "CameraEntity <0, 1>",
-        "primitive": 65536
+  "compatibility": {
+    "camera": {
+      "followsPlayer": {
+        "cameraX": 0,
+        "cameraY": 0,
+        "flags": 1,
+        "cameraState": [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
       },
-      "object": {
-        "className": "ObjectEntity",
-        "id": 1,
-        "hash": 1,
-        "preservedHash": 1,
-        "entityState": 1,
-        "exists": true,
-        "string": "ObjectEntity <1, 1>",
-        "primitive": 65537
+      "missingPlayer": {
+        "flags": 1,
+        "usesCameraCoords": true,
+        "cameraState": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
       }
     },
-    "creationHex": "010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046",
-    "updateState": {
-      "position": [
-        1,
-        1,
-        0,
-        0
-      ],
-      "physics": [
-        0,
-        0,
-        1,
-        0,
-        0,
-        0
-      ],
-      "style": [
-        0,
-        0,
-        0,
-        1,
-        0
-      ],
-      "health": [
-        0,
-        1,
-        0
-      ],
-      "name": [
-        0,
-        1
-      ],
-      "entityState": 1
-    },
-    "updateHex": "0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01"
+    "compiler": {
+      "ids": {
+        "camera": {
+          "className": "CameraEntity",
+          "id": 0,
+          "hash": 1,
+          "preservedHash": 1,
+          "entityState": 1,
+          "exists": true,
+          "string": "CameraEntity <0, 1>",
+          "primitive": 65536
+        },
+        "object": {
+          "className": "ObjectEntity",
+          "id": 1,
+          "hash": 1,
+          "preservedHash": 1,
+          "entityState": 1,
+          "exists": true,
+          "string": "ObjectEntity <1, 1>",
+          "primitive": 65537
+        }
+      },
+      "creationHex": "010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046",
+      "updateState": {
+        "position": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "physics": [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "style": [
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "health": [
+          0,
+          1,
+          0
+        ],
+        "name": [
+          0,
+          1
+        ],
+        "entityState": 1
+      },
+      "updateHex": "0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01"
+    }
   }
 }
