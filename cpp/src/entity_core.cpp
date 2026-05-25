@@ -19,6 +19,7 @@ constexpr int ColorEnemySquare = 8;
 constexpr int PhysicsNoOwnTeamCollision = 1 << 3;
 constexpr int PhysicsIsBase = 1 << 6;
 constexpr int PositionAbsoluteRotation = 1 << 0;
+constexpr int CameraUsesCameraCoords = 1 << 0;
 
 std::string q(const std::string& value) {
   std::ostringstream out;
@@ -170,6 +171,27 @@ struct Name { int flags=0; std::string name=""; std::array<int,2> state{}; };
 struct Health { int flags=0; double health=1,maxHealth=1; std::array<int,3> state{}; };
 struct Score { double score=0; std::array<int,1> state{}; };
 struct Barrel { int flags=0; double reloadTime=0; int trapezoidDirection=0; std::array<int,3> state{}; };
+struct CameraTable {
+  std::array<int,8> state{};
+  void wipe() { state.fill(0); }
+};
+struct CameraData {
+  int flags=1;
+  Entity* player=nullptr;
+  double cameraX=0;
+  double cameraY=0;
+  std::array<int,21> state{};
+  CameraTable statNames;
+  CameraTable statLevels;
+  CameraTable statLimits;
+
+  void wipe() {
+    state.fill(0);
+    statNames.wipe();
+    statLevels.wipe();
+    statLimits.wipe();
+  }
+};
 
 struct ObjectEntity : Entity {
   Relations relations; Physics physics; Position position; Style style;
@@ -186,7 +208,46 @@ struct ObjectEntity : Entity {
   }
 };
 
-struct CameraEntity : Entity { explicit CameraEntity(Manager& m) : Entity(m, "CameraEntity") { isCamera = true; manager.add(*this); entityState=1; } };
+struct CameraEntity : Entity {
+  CameraData camera;
+  std::array<std::string,8> statNames{};
+  std::array<int,8> statLevels{};
+  std::array<int,8> statLimits{};
+  explicit CameraEntity(Manager& m) : Entity(m, "CameraEntity") { isCamera = true; manager.add(*this); entityState=1; }
+  void wipeState() override { camera.wipe(); entityState = 0; }
+  void tick(int) {
+    if (camera.player && camera.player->exists()) {
+      auto* focus = dynamic_cast<ObjectEntity*>(camera.player);
+      if (!(camera.flags & CameraUsesCameraCoords) && focus) {
+        setCameraX(focus->position.x);
+        setCameraY(focus->position.y);
+      }
+    } else {
+      setCameraFlags(camera.flags | CameraUsesCameraCoords);
+    }
+  }
+  void setCameraFlags(int value) {
+    if (camera.flags != value) { camera.flags = value; camera.state[1] = 1; entityState = 1; }
+  }
+  void setPlayer(Entity* value) {
+    if (camera.player != value) { camera.player = value; camera.state[2] = 1; entityState = 1; }
+  }
+  void setCameraX(double value) {
+    if (camera.cameraX != value) { camera.cameraX = value; camera.state[12] = 1; entityState = 1; }
+  }
+  void setCameraY(double value) {
+    if (camera.cameraY != value) { camera.cameraY = value; camera.state[13] = 1; entityState = 1; }
+  }
+  void setStatName(std::size_t index, const std::string& value) {
+    if (statNames[index] != value) { statNames[index] = value; camera.statNames.state[index] = 1; camera.state[9] = 1; entityState = 1; }
+  }
+  void setStatLevel(std::size_t index, int value) {
+    if (statLevels[index] != value) { statLevels[index] = value; camera.statLevels.state[index] = 1; camera.state[10] = 1; entityState = 1; }
+  }
+  void setStatLimit(std::size_t index, int value) {
+    if (statLimits[index] != value) { statLimits[index] = value; camera.statLimits.state[index] = 1; camera.state[11] = 1; entityState = 1; }
+  }
+};
 
 Entity& createEntity(Manager& m) {
   auto entity = std::make_unique<Entity>(m);
@@ -436,12 +497,34 @@ std::string fieldsReport() {
     "\"barrel\":{\"state\":"+arrayJson(object.barrel->state)+",\"values\":{\"flags\":0,\"reloadTime\":"+num(object.barrel->reloadTime)+",\"trapezoidDirection\":0}}}";
   object.wipeState();
   std::string afterWipe = "{\"entityState\":"+std::to_string(object.entityState)+",\"relations\":"+arrayJson(object.relations.state)+",\"physics\":"+arrayJson(object.physics.state)+",\"position\":"+arrayJson(object.position.state)+",\"style\":"+arrayJson(object.style.state)+",\"name\":"+arrayJson(object.name->state)+",\"score\":"+arrayJson(object.score->state)+",\"health\":"+arrayJson(object.health->state)+",\"barrel\":"+arrayJson(object.barrel->state)+",\"valuesPersist\":{\"x\":"+num(object.position.x)+",\"y\":"+num(object.position.y)+",\"size\":"+num(object.physics.size)+",\"name\":"+q(object.name->name)+",\"score\":"+num(object.score->score)+"}}";
-  std::string cameraTable = R"JSON({"entityState":1,"cameraState":[0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0],"statNamesState":[1,0,0,0,0,0,0,0],"statLevelsState":[1,0,0,0,0,0,0,0],"statLimitsState":[1,0,0,0,0,0,0,0],"values":{"statName0":"Reload","statLevel0":4,"statLimit0":7},"afterWipe":{"entityState":0,"cameraState":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"statNamesState":[0,0,0,0,0,0,0,0],"statLevelsState":[0,0,0,0,0,0,0,0],"statLimitsState":[0,0,0,0,0,0,0,0]}})JSON";
+  auto& camera = createCamera(m);
+  camera.setStatName(0, "Reload");
+  camera.setStatLevel(0, 4);
+  camera.setStatLimit(0, 7);
+  std::string cameraBeforeWipe = "{\"entityState\":"+std::to_string(camera.entityState)+",\"cameraState\":"+arrayJson(camera.camera.state)+",\"statNamesState\":"+arrayJson(camera.camera.statNames.state)+",\"statLevelsState\":"+arrayJson(camera.camera.statLevels.state)+",\"statLimitsState\":"+arrayJson(camera.camera.statLimits.state)+",\"values\":{\"statName0\":"+q(camera.statNames[0])+",\"statLevel0\":"+std::to_string(camera.statLevels[0])+",\"statLimit0\":"+std::to_string(camera.statLimits[0])+"}";
+  camera.wipeState();
+  std::string cameraTable = cameraBeforeWipe + ",\"afterWipe\":{\"entityState\":"+std::to_string(camera.entityState)+",\"cameraState\":"+arrayJson(camera.camera.state)+",\"statNamesState\":"+arrayJson(camera.camera.statNames.state)+",\"statLevelsState\":"+arrayJson(camera.camera.statLevels.state)+",\"statLimitsState\":"+arrayJson(camera.camera.statLimits.state)+"}}";
   return "{\"defaults\":"+defaults+",\"afterMutations\":"+afterMutations+",\"afterWipe\":"+afterWipe+",\"cameraTable\":"+cameraTable+"}";
 }
 
+std::string cameraFollowReport() {
+  Manager m;
+  auto& player = createObject(m);
+  auto& camera = createCamera(m);
+  setX(player, 321);
+  setY(player, -222);
+  camera.setPlayer(&player);
+  camera.tick(10);
+  std::string followsPlayer = "{\"cameraX\":"+num(camera.camera.cameraX)+",\"cameraY\":"+num(camera.camera.cameraY)+",\"flags\":"+std::to_string(camera.camera.flags)+",\"cameraState\":"+arrayJson(camera.camera.state)+"}";
+  camera.wipeState();
+  player.remove();
+  camera.tick(11);
+  std::string missingPlayer = "{\"flags\":"+std::to_string(camera.camera.flags)+",\"usesCameraCoords\":"+std::string((camera.camera.flags & CameraUsesCameraCoords) ? "true" : "false")+",\"cameraState\":"+arrayJson(camera.camera.state)+"}";
+  return "{\"followsPlayer\":"+followsPlayer+",\"missingPlayer\":"+missingPlayer+"}";
+}
+
 std::string staticCompatibility() {
-  return R"JSON({"camera":{"followsPlayer":{"cameraX":0,"cameraY":0,"flags":1,"cameraState":[0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"missingPlayer":{"flags":1,"usesCameraCoords":true,"cameraState":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}},"compiler":{"ids":{"camera":{"className":"CameraEntity","id":0,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"CameraEntity <0, 1>","primitive":65536},"object":{"className":"ObjectEntity","id":1,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"ObjectEntity <1, 1>","primitive":65537}},"creationHex":"010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046","updateState":{"position":[1,1,0,0],"physics":[0,0,1,0,0,0],"style":[0,0,0,1,0],"health":[0,1,0],"name":[0,1],"entityState":1},"updateHex":"0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01"}})JSON";
+  return R"JSON({"compiler":{"ids":{"camera":{"className":"CameraEntity","id":0,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"CameraEntity <0, 1>","primitive":65536},"object":{"className":"ObjectEntity","id":1,"hash":1,"preservedHash":1,"entityState":1,"exists":true,"string":"ObjectEntity <1, 1>","primitive":65537}},"creationHex":"010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046","updateState":{"position":[1,1,0,0],"physics":[0,0,1,0,0,0],"style":[0,0,0,1,0],"health":[0,1,0],"name":[0,1],"entityState":1},"updateHex":"0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01"}})JSON";
 }
 } // namespace
 
@@ -453,7 +536,7 @@ std::string entityCoreReportJson() {
   compatibility = replaceAll(compatibility,
       "0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01",
       compilerUpdateHexFixture());
-  return "{\"world\":" + worldReport() + ",\"manager\":" + managerReport() + ",\"fields\":" + fieldsReport() + ",\"compatibility\":" + compatibility + "}";
+  return "{\"world\":" + worldReport() + ",\"manager\":" + managerReport() + ",\"fields\":" + fieldsReport() + ",\"compatibility\":{\"camera\":" + cameraFollowReport() + "," + compatibility.substr(1) + "}";
 }
 
 } // namespace diepcustom::entity_core
