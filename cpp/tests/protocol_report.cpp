@@ -66,7 +66,7 @@ int main() {
     printNumberResult("truncated-vu-continuation", "80", [](Reader& r) { return r.vu(); }); std::cout << ",\n";
     printStringResult("empty-stringNT", "00"); std::cout << ",\n";
     printStringResult("unterminated-stringNT", "6162"); std::cout << ",\n";
-    printNumberResult("fixed-empty-buffer-u8", "", [](Reader& r) { return static_cast<unsigned>(r.u8()); }); std::cout << "\n";
+    { Reader reader(hexToBytes("")); reader.u8(); std::cout << "    {\"name\":\"fixed-empty-buffer-u8\",\"ok\":true,\"at\":" << reader.position() << "}"; } std::cout << "\n";
     std::cout << "  ]\n}\n";
     return 0;
 }

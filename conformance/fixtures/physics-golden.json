@@ -1,0 +1,226 @@
+{
+  "vector": {
+    "base": {
+      "x": 3,
+      "y": 4,
+      "magnitude": 5,
+      "angle": 0.927295,
+      "finite": true
+    },
+    "afterSet": {
+      "x": -8,
+      "y": 9,
+      "magnitude": 12.041595,
+      "angle": 2.297439,
+      "finite": true
+    },
+    "afterAdd": {
+      "x": 2,
+      "y": 6,
+      "magnitude": 6.324555,
+      "angle": 1.249046,
+      "finite": true
+    },
+    "afterSubtract": {
+      "x": -7,
+      "y": 7,
+      "magnitude": 9.899495,
+      "angle": 2.356194,
+      "finite": true
+    },
+    "distanceToSQ": 25,
+    "angleSet": {
+      "x": 0,
+      "y": 5,
+      "magnitude": 5,
+      "angle": 1.570796,
+      "finite": true
+    },
+    "magnitudeSet": {
+      "x": 6,
+      "y": 8,
+      "magnitude": 10,
+      "angle": 0.927295,
+      "finite": true
+    },
+    "zeroMagnitude": {
+      "x": 5,
+      "y": 0,
+      "magnitude": 5,
+      "angle": 0,
+      "finite": true
+    },
+    "polar": {
+      "x": 10.392305,
+      "y": 6,
+      "magnitude": 12,
+      "angle": 0.523599,
+      "finite": true
+    },
+    "finiteChecks": [
+      true,
+      false
+    ]
+  },
+  "packedEntitySet": {
+    "beforeClear": [
+      [
+        0,
+        true
+      ],
+      [
+        1,
+        true
+      ],
+      [
+        2,
+        false
+      ],
+      [
+        31,
+        true
+      ],
+      [
+        32,
+        false
+      ],
+      [
+        33,
+        true
+      ],
+      [
+        1024,
+        true
+      ],
+      [
+        16383,
+        true
+      ]
+    ],
+    "firstWords": [
+      2147483651,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "afterClear": [
+      [
+        0,
+        false
+      ],
+      [
+        1,
+        false
+      ],
+      [
+        2,
+        false
+      ],
+      [
+        31,
+        false
+      ],
+      [
+        32,
+        false
+      ],
+      [
+        33,
+        false
+      ],
+      [
+        1024,
+        false
+      ],
+      [
+        16383,
+        false
+      ]
+    ],
+    "fullSetHas": [
+      [
+        0,
+        true
+      ],
+      [
+        31,
+        true
+      ],
+      [
+        32,
+        true
+      ],
+      [
+        16383,
+        true
+      ]
+    ]
+  },
+  "hashGrid": {
+    "lockedInsert": "HashGrid is locked! Cannot insert() entity outside of tick",
+    "nearCluster": [
+      1,
+      2,
+      4
+    ],
+    "wholeArena": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "lineEntity": [
+      2,
+      3,
+      4
+    ],
+    "firstAny": 1,
+    "firstLargeId": 3,
+    "pairs": [
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "lockedRetrieve": "HashGrid is locked! Cannot retrieve() entity outside of tick"
+  }
+}

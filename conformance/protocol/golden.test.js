@@ -59,7 +59,9 @@ test('TS protocol reader documents malformed and boundary fixture behavior', () 
   for (const boundary of fixture.boundaryDecode) {
     const reader = new Reader(fromHex(boundary.hex));
     if (boundary.ok) {
-      assert.equal(readers[boundary.method](reader), boundary.value, boundary.name);
+      const value = readers[boundary.method](reader);
+      if (Object.prototype.hasOwnProperty.call(boundary, 'value')) assert.equal(value, boundary.value, boundary.name);
+      else assert.equal(value, undefined, boundary.name);
       assert.equal(reader.at, boundary.at, boundary.name);
     } else {
       assert.throws(() => readers[boundary.method](reader), undefined, boundary.name);
