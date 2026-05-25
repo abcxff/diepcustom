@@ -19,6 +19,7 @@ add_library(diepcustom_entity_core
 target_include_directories(diepcustom_physics PUBLIC cpp/include)
 target_include_directories(diepcustom_protocol PUBLIC cpp/include)
 target_include_directories(diepcustom_entity_core PUBLIC cpp/include)
+target_link_libraries(diepcustom_entity_core PUBLIC diepcustom_protocol)
 
 add_executable(protocol_golden_test cpp/tests/protocol_golden_test.cpp)
 target_link_libraries(protocol_golden_test PRIVATE diepcustom_protocol)

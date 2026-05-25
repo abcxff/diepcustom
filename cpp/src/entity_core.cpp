@@ -1,5 +1,7 @@
 #include "diepcustom/entity_core.hpp"
+#include "diepcustom/protocol.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -183,6 +185,134 @@ std::string objectSnapshot(const ObjectEntity& e) {
   out << "}}"; return out.str();
 }
 
+
+void entid(diepcustom::protocol::Writer& w, const Entity* entity) {
+  if (!entity || entity->hash == 0) { w.u8(0); return; }
+  w.vu(entity->hash).vu(entity->id);
+}
+
+void float64Precision(diepcustom::protocol::Writer& w, double value) {
+  w.vi(static_cast<std::int32_t>(value * 64.0));
+}
+
+int visibleColorFor(const ObjectEntity& entity, const ObjectEntity* cameraPlayer) {
+  if (entity.style.color == ColorTank && !(cameraPlayer && entity.relations.team == cameraPlayer->relations.team)) return 15;
+  return entity.style.color;
+}
+
+std::string compileCreationHex(const CameraEntity& camera, const ObjectEntity& entity, const ObjectEntity* cameraPlayer) {
+  diepcustom::protocol::Writer w;
+  entid(w, &entity); w.u8(1);
+
+  int at = -1;
+  w.u8((0 - at) ^ 1); at = 0;   // relations
+  w.u8((2 - at) ^ 1); at = 2;   // barrel
+  w.u8((3 - at) ^ 1); at = 3;   // physics
+  w.u8((4 - at) ^ 1); at = 4;   // health
+  w.u8((8 - at) ^ 1); at = 8;   // name
+  w.u8((10 - at) ^ 1); at = 10; // position
+  w.u8((11 - at) ^ 1); at = 11; // style
+  w.u8((13 - at) ^ 1); at = 13; // score
+  w.u8(1);
+
+  w.vi(static_cast<std::int32_t>(entity.position.y));
+  w.vi(static_cast<std::int32_t>(entity.position.x));
+  float64Precision(w, entity.position.angle);
+  w.float32(static_cast<float>(entity.physics.size));
+  w.vu(visibleColorFor(entity, cameraPlayer));
+  w.vu(entity.physics.sides);
+  w.vu(entity.health ? entity.health->flags : 0);
+  w.float32(static_cast<float>(entity.physics.absorbtionFactor));
+  w.float32(static_cast<float>(entity.health ? entity.health->maxHealth : 1));
+  w.vu(entity.style.flags);
+  w.float32(static_cast<float>(entity.barrel ? entity.barrel->trapezoidDirection : 0));
+  w.vu(entity.position.flags);
+  w.vu(entity.name ? entity.name->flags : 0);
+  entid(w, entity.relations.team);
+  float64Precision(w, entity.style.borderWidth);
+  w.float32(static_cast<float>(entity.physics.width));
+  w.vu(entity.barrel ? entity.barrel->flags : 0);
+  w.stringNT(entity.name ? entity.name->name : "");
+  entid(w, entity.relations.owner);
+  w.float32(static_cast<float>(entity.health ? entity.health->health : 1));
+  w.float32(static_cast<float>(entity.style.opacity));
+  w.float32(static_cast<float>(entity.barrel ? entity.barrel->reloadTime : 0));
+  entid(w, nullptr);
+  w.vu(entity.style.zIndex);
+  w.float32(static_cast<float>(entity.physics.pushFactor));
+  w.vu(entity.physics.flags);
+  w.float32(static_cast<float>(entity.score ? entity.score->score : 0));
+  (void)camera;
+  return diepcustom::protocol::bytesToHex(w.bytes());
+}
+
+std::string compileUpdateHex(const CameraEntity& camera, const ObjectEntity& entity, const ObjectEntity* cameraPlayer) {
+  diepcustom::protocol::Writer w;
+  entid(w, &entity); w.raw({0, 1});
+  int at = -1;
+  if (entity.position.state[1]) { w.u8((0 - at) ^ 1); at = 0; w.vi(static_cast<std::int32_t>(entity.position.y)); }
+  if (entity.position.state[0]) { w.u8((1 - at) ^ 1); at = 1; w.vi(static_cast<std::int32_t>(entity.position.x)); }
+  if (entity.position.state[2]) { w.u8((2 - at) ^ 1); at = 2; float64Precision(w, entity.position.angle); }
+  if (entity.physics.state[2]) { w.u8((3 - at) ^ 1); at = 3; w.float32(static_cast<float>(entity.physics.size)); }
+  if (entity.style.state[1]) { w.u8((6 - at) ^ 1); at = 6; w.vu(visibleColorFor(entity, cameraPlayer)); }
+  if (entity.health && entity.health->state[2]) { w.u8((19 - at) ^ 1); at = 19; w.float32(static_cast<float>(entity.health->maxHealth)); }
+  if (entity.style.state[0]) { w.u8((20 - at) ^ 1); at = 20; w.vu(entity.style.flags); }
+  if (entity.barrel && entity.barrel->state[2]) { w.u8((22 - at) ^ 1); at = 22; w.float32(static_cast<float>(entity.barrel->trapezoidDirection)); }
+  if (entity.position.state[3]) { w.u8((23 - at) ^ 1); at = 23; w.vu(entity.position.flags); }
+  if (entity.relations.state[2]) { w.u8((32 - at) ^ 1); at = 32; entid(w, entity.relations.team); }
+  if (entity.style.state[2]) { w.u8((42 - at) ^ 1); at = 42; float64Precision(w, entity.style.borderWidth); }
+  if (entity.physics.state[3]) { w.u8((44 - at) ^ 1); at = 44; w.float32(static_cast<float>(entity.physics.width)); }
+  if (entity.barrel && entity.barrel->state[0]) { w.u8((46 - at) ^ 1); at = 46; w.vu(entity.barrel->flags); }
+  if (entity.name && entity.name->state[1]) { w.u8((48 - at) ^ 1); at = 48; w.stringNT(entity.name->name); }
+  if (entity.relations.state[1]) { w.u8((49 - at) ^ 1); at = 49; entid(w, entity.relations.owner); }
+  if (entity.health && entity.health->state[1]) { w.u8((50 - at) ^ 1); at = 50; w.float32(static_cast<float>(entity.health->health)); }
+  if (entity.style.state[3]) { w.u8((52 - at) ^ 1); at = 52; w.float32(static_cast<float>(entity.style.opacity)); }
+  if (entity.barrel && entity.barrel->state[1]) { w.u8((53 - at) ^ 1); at = 53; w.float32(static_cast<float>(entity.barrel->reloadTime)); }
+  if (entity.relations.state[0]) { w.u8((58 - at) ^ 1); at = 58; entid(w, nullptr); }
+  if (entity.style.state[4]) { w.u8((59 - at) ^ 1); at = 59; w.vu(entity.style.zIndex); }
+  if (entity.physics.state[5]) { w.u8((62 - at) ^ 1); at = 62; w.float32(static_cast<float>(entity.physics.pushFactor)); }
+  if (entity.physics.state[0]) { w.u8((63 - at) ^ 1); at = 63; w.vu(entity.physics.flags); }
+  if (entity.score && entity.score->state[0]) { w.u8((67 - at) ^ 1); at = 67; w.float32(static_cast<float>(entity.score->score)); }
+  w.u8(1);
+  (void)camera;
+  return diepcustom::protocol::bytesToHex(w.bytes());
+}
+
+std::string replaceAll(std::string value, const std::string& from, const std::string& to) {
+  std::size_t pos = 0;
+  while ((pos = value.find(from, pos)) != std::string::npos) {
+    value.replace(pos, from.size(), to);
+    pos += to.size();
+  }
+  return value;
+}
+
+std::string compilerCreationHexFixture() {
+  Manager m;
+  auto* camera = new CameraEntity(m);
+  auto* object = new ObjectEntity(m);
+  object->name=std::make_unique<Name>(); object->score=std::make_unique<Score>(); object->health=std::make_unique<Health>(); object->barrel=std::make_unique<Barrel>();
+  setSides(*object,3); setSize(*object,42.5); setWidth(*object,17); setPhysFlags(*object,PhysicsNoOwnTeamCollision);
+  setX(*object,-120); setY(*object,80); setAngle(*object, M_PI/4); setColor(*object,ColorTank); setOpacity(*object,0.75);
+  object->name->name="Phase C Δ"; object->score->score=12345; object->health->health=0.5; object->health->maxHealth=2; object->barrel->reloadTime=22;
+  setOwner(*object, object); setTeam(*object, object);
+  return compileCreationHex(*camera, *object, object);
+}
+
+std::string compilerUpdateHexFixture() {
+  Manager m;
+  auto* camera = new CameraEntity(m);
+  auto* object = new ObjectEntity(m);
+  object->name=std::make_unique<Name>(); object->score=std::make_unique<Score>(); object->health=std::make_unique<Health>(); object->barrel=std::make_unique<Barrel>();
+  setSides(*object,3); setSize(*object,42.5); setWidth(*object,17); setPhysFlags(*object,PhysicsNoOwnTeamCollision);
+  setX(*object,-120); setY(*object,80); setAngle(*object, M_PI/4); setColor(*object,ColorTank); setOpacity(*object,0.75);
+  object->name->name="Phase C Δ"; object->score->score=12345; object->health->health=0.5; object->health->maxHealth=2; object->barrel->reloadTime=22;
+  setOwner(*object, object); setTeam(*object, object);
+  object->wipeState();
+  setX(*object,-100); setY(*object,90); setSize(*object,50); setOpacity(*object,0.5); object->health->health=0.25; object->health->state[1]=1; object->entityState=1; object->name->name="Phase C Ω"; object->name->state[1]=1;
+  return compileUpdateHex(*camera, *object, object);
+}
+
 std::string worldReport() {
   Manager m; auto* player = new ObjectEntity(m); player->name=std::make_unique<Name>(); player->score=std::make_unique<Score>(); player->health=std::make_unique<Health>(); player->barrel=std::make_unique<Barrel>();
   setX(*player,125.5); setY(*player,-64.25); setAngle(*player, M_PI/3); setSides(*player,1); setSize(*player,35); setWidth(*player,12); setColor(*player,ColorTank); setOpacity(*player,0.9); player->name->name="RL Player"; player->name->state[1]=1; player->score->score=9001; player->score->state[0]=1; player->health->health=0.875; player->health->maxHealth=1.25; player->health->state={0,1,1}; player->barrel->reloadTime=12; player->barrel->state[1]=1; setOwner(*player,player); setTeam(*player,player);
@@ -206,7 +336,14 @@ std::string staticTail() {
 } // namespace
 
 std::string entityCoreReportJson() {
-  return "{\"world\":" + worldReport() + ",\"manager\":" + managerReport() + ",\"fields\":" + staticTail() + "}";
+  auto fieldsAndCompatibility = staticTail();
+  fieldsAndCompatibility = replaceAll(fieldsAndCompatibility,
+      "010101000300000503000301a001ef016400002a420203000000803f00000040010000000000000101c00700008841005068617365204320ce940001010000003f0000403f0000b0410000000000410800e44046",
+      compilerCreationHexFixture());
+  fieldsAndCompatibility = replaceAll(fieldsAndCompatibility,
+      "0101000100b40100c70103000048422c5068617365204320cea900030000803e030000003f01",
+      compilerUpdateHexFixture());
+  return "{\"world\":" + worldReport() + ",\"manager\":" + managerReport() + ",\"fields\":" + fieldsAndCompatibility + "}";
 }
 
 } // namespace diepcustom::entity_core
