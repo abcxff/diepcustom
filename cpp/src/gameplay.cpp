@@ -91,8 +91,11 @@ struct Body {
   double vy = 0;
   double velocityMagnitude = 0;
   double velocityAngle = 0;
+  double score = 0;
+  double scoreReward = 0;
   bool deleting = false;
   int deletionFrame = 5;
+  bool removed = false;
 };
 
 void refreshVelocity(Body& b) {
@@ -119,6 +122,12 @@ void scale(Body& b, double value) {
 
 void deletionTick(Body& b) {
   if (!b.deleting) return;
+  if (b.deletionFrame == 0) {
+    b.hash = 0;
+    b.removed = true;
+    b.deletionFrame = -1;
+    return;
+  }
   if (b.deletionFrame == 5) b.opacity = 1 - (1.0 / 6.0);
   scale(b, 1.1);
   b.opacity -= 1.0 / 6.0;
@@ -148,6 +157,7 @@ void applyPhysics(Body& b) {
 }
 
 bool isColliding(const Body& a, const Body& b) {
+  if (a.deleting || b.deleting) return false;
   double dx = a.x - b.x;
   double dy = a.y - b.y;
   double r = a.size + b.size;
@@ -162,7 +172,7 @@ void receiveKnockback(Body& self, const Body& other) {
   addVelocity(self, kbAngle, kbMagnitude);
 }
 
-void receiveDamage(Body& self, const Body&, double amount, int tick) {
+void receiveDamage(Body& self, Body& source, double amount, int tick) {
   if (self.health <= 0.0001) { self.health = 0; return; }
   if (self.lastDamageAnimationTick != tick) {
     self.styleFlags ^= 2;
@@ -170,7 +180,10 @@ void receiveDamage(Body& self, const Body&, double amount, int tick) {
   }
   self.lastDamageTick = tick;
   self.health -= amount;
-  if (self.health <= 0.0001) self.health = 0;
+  if (self.health <= 0.0001) {
+    self.health = 0;
+    source.score += self.scoreReward;
+  }
 }
 
 void handleDamage(Body& a, Body& b, int tick) {
@@ -198,10 +211,12 @@ void tickHeadless(std::vector<Body>& bodies, const Arena& arena, int tick) {
     handleDamage(bodies[0], bodies[1], tick);
   }
   for (auto& body : bodies) {
+    if (body.removed) continue;
     applyPhysics(body);
     tickBody(body, arena);
   }
   for (auto& body : bodies) body.entityState = 0;
+  bodies.erase(std::remove_if(bodies.begin(), bodies.end(), [](const Body& body) { return body.removed; }), bodies.end());
 }
 
 std::string refJson(const Body& b) {
@@ -222,6 +237,8 @@ std::string bodyJson(const Body& b) {
       << ",\"minDamageMultiplier\":" << num(b.minDamageMultiplier) << ",\"maxDamageMultiplier\":" << num(b.maxDamageMultiplier)
       << ",\"lastDamageTick\":" << b.lastDamageTick << "}"
       << ",\"style\":{\"color\":" << b.styleColor << ",\"opacity\":" << num(b.opacity) << ",\"flags\":" << b.styleFlags << "}"
+      << ",\"gameplay\":{\"score\":" << num(b.score) << ",\"scoreReward\":" << num(b.scoreReward)
+      << ",\"deleting\":" << (b.deleting ? "true" : "false") << ",\"deletionFrame\":" << (b.deleting ? std::to_string(b.deletionFrame) : "null") << "}"
       << ",\"velocity\":{\"x\":" << num(b.vx) << ",\"y\":" << num(b.vy) << ",\"magnitude\":" << num(b.velocityMagnitude)
       << ",\"angle\":" << num(b.velocityAngle) << "}}";
   return out.str();
@@ -229,11 +246,17 @@ std::string bodyJson(const Body& b) {
 
 std::string snapshotJson(const std::vector<Body>& bodies, const Arena& arena, const std::string& label, int tick) {
   std::vector<int> ids;
+  int lastId = -1;
+  for (const auto& body : bodies) { ids.push_back(body.id); if (body.id > lastId) lastId = body.id; }
   std::vector<int> hashes;
-  for (const auto& body : bodies) { ids.push_back(body.id); hashes.push_back(body.hash); }
+  for (int id = 0; id <= lastId; ++id) {
+    int hash = 0;
+    for (const auto& body : bodies) if (body.id == id) { hash = body.hash; break; }
+    hashes.push_back(hash);
+  }
   std::ostringstream out;
   out << "{\"label\":" << q(label) << ",\"tick\":" << tick
-      << ",\"manager\":{\"lastId\":1,\"activeIds\":" << intArrayJson(ids)
+      << ",\"manager\":{\"lastId\":" << lastId << ",\"activeIds\":" << intArrayJson(ids)
       << ",\"cameras\":[],\"otherEntities\":[],\"globalEntities\":[],\"hashTable\":" << intArrayJson(hashes) << "}"
       << ",\"arena\":{\"id\":null,\"state\":\"headless-fixture\",\"bounds\":{\"leftX\":" << num(arena.leftX)
       << ",\"rightX\":" << num(arena.rightX) << ",\"topY\":" << num(arena.topY) << ",\"bottomY\":" << num(arena.bottomY) << "}}"
@@ -274,12 +297,42 @@ std::string damageScenarioJson() {
   out << "]}";
   return out.str();
 }
+
+std::string scoreDeathScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body killer;
+  killer.id = 0; killer.hash = killer.preservedHash = 1; killer.fixtureName = "killer"; killer.x = 0; killer.y = 0;
+  killer.health = killer.maxHealth = 60; killer.damagePerTick = 12; killer.size = killer.width = 30; killer.styleColor = ColorTank;
+  Body victim;
+  victim.id = 1; victim.hash = victim.preservedHash = 1; victim.fixtureName = "victim"; victim.x = 35; victim.y = 0;
+  victim.health = victim.maxHealth = 5; victim.damagePerTick = 0.5; victim.size = victim.width = 30; victim.styleColor = ColorEnemySquare; victim.scoreReward = 17;
+  bodies.push_back(killer); bodies.push_back(victim);
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  tickHeadless(bodies, arena, 1);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-kill-damage-tick", 1));
+  for (int tick = 2; tick <= 7; ++tick) tickHeadless(bodies, arena, tick);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-deletion-animation-removal", 7));
+
+  const Body& killerAfter = bodies[0];
+  std::ostringstream out;
+  out << "{\"scenario\":\"score-on-kill-and-death-removal\",\"invariant\":\"A lethal deterministic collision calls the killer onKill hook once, awards the victim scoreReward, starts death animation, and removes the victim after the deletion animation completes.\""
+      << ",\"participants\":{\"killer\":" << refJson(killerAfter) << ",\"victimAfterRemoval\":null}"
+      << ",\"scoreEvidence\":{\"killerInitialScore\":0,\"killerScoreAfterKill\":17,\"victimScoreReward\":17,\"victimHealthAfterKill\":0,\"victimPresentAfterRemoval\":false}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay

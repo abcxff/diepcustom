@@ -52,6 +52,10 @@ function makeDamageBody(game, name, { x, y, health, maxHealth, damagePerTick, si
   body.styleData.color = color;
   body.damagePerTick = damagePerTick;
   body.scoreReward = 0;
+  body.fixtureScore = 0;
+  body.onKill = function onFixtureKill(entity) {
+    this.fixtureScore += entity.scoreReward;
+  };
   body.fixtureName = name;
   return body;
 }
@@ -123,6 +127,14 @@ function objectSnapshot(entity) {
       flags: entity.styleData.values.flags
     };
   }
+  if (typeof entity.fixtureScore === 'number') {
+    snapshot.gameplay = {
+      score: round(entity.fixtureScore),
+      scoreReward: round(entity.scoreReward),
+      deleting: Boolean(entity.deletionAnimation),
+      deletionFrame: entity.deletionAnimation ? entity.deletionAnimation.frame : null
+    };
+  }
   if (entity.velocity) {
     snapshot.velocity = {
       x: round(entity.velocity.x),
@@ -173,6 +185,10 @@ function tickHeadless(game) {
   game.entities.postTick(game.tick);
 }
 
+function findEntity(snap, name) {
+  return snap.entities.find((entity) => entity.fixtureName === name);
+}
+
 function damageScenario() {
   const game = createHeadlessGame();
   const attacker = makeDamageBody(game, 'attacker', {
@@ -208,10 +224,57 @@ function damageScenario() {
       defender: entityRef(defender)
     },
     damageEvidence: {
-      attackerInitialHealth: snapshots[0].entities.find((e) => e.fixtureName === 'attacker').health.health,
-      attackerFinalHealth: snapshots[2].entities.find((e) => e.fixtureName === 'attacker').health.health,
-      defenderInitialHealth: snapshots[0].entities.find((e) => e.fixtureName === 'defender').health.health,
-      defenderFinalHealth: snapshots[2].entities.find((e) => e.fixtureName === 'defender').health.health
+      attackerInitialHealth: findEntity(snapshots[0], 'attacker').health.health,
+      attackerFinalHealth: findEntity(snapshots[2], 'attacker').health.health,
+      defenderInitialHealth: findEntity(snapshots[0], 'defender').health.health,
+      defenderFinalHealth: findEntity(snapshots[2], 'defender').health.health
+    },
+    snapshots
+  };
+}
+
+
+function scoreDeathScenario() {
+  const game = createHeadlessGame();
+  const killer = makeDamageBody(game, 'killer', {
+    x: 0,
+    y: 0,
+    health: 60,
+    maxHealth: 60,
+    damagePerTick: 12,
+    size: 30,
+    color: Color.Tank
+  });
+  const victim = makeDamageBody(game, 'victim', {
+    x: 35,
+    y: 0,
+    health: 5,
+    maxHealth: 5,
+    damagePerTick: 0.5,
+    size: 30,
+    color: Color.EnemySquare
+  });
+  victim.scoreReward = 17;
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-kill-damage-tick'));
+  for (let i = 0; i < 6; i += 1) tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-deletion-animation-removal'));
+
+  return {
+    scenario: 'score-on-kill-and-death-removal',
+    invariant: 'A lethal deterministic collision calls the killer onKill hook once, awards the victim scoreReward, starts death animation, and removes the victim after the deletion animation completes.',
+    participants: {
+      killer: entityRef(killer),
+      victimAfterRemoval: entityRef(victim)
+    },
+    scoreEvidence: {
+      killerInitialScore: findEntity(snapshots[0], 'killer').gameplay.score,
+      killerScoreAfterKill: findEntity(snapshots[1], 'killer').gameplay.score,
+      victimScoreReward: findEntity(snapshots[0], 'victim').gameplay.scoreReward,
+      victimHealthAfterKill: findEntity(snapshots[1], 'victim').health.health,
+      victimPresentAfterRemoval: Boolean(findEntity(snapshots[2], 'victim'))
     },
     snapshots
   };
@@ -228,7 +291,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario()]
   };
 }
 
