@@ -603,6 +603,94 @@ function teamOwnerCollisionRulesScenario() {
   };
 }
 
+function collisionEligibilityFiltersScenario() {
+  const game = createHeadlessGame();
+  const zeroSidesA = makeDamageBody(game, 'zero-sides-a', {
+    x: -500,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  const zeroSidesB = makeDamageBody(game, 'zero-sides-b', {
+    x: -475,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  zeroSidesA.physicsData.sides = 0;
+
+  const nonPhysicalA = makeDamageBody(game, 'nonphysical-a', {
+    x: -100,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  const nonPhysicalB = makeDamageBody(game, 'nonphysical-b', {
+    x: -75,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  nonPhysicalA.isPhysical = false;
+
+  const deletingA = makeDamageBody(game, 'deleting-a', {
+    x: 300,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  const deletingB = makeDamageBody(game, 'deleting-b', {
+    x: 325,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  deletingA.destroy(true);
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-filtered-collision-tick'));
+
+  return {
+    scenario: 'collision-eligibility-filters',
+    invariant: 'Zero-sided, nonphysical, and actively deleting entities are excluded from collision damage and knockback before geometry checks.',
+    participants: {
+      zeroSidesA: entityRef(zeroSidesA),
+      zeroSidesB: entityRef(zeroSidesB),
+      nonPhysicalA: entityRef(nonPhysicalA),
+      nonPhysicalB: entityRef(nonPhysicalB),
+      deletingA: entityRef(deletingA),
+      deletingB: entityRef(deletingB)
+    },
+    filterEvidence: {
+      zeroSidesHealthAfterTick: [findEntity(snapshots[1], 'zero-sides-a').health.health, findEntity(snapshots[1], 'zero-sides-b').health.health],
+      nonPhysicalHealthAfterTick: [findEntity(snapshots[1], 'nonphysical-a').health.health, findEntity(snapshots[1], 'nonphysical-b').health.health],
+      deletingPairHealthAfterTick: [findEntity(snapshots[1], 'deleting-a').health.health, findEntity(snapshots[1], 'deleting-b').health.health],
+      deletingAStateAfterTick: findEntity(snapshots[1], 'deleting-a').gameplay,
+      otherVelocitiesAfterTick: [findEntity(snapshots[1], 'zero-sides-b').velocity, findEntity(snapshots[1], 'nonphysical-b').velocity, findEntity(snapshots[1], 'deleting-b').velocity]
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -614,7 +702,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario(), teamOwnerCollisionRulesScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario(), teamOwnerCollisionRulesScenario(), collisionEligibilityFiltersScenario()]
   };
 }
 

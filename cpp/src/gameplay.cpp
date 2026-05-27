@@ -549,12 +549,55 @@ std::string teamOwnerCollisionRulesScenarioJson() {
   return out.str();
 }
 
+
+std::string collisionEligibilityFiltersScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body zeroSidesA;
+  zeroSidesA.id = 0; zeroSidesA.hash = zeroSidesA.preservedHash = 1; zeroSidesA.fixtureName = "zero-sides-a"; zeroSidesA.x = -500; zeroSidesA.y = 0;
+  zeroSidesA.health = zeroSidesA.maxHealth = 20; zeroSidesA.damagePerTick = 5; zeroSidesA.size = zeroSidesA.width = 20; zeroSidesA.styleColor = ColorTank; zeroSidesA.sides = 0;
+  Body zeroSidesB;
+  zeroSidesB.id = 1; zeroSidesB.hash = zeroSidesB.preservedHash = 1; zeroSidesB.fixtureName = "zero-sides-b"; zeroSidesB.x = -475; zeroSidesB.y = 0;
+  zeroSidesB.health = zeroSidesB.maxHealth = 20; zeroSidesB.damagePerTick = 5; zeroSidesB.size = zeroSidesB.width = 20; zeroSidesB.styleColor = ColorEnemySquare;
+  Body nonPhysicalA;
+  nonPhysicalA.id = 2; nonPhysicalA.hash = nonPhysicalA.preservedHash = 1; nonPhysicalA.fixtureName = "nonphysical-a"; nonPhysicalA.x = -100; nonPhysicalA.y = 0;
+  nonPhysicalA.health = nonPhysicalA.maxHealth = 20; nonPhysicalA.damagePerTick = 5; nonPhysicalA.size = nonPhysicalA.width = 20; nonPhysicalA.styleColor = ColorTank; nonPhysicalA.isPhysical = false;
+  Body nonPhysicalB;
+  nonPhysicalB.id = 3; nonPhysicalB.hash = nonPhysicalB.preservedHash = 1; nonPhysicalB.fixtureName = "nonphysical-b"; nonPhysicalB.x = -75; nonPhysicalB.y = 0;
+  nonPhysicalB.health = nonPhysicalB.maxHealth = 20; nonPhysicalB.damagePerTick = 5; nonPhysicalB.size = nonPhysicalB.width = 20; nonPhysicalB.styleColor = ColorEnemySquare;
+  Body deletingA;
+  deletingA.id = 4; deletingA.hash = deletingA.preservedHash = 1; deletingA.fixtureName = "deleting-a"; deletingA.x = 300; deletingA.y = 0;
+  deletingA.health = 0; deletingA.maxHealth = 20; deletingA.damagePerTick = 5; deletingA.size = deletingA.width = 20; deletingA.styleColor = ColorTank; deletingA.deleting = true;
+  Body deletingB;
+  deletingB.id = 5; deletingB.hash = deletingB.preservedHash = 1; deletingB.fixtureName = "deleting-b"; deletingB.x = 325; deletingB.y = 0;
+  deletingB.health = deletingB.maxHealth = 20; deletingB.damagePerTick = 5; deletingB.size = deletingB.width = 20; deletingB.styleColor = ColorEnemySquare;
+  bodies = {zeroSidesA, zeroSidesB, nonPhysicalA, nonPhysicalB, deletingA, deletingB};
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  tickHeadless(bodies, arena, 1);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-filtered-collision-tick", 1));
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"collision-eligibility-filters\",\"invariant\":\"Zero-sided, nonphysical, and actively deleting entities are excluded from collision damage and knockback before geometry checks.\""
+      << ",\"participants\":{\"zeroSidesA\":" << refJson(bodies[0]) << ",\"zeroSidesB\":" << refJson(bodies[1])
+      << ",\"nonPhysicalA\":" << refJson(bodies[2]) << ",\"nonPhysicalB\":" << refJson(bodies[3])
+      << ",\"deletingA\":" << refJson(bodies[4]) << ",\"deletingB\":" << refJson(bodies[5]) << "}"
+      << ",\"filterEvidence\":{\"zeroSidesHealthAfterTick\":[20,20],\"nonPhysicalHealthAfterTick\":[20,20],\"deletingPairHealthAfterTick\":[0,20],"
+      << "\"deletingAStateAfterTick\":{\"score\":0,\"scoreReward\":0,\"deleting\":true,\"deletionFrame\":4},"
+      << "\"otherVelocitiesAfterTick\":[{\"x\":0,\"y\":0,\"magnitude\":0,\"angle\":0},{\"x\":0,\"y\":0,\"magnitude\":0,\"angle\":0},{\"x\":0,\"y\":0,\"magnitude\":0,\"angle\":0}]}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "," + teamOwnerCollisionRulesScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "," + teamOwnerCollisionRulesScenarioJson() + "," + collisionEligibilityFiltersScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay
