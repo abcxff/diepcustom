@@ -134,6 +134,15 @@ function objectSnapshot(entity) {
       deleting: Boolean(entity.deletionAnimation),
       deletionFrame: entity.deletionAnimation ? entity.deletionAnimation.frame : null
     };
+    if (entity.fixtureProjectile) {
+      snapshot.gameplay.projectile = {
+        spawnTick: entity.fixtureProjectile.spawnTick,
+        baseSpeed: round(entity.fixtureProjectile.baseSpeed),
+        baseAccel: round(entity.fixtureProjectile.baseAccel),
+        lifeLength: entity.fixtureProjectile.lifeLength,
+        movementAngle: round(entity.fixtureProjectile.movementAngle)
+      };
+    }
   }
   if (entity.velocity) {
     snapshot.velocity = {
@@ -342,6 +351,56 @@ function ownerPropagatedKillScenario() {
   };
 }
 
+function projectileMovementLifetimeScenario() {
+  const game = createHeadlessGame();
+  const projectile = makeDamageBody(game, 'lifetime-projectile', {
+    x: 0,
+    y: 0,
+    health: 10,
+    maxHealth: 10,
+    damagePerTick: 0,
+    size: 12,
+    color: Color.Tank
+  });
+  projectile.physicsData.flags = 16; // canEscapeArena; keep snapshot focused on projectile movement rather than bounds.
+  projectile.fixtureProjectile = {
+    spawnTick: game.tick,
+    baseSpeed: 6,
+    baseAccel: 2,
+    lifeLength: 3,
+    movementAngle: Math.PI / 4
+  };
+  projectile.tick = function tickFixtureProjectile(tick) {
+    LivingEntity.prototype.tick.call(this, tick);
+    const { spawnTick, baseSpeed, baseAccel, lifeLength, movementAngle } = this.fixtureProjectile;
+    if (tick === spawnTick + 1) this.addVelocity(movementAngle, baseSpeed);
+    else this.maintainVelocity(movementAngle, baseAccel);
+    if (tick - spawnTick >= lifeLength) this.destroy(true);
+  };
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  for (let i = 0; i < 4; i += 1) {
+    tickHeadless(game);
+    snapshots.push(worldSnapshot(game, `after-projectile-tick-${game.tick}`));
+  }
+
+  return {
+    scenario: 'projectile-movement-and-lifetime',
+    invariant: 'A projectile-style entity applies spawn speed on its first tick, maintains acceleration on later ticks, and starts deletion once its lifetime expires.',
+    participants: {
+      projectile: entityRef(projectile)
+    },
+    movementEvidence: {
+      initialPosition: findEntity(snapshots[0], 'lifetime-projectile').position,
+      firstTickVelocity: findEntity(snapshots[1], 'lifetime-projectile').velocity,
+      secondTickPosition: findEntity(snapshots[2], 'lifetime-projectile').position,
+      deletionStartedAtLifetime: findEntity(snapshots[3], 'lifetime-projectile').gameplay.deleting,
+      deletionFrameAfterNextTick: findEntity(snapshots[4], 'lifetime-projectile').gameplay.deletionFrame
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -353,7 +412,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario()]
   };
 }
 

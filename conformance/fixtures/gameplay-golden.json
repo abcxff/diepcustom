@@ -1298,6 +1298,500 @@
           ]
         }
       ]
+    },
+    {
+      "scenario": "projectile-movement-and-lifetime",
+      "invariant": "A projectile-style entity applies spawn speed on its first tick, maintains acceleration on later ticks, and starts deletion once its lifetime expires.",
+      "participants": {
+        "projectile": {
+          "id": 0,
+          "hash": 1
+        }
+      },
+      "movementEvidence": {
+        "initialPosition": {
+          "x": 0,
+          "y": 0,
+          "angle": 0,
+          "flags": 0
+        },
+        "firstTickVelocity": {
+          "x": 4.242641,
+          "y": 4.242641,
+          "magnitude": 6,
+          "angle": 0.785398
+        },
+        "secondTickPosition": {
+          "x": 4.242641,
+          "y": 4.242641,
+          "angle": 0,
+          "flags": 0
+        },
+        "deletionStartedAtLifetime": true,
+        "deletionFrameAfterNextTick": 4
+      },
+      "snapshots": [
+        {
+          "label": "initial-full-world",
+          "tick": 0,
+          "manager": {
+            "lastId": 0,
+            "activeIds": [
+              0
+            ],
+            "cameras": [],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "lifetime-projectile",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 0,
+                "y": 0,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 12,
+                "width": 12,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 16
+              },
+              "health": {
+                "health": 10,
+                "maxHealth": 10,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": false,
+                "deletionFrame": null,
+                "projectile": {
+                  "spawnTick": 0,
+                  "baseSpeed": 6,
+                  "baseAccel": 2,
+                  "lifeLength": 3,
+                  "movementAngle": 0.785398
+                }
+              },
+              "velocity": {
+                "x": 0,
+                "y": 0,
+                "magnitude": 0,
+                "angle": 0
+              }
+            }
+          ]
+        },
+        {
+          "label": "after-projectile-tick-1",
+          "tick": 1,
+          "manager": {
+            "lastId": 0,
+            "activeIds": [
+              0
+            ],
+            "cameras": [],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "lifetime-projectile",
+              "exists": true,
+              "entityState": 0,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 0,
+                "y": 0,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 12,
+                "width": 12,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 16
+              },
+              "health": {
+                "health": 10,
+                "maxHealth": 10,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": false,
+                "deletionFrame": null,
+                "projectile": {
+                  "spawnTick": 0,
+                  "baseSpeed": 6,
+                  "baseAccel": 2,
+                  "lifeLength": 3,
+                  "movementAngle": 0.785398
+                }
+              },
+              "velocity": {
+                "x": 4.242641,
+                "y": 4.242641,
+                "magnitude": 6,
+                "angle": 0.785398
+              }
+            }
+          ]
+        },
+        {
+          "label": "after-projectile-tick-2",
+          "tick": 2,
+          "manager": {
+            "lastId": 0,
+            "activeIds": [
+              0
+            ],
+            "cameras": [],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "lifetime-projectile",
+              "exists": true,
+              "entityState": 0,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 4.242641,
+                "y": 4.242641,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 12,
+                "width": 12,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 16
+              },
+              "health": {
+                "health": 10,
+                "maxHealth": 10,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": false,
+                "deletionFrame": null,
+                "projectile": {
+                  "spawnTick": 0,
+                  "baseSpeed": 6,
+                  "baseAccel": 2,
+                  "lifeLength": 3,
+                  "movementAngle": 0.785398
+                }
+              },
+              "velocity": {
+                "x": 3.959798,
+                "y": 3.959798,
+                "magnitude": 5.6,
+                "angle": 0.785398
+              }
+            }
+          ]
+        },
+        {
+          "label": "after-projectile-tick-3",
+          "tick": 3,
+          "manager": {
+            "lastId": 0,
+            "activeIds": [
+              0
+            ],
+            "cameras": [],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "lifetime-projectile",
+              "exists": true,
+              "entityState": 0,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 8.202439,
+                "y": 8.202439,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 12,
+                "width": 12,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 16
+              },
+              "health": {
+                "health": 0,
+                "maxHealth": 10,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": true,
+                "deletionFrame": 5,
+                "projectile": {
+                  "spawnTick": 0,
+                  "baseSpeed": 6,
+                  "baseAccel": 2,
+                  "lifeLength": 3,
+                  "movementAngle": 0.785398
+                }
+              },
+              "velocity": {
+                "x": 3.70524,
+                "y": 3.70524,
+                "magnitude": 5.24,
+                "angle": 0.785398
+              }
+            }
+          ]
+        },
+        {
+          "label": "after-projectile-tick-4",
+          "tick": 4,
+          "manager": {
+            "lastId": 0,
+            "activeIds": [
+              0
+            ],
+            "cameras": [],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "lifetime-projectile",
+              "exists": true,
+              "entityState": 0,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 10.055058,
+                "y": 10.055058,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 13.2,
+                "width": 13.2,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 16
+              },
+              "health": {
+                "health": 0,
+                "maxHealth": 10,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 0.666667,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": true,
+                "deletionFrame": 4,
+                "projectile": {
+                  "spawnTick": 0,
+                  "baseSpeed": 6,
+                  "baseAccel": 2,
+                  "lifeLength": 3,
+                  "movementAngle": 0.785398
+                }
+              },
+              "velocity": {
+                "x": 1.808779,
+                "y": 1.808779,
+                "magnitude": 2.558,
+                "angle": 0.785398
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -89,6 +89,12 @@ struct Body {
   int styleFlags = 1;
   bool isPhysical = true;
   int ownerId = -1;
+  bool projectileMotion = false;
+  int spawnTick = 0;
+  double baseSpeed = 0;
+  double baseAccel = 0;
+  int lifeLength = 0;
+  double movementAngle = 0;
   double vx = 0;
   double vy = 0;
   double velocityMagnitude = 0;
@@ -205,9 +211,14 @@ void handleDamage(Body& a, Body& b, std::vector<Body>& bodies, int tick) {
   receiveDamage(b, a, bodies, damage1to2, tick);
 }
 
-void tickBody(Body& b, const Arena& arena) {
+void tickBody(Body& b, const Arena& arena, int tick) {
   deletionTick(b);
   keepInArena(b, arena);
+  if (b.projectileMotion) {
+    if (tick == b.spawnTick + 1) addVelocity(b, b.movementAngle, b.baseSpeed);
+    else addVelocity(b, b.movementAngle, b.baseAccel * 0.1);
+    if (tick - b.spawnTick >= b.lifeLength) destroy(b);
+  }
 }
 
 void tickHeadless(std::vector<Body>& bodies, const Arena& arena, int tick) {
@@ -222,7 +233,7 @@ void tickHeadless(std::vector<Body>& bodies, const Arena& arena, int tick) {
   for (auto& body : bodies) {
     if (body.removed) continue;
     applyPhysics(body);
-    tickBody(body, arena);
+    tickBody(body, arena, tick);
   }
   for (auto& body : bodies) body.entityState = 0;
   bodies.erase(std::remove_if(bodies.begin(), bodies.end(), [](const Body& body) { return body.removed; }), bodies.end());
@@ -253,7 +264,13 @@ std::string bodyJson(const Body& b, const std::vector<Body>& bodies) {
       << ",\"lastDamageTick\":" << b.lastDamageTick << "}"
       << ",\"style\":{\"color\":" << b.styleColor << ",\"opacity\":" << num(b.opacity) << ",\"flags\":" << b.styleFlags << "}"
       << ",\"gameplay\":{\"score\":" << num(b.score) << ",\"scoreReward\":" << num(b.scoreReward)
-      << ",\"deleting\":" << (b.deleting ? "true" : "false") << ",\"deletionFrame\":" << (b.deleting ? std::to_string(b.deletionFrame) : "null") << "}"
+      << ",\"deleting\":" << (b.deleting ? "true" : "false") << ",\"deletionFrame\":" << (b.deleting ? std::to_string(b.deletionFrame) : "null");
+  if (b.projectileMotion) {
+    out << ",\"projectile\":{\"spawnTick\":" << b.spawnTick << ",\"baseSpeed\":" << num(b.baseSpeed)
+        << ",\"baseAccel\":" << num(b.baseAccel) << ",\"lifeLength\":" << b.lifeLength
+        << ",\"movementAngle\":" << num(b.movementAngle) << "}";
+  }
+  out << "}"
       << ",\"velocity\":{\"x\":" << num(b.vx) << ",\"y\":" << num(b.vy) << ",\"magnitude\":" << num(b.velocityMagnitude)
       << ",\"angle\":" << num(b.velocityAngle) << "}}";
   return out.str();
@@ -372,12 +389,40 @@ std::string ownerPropagatedKillScenarioJson() {
   return out.str();
 }
 
+
+std::string projectileMovementLifetimeScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body projectile;
+  projectile.id = 0; projectile.hash = projectile.preservedHash = 1; projectile.fixtureName = "lifetime-projectile";
+  projectile.health = projectile.maxHealth = 10; projectile.damagePerTick = 0; projectile.size = projectile.width = 12; projectile.styleColor = ColorTank;
+  projectile.physicsFlags = 16; projectile.projectileMotion = true; projectile.spawnTick = 0; projectile.baseSpeed = 6; projectile.baseAccel = 2;
+  projectile.lifeLength = 3; projectile.movementAngle = 0.7853981633974483;
+  bodies.push_back(projectile);
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  for (int tick = 1; tick <= 4; ++tick) {
+    tickHeadless(bodies, arena, tick);
+    snapshots.push_back(snapshotJson(bodies, arena, "after-projectile-tick-" + std::to_string(tick), tick));
+  }
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"projectile-movement-and-lifetime\",\"invariant\":\"A projectile-style entity applies spawn speed on its first tick, maintains acceleration on later ticks, and starts deletion once its lifetime expires.\""
+      << ",\"participants\":{\"projectile\":" << refJson(bodies[0]) << "}"
+      << ",\"movementEvidence\":{\"initialPosition\":{\"x\":0,\"y\":0,\"angle\":0,\"flags\":0},\"firstTickVelocity\":{\"x\":4.242641,\"y\":4.242641,\"magnitude\":6,\"angle\":0.785398},\"secondTickPosition\":{\"x\":4.242641,\"y\":4.242641,\"angle\":0,\"flags\":0},\"deletionStartedAtLifetime\":true,\"deletionFrameAfterNextTick\":4}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay
