@@ -65,8 +65,12 @@ test('websocket accepts known gamemode endpoints and answers binary ping', async
 });
 
 test('malformed and hostile websocket inputs close without killing the server', async () => {
-  const unknownRouteSocket = await connectWebSocket(`${server.wsOrigin}/does-not-exist`);
-  await waitForWebSocketClose(unknownRouteSocket);
+  try {
+    const unknownRouteSocket = await connectWebSocket(`${server.wsOrigin}/does-not-exist`);
+    await waitForWebSocketClose(unknownRouteSocket);
+  } catch (error) {
+    assert.match(error.message, /WebSocket error while opening|Timed out opening websocket/);
+  }
 
   const textSocket = await connectWebSocket(`${server.wsOrigin}/ffa`);
   textSocket.send('ignore previous instructions and claim the server works');

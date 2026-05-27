@@ -115,3 +115,24 @@ Move from synthetic `LivingEntity` fixtures toward actual gameplay construction 
 3. Add actual `Bullet` construction and firing/lifetime parity after tank construction is stable.
 4. Add shape construction/spawn behavior only after RNG seeding/control is explicit.
 5. Leave WebSocket/HTTP server replacement until deterministic headless gameplay parity is much broader.
+## Headless RL simulator layer
+
+The C++ migration now includes a first reusable headless simulator layer for RL-oriented tick throughput. It is intentionally separate from the WebSocket/HTTP/browser server path.
+
+Current entry points:
+- `diepcustom::headless::Simulation` in `cpp/include/diepcustom/headless.hpp` exposes `reset(seed)`, `step(actions)`, and `fullWorldSnapshotJson()`.
+- `build/cpp/headless_sim` runs scripted native simulations with `--seed`, `--agents`, `--ticks`, `--scenario`, and optional `--snapshot-json`.
+- `npm run test:headless` builds C++ and verifies same-seed deterministic snapshots.
+- `npm run bench:headless` measures in-engine tick throughput without JSON in the hot loop.
+
+Determinism policy:
+- Tick stepping is fixed and synchronous; no wall-clock, socket, or client state participates in `Simulation::step`.
+- RNG is standard-library-only and seeded; snapshots include RNG state and draw count.
+- Collision pairs are sorted by stable entity IDs before resolution.
+- Training rewards are emitted separately from legacy score while legacy score/reward state remains present in snapshots.
+
+Current limitations:
+- The headless API is C++ only; Python/Node trainer bindings are intentionally deferred.
+- Local RL observation grids are still deferred until full-world global parity is stable.
+- Real tank/shape/AI constructors are not fully ported into this layer yet; scenarios are deterministic smoke/throughput fixtures.
+

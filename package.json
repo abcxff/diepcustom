@@ -28,7 +28,9 @@
     "test:conformance": "node --test conformance/**/*.test.js",
     "test:cpp": "cmake -S . -B build/cpp && cmake --build build/cpp && ctest --test-dir build/cpp --output-on-failure",
     "test:parity": "npm run test:cpp && node conformance/protocol/compare-parity.js && node conformance/physics/compare-parity.js && node conformance/entity-core/compare-parity.js && node conformance/gameplay/compare-parity.js",
-    "bench:gameplay": "npm run test:cpp && node conformance/gameplay/benchmark-parity.js"
+    "bench:gameplay": "npm run test:cpp && node conformance/gameplay/benchmark-parity.js",
+    "test:headless": "npm run test:cpp && node --test conformance/headless/*.test.js",
+    "bench:headless": "npm run test:cpp && node conformance/headless/benchmark-headless.js"
   },
   "engines": {
     "node": ">=16.17.0"
