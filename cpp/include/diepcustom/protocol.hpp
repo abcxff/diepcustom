@@ -11,7 +11,7 @@ public:
     Writer& u8(std::uint32_t value);
     Writer& u16(std::uint32_t value);
     Writer& u32(std::uint32_t value);
-    Writer& vu(std::int32_t value);
+    Writer& vu(std::uint32_t value);
     Writer& vi(std::int32_t value);
     Writer& vf(float value);
     Writer& float32(float value);

@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 namespace diepcustom::entity_core {
@@ -113,16 +114,18 @@ struct Entity {
 };
 
 void Manager::add(Entity& entity) {
-  for (int id = 0; id <= lastId + 1; ++id) {
+  const auto limit = std::min<std::size_t>(static_cast<std::size_t>(std::max(lastId + 2, 0)), inner.size());
+  for (std::size_t id = 0; id < limit; ++id) {
     if (inner[id]) continue;
-    entity.id = id;
+    entity.id = static_cast<int>(id);
     entity.hash = entity.preservedHash = ++hashTable[id];
     inner[id] = &entity;
-    if (entity.isCamera) cameras.push_back(id);
-    else if (!entity.isObject) otherEntities.push_back(id);
-    if (lastId < id) lastId = id;
+    if (entity.isCamera) cameras.push_back(entity.id);
+    else if (!entity.isObject) otherEntities.push_back(entity.id);
+    if (lastId < entity.id) lastId = entity.id;
     return;
   }
+  throw std::runtime_error("Manager entity table is full");
 }
 
 void removeFast(std::vector<int>& values, int id) {
@@ -130,8 +133,10 @@ void removeFast(std::vector<int>& values, int id) {
 }
 
 void Manager::remove(int id) {
-  Entity* entity = inner[id];
-  inner[id] = nullptr;
+  if (id < 0 || static_cast<std::size_t>(id) >= inner.size()) return;
+  Entity* entity = inner[static_cast<std::size_t>(id)];
+  if (!entity) return;
+  inner[static_cast<std::size_t>(id)] = nullptr;
   entity->hash = 0;
   if (entity->isCamera) removeFast(cameras, id);
   else if (!entity->isObject) removeFast(otherEntities, id);

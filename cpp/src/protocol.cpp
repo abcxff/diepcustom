@@ -41,8 +41,7 @@ Writer& Writer::u32(std::uint32_t value) {
     return *this;
 }
 
-Writer& Writer::vu(std::int32_t input) {
-    auto value = static_cast<std::uint32_t>(input);
+Writer& Writer::vu(std::uint32_t value) {
     do {
         auto part = value;
         value >>= 7u;
@@ -53,7 +52,9 @@ Writer& Writer::vu(std::int32_t input) {
 }
 
 Writer& Writer::vi(std::int32_t value) {
-    return vu(static_cast<std::int32_t>((0 - (value < 0 ? 1 : 0)) ^ (value << 1)));
+    std::uint32_t bits = 0;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return vu((bits << 1u) ^ (0u - (bits >> 31u)));
 }
 
 Writer& Writer::vf(float value) {
@@ -120,7 +121,10 @@ std::uint32_t Reader::vu() {
 
 std::int32_t Reader::vi() {
     const auto out = vu();
-    return static_cast<std::int32_t>((0 - (out & 1u)) ^ (out >> 1u));
+    const auto decoded = (out >> 1u) ^ (0u - (out & 1u));
+    std::int32_t value = 0;
+    std::memcpy(&value, &decoded, sizeof(value));
+    return value;
 }
 
 float Reader::vf() {

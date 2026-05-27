@@ -73,9 +73,17 @@ void Vector::setMagnitude(double value) { const auto currentDir = angle(); set({
 double Vector::angle() const { return std::atan2(y, x); }
 void Vector::setAngle(double value) { const auto currentMag = magnitude(); set({std::cos(value) * currentMag, std::sin(value) * currentMag}); }
 
-void PackedEntitySet::add(std::uint32_t entityId) { data_[entityId >> 5u] |= (1u << (entityId & 31u)); }
-void PackedEntitySet::remove(std::uint32_t entityId) { data_[entityId >> 5u] &= ~(1u << (entityId & 31u)); }
-bool PackedEntitySet::has(std::uint32_t entityId) const { return (data_[entityId >> 5u] & (1u << (entityId & 31u))) != 0; }
+void PackedEntitySet::add(std::uint32_t entityId) {
+    if (entityId >= MaxEntityCount) return;
+    data_[entityId >> 5u] |= (1u << (entityId & 31u));
+}
+void PackedEntitySet::remove(std::uint32_t entityId) {
+    if (entityId >= MaxEntityCount) return;
+    data_[entityId >> 5u] &= ~(1u << (entityId & 31u));
+}
+bool PackedEntitySet::has(std::uint32_t entityId) const {
+    return entityId < MaxEntityCount && (data_[entityId >> 5u] & (1u << (entityId & 31u))) != 0;
+}
 void PackedEntitySet::clear() { data_.fill(0); }
 const std::array<std::uint32_t, PackedEntitySet::WordCount>& PackedEntitySet::data() const { return data_; }
 PackedEntitySet PackedEntitySet::fullSet() { PackedEntitySet set; set.data_.fill(0xffffffffu); return set; }
@@ -106,6 +114,7 @@ void HashGrid::requireUnlocked(const std::string& method) const { if (isLocked_)
 
 void HashGrid::insert(const Entity& entity) {
     requireUnlocked("insert() entity outside of tick");
+    if (entity.id >= MaxEntityCount) return;
     const bool isLine = entity.sides == 2;
     const auto halfWidth = isLine ? entity.size / 2 : entity.size;
     const auto halfHeight = isLine ? entity.width / 2 : entity.size;
@@ -136,6 +145,7 @@ const PackedEntitySet& HashGrid::retrieve(double centerX, double centerY, double
             const auto key = cellKey(x, y);
             if (key >= hashMap_.size()) continue;
             for (const auto entityId : hashMap_[key]) {
+                if (entityId >= MaxEntityCount) continue;
                 if (queryIdMap_[entityId] == queryId) continue;
                 queryIdMap_[entityId] = queryId;
                 const auto* entity = entityById(entityId);
@@ -160,6 +170,7 @@ const Entity* HashGrid::getFirstMatch(double centerX, double centerY, double hal
             const auto key = cellKey(x, y);
             if (key >= hashMap_.size()) continue;
             for (const auto entityId : hashMap_[key]) {
+                if (entityId >= MaxEntityCount) continue;
                 if (queryIdMap_[entityId] == queryId) continue;
                 queryIdMap_[entityId] = queryId;
                 const auto* entity = entityById(entityId);
@@ -178,11 +189,13 @@ void HashGrid::forEachCollisionPair(const std::function<void(const Entity&, cons
         if (cell.size() < 2) continue;
         for (std::size_t a = 0; a < cell.size() - 1; ++a) {
             const auto eidA = cell[a];
+            if (eidA >= MaxEntityCount) continue;
             const auto* entityA = entityById(eidA);
             if (!entityA || entityA->hash == 0) continue;
             for (std::size_t b = a + 1; b < cell.size(); ++b) {
                 const auto eidB = cell[b];
                 if (eidA == eidB) continue;
+                if (eidB >= MaxEntityCount) continue;
                 const auto* entityB = entityById(eidB);
                 if (!entityB || entityB->hash == 0) continue;
                 const auto idA = std::min(eidA, eidB);

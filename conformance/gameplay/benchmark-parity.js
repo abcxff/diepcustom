@@ -3,8 +3,18 @@ const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 
 const root = path.join(__dirname, '../..');
-const iterations = Number(process.env.ITERATIONS || 25);
-const warmups = Number(process.env.WARMUPS || 3);
+function positiveIntegerFromEnv(name, defaultValue) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return defaultValue;
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive integer, got ${JSON.stringify(raw)}`);
+  }
+  return value;
+}
+
+const iterations = positiveIntegerFromEnv('ITERATIONS', 25);
+const warmups = positiveIntegerFromEnv('WARMUPS', 3);
 const tsCommand = [process.execPath, path.join(root, 'conformance/gameplay/report-ts.js')];
 const cppCommand = [path.join(root, 'build/cpp/gameplay_report')];
 

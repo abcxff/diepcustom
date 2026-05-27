@@ -31,7 +31,7 @@
     "bench:gameplay": "npm run test:cpp && node conformance/gameplay/benchmark-parity.js"
   },
   "engines": {
-    "node": ">=16.3"
+    "node": ">=16.17.0"
   },
   "dependencies": {
     "chalk": "^4.1.1",
