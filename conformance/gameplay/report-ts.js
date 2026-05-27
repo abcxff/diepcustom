@@ -4,8 +4,9 @@ require(path.join(__dirname, '../../test/helpers/register-ts'));
 
 const EntityManager = require('../../src/Native/Manager').default;
 const LivingEntity = require('../../src/Entity/Live').default;
+const { CameraEntity } = require('../../src/Native/Camera');
 const { Entity } = require('../../src/Native/Entity');
-const { ArenaGroup } = require('../../src/Native/FieldGroups');
+const { ArenaGroup, ScoreGroup } = require('../../src/Native/FieldGroups');
 const { Color } = require('../../src/Const/Enums');
 
 function createHeadlessGame() {
@@ -104,6 +105,21 @@ function objectSnapshot(entity) {
       pushFactor: round(entity.physicsData.values.pushFactor),
       absorbtionFactor: round(entity.physicsData.values.absorbtionFactor),
       flags: entity.physicsData.values.flags
+    };
+  }
+  if (entity.cameraData) {
+    snapshot.camera = {
+      player: entityRef(entity.cameraData.values.player),
+      score: round(entity.cameraData.values.score),
+      level: entity.cameraData.values.level,
+      levelbarProgress: round(entity.cameraData.values.levelbarProgress),
+      levelbarMax: round(entity.cameraData.values.levelbarMax),
+      statsAvailable: entity.cameraData.values.statsAvailable
+    };
+  }
+  if (entity.scoreData) {
+    snapshot.score = {
+      score: round(entity.scoreData.values.score)
     };
   }
   if (entity.healthData) {
@@ -401,6 +417,48 @@ function projectileMovementLifetimeScenario() {
   };
 }
 
+function cameraScoreIntegrationScenario() {
+  const game = createHeadlessGame();
+  const player = makeDamageBody(game, 'score-player', {
+    x: 0,
+    y: 0,
+    health: 30,
+    maxHealth: 30,
+    damagePerTick: 0,
+    size: 25,
+    color: Color.Tank
+  });
+  player.scoreData = new ScoreGroup(player);
+  const camera = new CameraEntity(game);
+  camera.fixtureName = 'score-camera';
+  camera.cameraData.player = player;
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  camera.addScore(15);
+  snapshots.push(worldSnapshot(game, 'after-camera-add-score'));
+  camera.setScore(7);
+  snapshots.push(worldSnapshot(game, 'after-camera-set-score'));
+
+  return {
+    scenario: 'camera-player-score-integration',
+    invariant: 'Camera score mutations mirror onto the focused player score field, preserving the score source used by tank/camera gameplay integration.',
+    participants: {
+      player: entityRef(player),
+      camera: entityRef(camera)
+    },
+    scoreEvidence: {
+      initialCameraScore: findEntity(snapshots[0], 'score-camera').camera.score,
+      initialPlayerScore: findEntity(snapshots[0], 'score-player').score.score,
+      cameraScoreAfterAdd: findEntity(snapshots[1], 'score-camera').camera.score,
+      playerScoreAfterAdd: findEntity(snapshots[1], 'score-player').score.score,
+      cameraScoreAfterSet: findEntity(snapshots[2], 'score-camera').camera.score,
+      playerScoreAfterSet: findEntity(snapshots[2], 'score-player').score.score,
+      cameraPlayerRef: findEntity(snapshots[0], 'score-camera').camera.player
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -412,7 +470,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario()]
   };
 }
 

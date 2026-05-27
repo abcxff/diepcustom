@@ -104,6 +104,15 @@ struct Body {
   bool deleting = false;
   int deletionFrame = 5;
   bool removed = false;
+  bool isCamera = false;
+  bool hasScoreData = false;
+  double scoreField = 0;
+  int cameraPlayerId = -1;
+  double cameraScore = 0;
+  int cameraLevel = 1;
+  double cameraLevelbarProgress = 0;
+  double cameraLevelbarMax = 0;
+  int cameraStatsAvailable = 0;
 };
 
 void refreshVelocity(Body& b) {
@@ -243,43 +252,59 @@ std::string refJson(const Body& b) {
   return "{\"id\":" + std::to_string(b.id) + ",\"hash\":" + std::to_string(b.hash) + "}";
 }
 
-std::string ownerJson(const Body& b, const std::vector<Body>& bodies) {
-  if (b.ownerId < 0) return "null";
-  for (const auto& candidate : bodies) if (candidate.id == b.ownerId && candidate.hash != 0) return refJson(candidate);
+std::string entityRefById(int id, const std::vector<Body>& bodies) {
+  if (id < 0) return "null";
+  for (const auto& candidate : bodies) if (candidate.id == id && candidate.hash != 0) return refJson(candidate);
   return "null";
+}
+
+std::string ownerJson(const Body& b, const std::vector<Body>& bodies) {
+  return entityRefById(b.ownerId, bodies);
 }
 
 std::string bodyJson(const Body& b, const std::vector<Body>& bodies) {
   std::ostringstream out;
   out << "{\"id\":" << b.id << ",\"hash\":" << b.hash << ",\"preservedHash\":" << b.preservedHash
-      << ",\"className\":\"LivingEntity\",\"fixtureName\":" << q(b.fixtureName)
+      << ",\"className\":" << q(b.isCamera ? "CameraEntity" : "LivingEntity") << ",\"fixtureName\":" << q(b.fixtureName)
       << ",\"exists\":true,\"entityState\":" << b.entityState
-      << ",\"relations\":{\"parent\":null,\"owner\":" << ownerJson(b, bodies) << ",\"team\":null}"
-      << ",\"position\":{\"x\":" << num(b.x) << ",\"y\":" << num(b.y) << ",\"angle\":" << num(b.angle) << ",\"flags\":" << b.positionFlags << "}"
-      << ",\"physics\":{\"sides\":" << b.sides << ",\"size\":" << num(b.size) << ",\"width\":" << num(b.width)
-      << ",\"pushFactor\":" << num(b.pushFactor) << ",\"absorbtionFactor\":" << num(b.absorbtionFactor) << ",\"flags\":" << b.physicsFlags << "}"
-      << ",\"health\":{\"health\":" << num(b.health) << ",\"maxHealth\":" << num(b.maxHealth) << ",\"flags\":" << b.healthFlags << "}"
-      << ",\"damage\":{\"damagePerTick\":" << num(b.damagePerTick) << ",\"damageReduction\":" << num(b.damageReduction)
-      << ",\"minDamageMultiplier\":" << num(b.minDamageMultiplier) << ",\"maxDamageMultiplier\":" << num(b.maxDamageMultiplier)
-      << ",\"lastDamageTick\":" << b.lastDamageTick << "}"
-      << ",\"style\":{\"color\":" << b.styleColor << ",\"opacity\":" << num(b.opacity) << ",\"flags\":" << b.styleFlags << "}"
-      << ",\"gameplay\":{\"score\":" << num(b.score) << ",\"scoreReward\":" << num(b.scoreReward)
-      << ",\"deleting\":" << (b.deleting ? "true" : "false") << ",\"deletionFrame\":" << (b.deleting ? std::to_string(b.deletionFrame) : "null");
-  if (b.projectileMotion) {
-    out << ",\"projectile\":{\"spawnTick\":" << b.spawnTick << ",\"baseSpeed\":" << num(b.baseSpeed)
-        << ",\"baseAccel\":" << num(b.baseAccel) << ",\"lifeLength\":" << b.lifeLength
-        << ",\"movementAngle\":" << num(b.movementAngle) << "}";
+      << ",\"relations\":{\"parent\":null,\"owner\":" << ownerJson(b, bodies) << ",\"team\":null}";
+  if (!b.isCamera) {
+    out << ",\"position\":{\"x\":" << num(b.x) << ",\"y\":" << num(b.y) << ",\"angle\":" << num(b.angle) << ",\"flags\":" << b.positionFlags << "}"
+        << ",\"physics\":{\"sides\":" << b.sides << ",\"size\":" << num(b.size) << ",\"width\":" << num(b.width)
+        << ",\"pushFactor\":" << num(b.pushFactor) << ",\"absorbtionFactor\":" << num(b.absorbtionFactor) << ",\"flags\":" << b.physicsFlags << "}"
+        << ",\"health\":{\"health\":" << num(b.health) << ",\"maxHealth\":" << num(b.maxHealth) << ",\"flags\":" << b.healthFlags << "}"
+        << ",\"damage\":{\"damagePerTick\":" << num(b.damagePerTick) << ",\"damageReduction\":" << num(b.damageReduction)
+        << ",\"minDamageMultiplier\":" << num(b.minDamageMultiplier) << ",\"maxDamageMultiplier\":" << num(b.maxDamageMultiplier)
+        << ",\"lastDamageTick\":" << b.lastDamageTick << "}"
+        << ",\"style\":{\"color\":" << b.styleColor << ",\"opacity\":" << num(b.opacity) << ",\"flags\":" << b.styleFlags << "}"
+        << ",\"gameplay\":{\"score\":" << num(b.score) << ",\"scoreReward\":" << num(b.scoreReward)
+        << ",\"deleting\":" << (b.deleting ? "true" : "false") << ",\"deletionFrame\":" << (b.deleting ? std::to_string(b.deletionFrame) : "null");
+    if (b.projectileMotion) {
+      out << ",\"projectile\":{\"spawnTick\":" << b.spawnTick << ",\"baseSpeed\":" << num(b.baseSpeed)
+          << ",\"baseAccel\":" << num(b.baseAccel) << ",\"lifeLength\":" << b.lifeLength
+          << ",\"movementAngle\":" << num(b.movementAngle) << "}";
+    }
+    out << "}";
   }
-  out << "}"
-      << ",\"velocity\":{\"x\":" << num(b.vx) << ",\"y\":" << num(b.vy) << ",\"magnitude\":" << num(b.velocityMagnitude)
-      << ",\"angle\":" << num(b.velocityAngle) << "}}";
+  if (b.isCamera) {
+    out << ",\"camera\":{\"player\":" << entityRefById(b.cameraPlayerId, bodies) << ",\"score\":" << num(b.cameraScore)
+        << ",\"level\":" << b.cameraLevel << ",\"levelbarProgress\":" << num(b.cameraLevelbarProgress)
+        << ",\"levelbarMax\":" << num(b.cameraLevelbarMax) << ",\"statsAvailable\":" << b.cameraStatsAvailable << "}";
+  }
+  if (b.hasScoreData) out << ",\"score\":{\"score\":" << num(b.scoreField) << "}";
+  if (!b.isCamera) {
+    out << ",\"velocity\":{\"x\":" << num(b.vx) << ",\"y\":" << num(b.vy) << ",\"magnitude\":" << num(b.velocityMagnitude)
+        << ",\"angle\":" << num(b.velocityAngle) << "}";
+  }
+  out << "}";
   return out.str();
 }
 
 std::string snapshotJson(const std::vector<Body>& bodies, const Arena& arena, const std::string& label, int tick) {
   std::vector<int> ids;
+  std::vector<int> cameras;
   int lastId = -1;
-  for (const auto& body : bodies) { ids.push_back(body.id); if (body.id > lastId) lastId = body.id; }
+  for (const auto& body : bodies) { ids.push_back(body.id); if (body.isCamera) cameras.push_back(body.id); if (body.id > lastId) lastId = body.id; }
   std::vector<int> hashes;
   for (int id = 0; id <= lastId; ++id) {
     int hash = 0;
@@ -289,7 +314,7 @@ std::string snapshotJson(const std::vector<Body>& bodies, const Arena& arena, co
   std::ostringstream out;
   out << "{\"label\":" << q(label) << ",\"tick\":" << tick
       << ",\"manager\":{\"lastId\":" << lastId << ",\"activeIds\":" << intArrayJson(ids)
-      << ",\"cameras\":[],\"otherEntities\":[],\"globalEntities\":[],\"hashTable\":" << intArrayJson(hashes) << "}"
+      << ",\"cameras\":" << intArrayJson(cameras) << ",\"otherEntities\":[],\"globalEntities\":[],\"hashTable\":" << intArrayJson(hashes) << "}"
       << ",\"arena\":{\"id\":null,\"state\":\"headless-fixture\",\"bounds\":{\"leftX\":" << num(arena.leftX)
       << ",\"rightX\":" << num(arena.rightX) << ",\"topY\":" << num(arena.topY) << ",\"bottomY\":" << num(arena.bottomY) << "}}"
       << ",\"entities\":[";
@@ -417,12 +442,40 @@ std::string projectileMovementLifetimeScenarioJson() {
   return out.str();
 }
 
+
+std::string cameraScoreIntegrationScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body player;
+  player.id = 0; player.hash = player.preservedHash = 1; player.fixtureName = "score-player";
+  player.health = player.maxHealth = 30; player.damagePerTick = 0; player.size = player.width = 25; player.styleColor = ColorTank; player.hasScoreData = true;
+  Body camera;
+  camera.id = 1; camera.hash = camera.preservedHash = 1; camera.fixtureName = "score-camera"; camera.isCamera = true; camera.cameraPlayerId = 0;
+  bodies.push_back(player); bodies.push_back(camera);
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  bodies[1].cameraScore += 15; bodies[0].scoreField += 15;
+  snapshots.push_back(snapshotJson(bodies, arena, "after-camera-add-score", 0));
+  bodies[1].cameraScore = 7; bodies[0].scoreField = 7;
+  snapshots.push_back(snapshotJson(bodies, arena, "after-camera-set-score", 0));
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"camera-player-score-integration\",\"invariant\":\"Camera score mutations mirror onto the focused player score field, preserving the score source used by tank/camera gameplay integration.\""
+      << ",\"participants\":{\"player\":" << refJson(bodies[0]) << ",\"camera\":" << refJson(bodies[1]) << "}"
+      << ",\"scoreEvidence\":{\"initialCameraScore\":0,\"initialPlayerScore\":0,\"cameraScoreAfterAdd\":15,\"playerScoreAfterAdd\":15,\"cameraScoreAfterSet\":7,\"playerScoreAfterSet\":7,\"cameraPlayerRef\":" << refJson(bodies[0]) << "}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay

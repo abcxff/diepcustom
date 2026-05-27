@@ -1792,6 +1792,385 @@
           ]
         }
       ]
+    },
+    {
+      "scenario": "camera-player-score-integration",
+      "invariant": "Camera score mutations mirror onto the focused player score field, preserving the score source used by tank/camera gameplay integration.",
+      "participants": {
+        "player": {
+          "id": 0,
+          "hash": 1
+        },
+        "camera": {
+          "id": 1,
+          "hash": 1
+        }
+      },
+      "scoreEvidence": {
+        "initialCameraScore": 0,
+        "initialPlayerScore": 0,
+        "cameraScoreAfterAdd": 15,
+        "playerScoreAfterAdd": 15,
+        "cameraScoreAfterSet": 7,
+        "playerScoreAfterSet": 7,
+        "cameraPlayerRef": {
+          "id": 0,
+          "hash": 1
+        }
+      },
+      "snapshots": [
+        {
+          "label": "initial-full-world",
+          "tick": 0,
+          "manager": {
+            "lastId": 1,
+            "activeIds": [
+              0,
+              1
+            ],
+            "cameras": [
+              1
+            ],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1,
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "score-player",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 0,
+                "y": 0,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 25,
+                "width": 25,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 0
+              },
+              "score": {
+                "score": 0
+              },
+              "health": {
+                "health": 30,
+                "maxHealth": 30,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": false,
+                "deletionFrame": null
+              },
+              "velocity": {
+                "x": 0,
+                "y": 0,
+                "magnitude": 0,
+                "angle": 0
+              }
+            },
+            {
+              "id": 1,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "CameraEntity",
+              "fixtureName": "score-camera",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "camera": {
+                "player": {
+                  "id": 0,
+                  "hash": 1
+                },
+                "score": 0,
+                "level": 1,
+                "levelbarProgress": 0,
+                "levelbarMax": 0,
+                "statsAvailable": 0
+              }
+            }
+          ]
+        },
+        {
+          "label": "after-camera-add-score",
+          "tick": 0,
+          "manager": {
+            "lastId": 1,
+            "activeIds": [
+              0,
+              1
+            ],
+            "cameras": [
+              1
+            ],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1,
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "score-player",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 0,
+                "y": 0,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 25,
+                "width": 25,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 0
+              },
+              "score": {
+                "score": 15
+              },
+              "health": {
+                "health": 30,
+                "maxHealth": 30,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": false,
+                "deletionFrame": null
+              },
+              "velocity": {
+                "x": 0,
+                "y": 0,
+                "magnitude": 0,
+                "angle": 0
+              }
+            },
+            {
+              "id": 1,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "CameraEntity",
+              "fixtureName": "score-camera",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "camera": {
+                "player": {
+                  "id": 0,
+                  "hash": 1
+                },
+                "score": 15,
+                "level": 1,
+                "levelbarProgress": 0,
+                "levelbarMax": 0,
+                "statsAvailable": 0
+              }
+            }
+          ]
+        },
+        {
+          "label": "after-camera-set-score",
+          "tick": 0,
+          "manager": {
+            "lastId": 1,
+            "activeIds": [
+              0,
+              1
+            ],
+            "cameras": [
+              1
+            ],
+            "otherEntities": [],
+            "globalEntities": [],
+            "hashTable": [
+              1,
+              1
+            ]
+          },
+          "arena": {
+            "id": null,
+            "state": "headless-fixture",
+            "bounds": {
+              "leftX": -1000,
+              "rightX": 1000,
+              "topY": -1000,
+              "bottomY": 1000
+            }
+          },
+          "entities": [
+            {
+              "id": 0,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "LivingEntity",
+              "fixtureName": "score-player",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "position": {
+                "x": 0,
+                "y": 0,
+                "angle": 0,
+                "flags": 0
+              },
+              "physics": {
+                "sides": 1,
+                "size": 25,
+                "width": 25,
+                "pushFactor": 8,
+                "absorbtionFactor": 1,
+                "flags": 0
+              },
+              "score": {
+                "score": 7
+              },
+              "health": {
+                "health": 30,
+                "maxHealth": 30,
+                "flags": 0
+              },
+              "damage": {
+                "damagePerTick": 0,
+                "damageReduction": 1,
+                "minDamageMultiplier": 1,
+                "maxDamageMultiplier": 4,
+                "lastDamageTick": -1
+              },
+              "style": {
+                "color": 2,
+                "opacity": 1,
+                "flags": 1
+              },
+              "gameplay": {
+                "score": 0,
+                "scoreReward": 0,
+                "deleting": false,
+                "deletionFrame": null
+              },
+              "velocity": {
+                "x": 0,
+                "y": 0,
+                "magnitude": 0,
+                "angle": 0
+              }
+            },
+            {
+              "id": 1,
+              "hash": 1,
+              "preservedHash": 1,
+              "className": "CameraEntity",
+              "fixtureName": "score-camera",
+              "exists": true,
+              "entityState": 1,
+              "relations": {
+                "parent": null,
+                "owner": null,
+                "team": null
+              },
+              "camera": {
+                "player": {
+                  "id": 0,
+                  "hash": 1
+                },
+                "score": 7,
+                "level": 1,
+                "levelbarProgress": 0,
+                "levelbarMax": 0,
+                "statsAvailable": 0
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
