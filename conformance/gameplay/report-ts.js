@@ -459,6 +459,48 @@ function cameraScoreIntegrationScenario() {
   };
 }
 
+function arenaBoundsClampScenario() {
+  const game = createHeadlessGame();
+  const clamped = makeDamageBody(game, 'bounds-clamped', {
+    x: 1300,
+    y: -1300,
+    health: 10,
+    maxHealth: 10,
+    damagePerTick: 0,
+    size: 20,
+    color: Color.Tank
+  });
+  const escaping = makeDamageBody(game, 'bounds-escaping', {
+    x: 1300,
+    y: -900,
+    health: 10,
+    maxHealth: 10,
+    damagePerTick: 0,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  escaping.physicsData.flags = 256; // PhysicsFlags.canEscapeArena
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-bounds-tick'));
+
+  return {
+    scenario: 'arena-bounds-clamp-and-can-escape',
+    invariant: 'Physical entities without canEscapeArena clamp to arena bounds plus padding, while canEscapeArena entities keep their out-of-bounds position.',
+    participants: {
+      clamped: entityRef(clamped),
+      escaping: entityRef(escaping)
+    },
+    boundsEvidence: {
+      initialClampedPosition: findEntity(snapshots[0], 'bounds-clamped').position,
+      clampedAfterTick: findEntity(snapshots[1], 'bounds-clamped').position,
+      escapingAfterTick: findEntity(snapshots[1], 'bounds-escaping').position
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -470,7 +512,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario()]
   };
 }
 

@@ -158,6 +158,7 @@ void destroy(Body& b) {
 }
 
 void keepInArena(Body& b, const Arena& arena) {
+  if (b.physicsFlags & 256) return;
   if (b.x < arena.leftX - arena.padding) b.x = arena.leftX - arena.padding;
   else if (b.x > arena.rightX + arena.padding) b.x = arena.rightX + arena.padding;
   if (b.y < arena.topY - arena.padding) b.y = arena.topY - arena.padding;
@@ -470,12 +471,39 @@ std::string cameraScoreIntegrationScenarioJson() {
   return out.str();
 }
 
+
+std::string arenaBoundsClampScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body clamped;
+  clamped.id = 0; clamped.hash = clamped.preservedHash = 1; clamped.fixtureName = "bounds-clamped"; clamped.x = 1300; clamped.y = -1300;
+  clamped.health = clamped.maxHealth = 10; clamped.damagePerTick = 0; clamped.size = clamped.width = 20; clamped.styleColor = ColorTank;
+  Body escaping;
+  escaping.id = 1; escaping.hash = escaping.preservedHash = 1; escaping.fixtureName = "bounds-escaping"; escaping.x = 1300; escaping.y = -900;
+  escaping.health = escaping.maxHealth = 10; escaping.damagePerTick = 0; escaping.size = escaping.width = 20; escaping.styleColor = ColorEnemySquare; escaping.physicsFlags = 256;
+  bodies.push_back(clamped); bodies.push_back(escaping);
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  tickHeadless(bodies, arena, 1);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-bounds-tick", 1));
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"arena-bounds-clamp-and-can-escape\",\"invariant\":\"Physical entities without canEscapeArena clamp to arena bounds plus padding, while canEscapeArena entities keep their out-of-bounds position.\""
+      << ",\"participants\":{\"clamped\":" << refJson(bodies[0]) << ",\"escaping\":" << refJson(bodies[1]) << "}"
+      << ",\"boundsEvidence\":{\"initialClampedPosition\":{\"x\":1300,\"y\":-1300,\"angle\":0,\"flags\":0},\"clampedAfterTick\":{\"x\":1200,\"y\":-1200,\"angle\":0,\"flags\":0},\"escapingAfterTick\":{\"x\":1300,\"y\":-900,\"angle\":0,\"flags\":0}}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay
