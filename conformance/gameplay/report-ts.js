@@ -280,6 +280,68 @@ function scoreDeathScenario() {
   };
 }
 
+function ownerPropagatedKillScenario() {
+  const game = createHeadlessGame();
+  const owner = makeDamageBody(game, 'owner', {
+    x: -200,
+    y: 0,
+    health: 80,
+    maxHealth: 80,
+    damagePerTick: 0,
+    size: 25,
+    color: Color.Tank
+  });
+  owner.isPhysical = false;
+
+  const projectile = makeDamageBody(game, 'projectile', {
+    x: 0,
+    y: 0,
+    health: 10,
+    maxHealth: 10,
+    damagePerTick: 12,
+    size: 20,
+    color: Color.Tank
+  });
+  projectile.relationsData.owner = owner;
+  projectile.onKill = function onProjectileKill(entity) {
+    this.relationsData.values.owner?.onKill?.(entity);
+  };
+
+  const target = makeDamageBody(game, 'target', {
+    x: 25,
+    y: 0,
+    health: 5,
+    maxHealth: 5,
+    damagePerTick: 0.25,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  target.scoreReward = 23;
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-projectile-kill-tick'));
+
+  return {
+    scenario: 'owner-propagated-projectile-kill-score',
+    invariant: 'A projectile-style living entity propagates its onKill event to its owner, awarding the target scoreReward to the owner instead of retaining it on the projectile.',
+    participants: {
+      owner: entityRef(owner),
+      projectile: entityRef(projectile),
+      target: entityRef(target)
+    },
+    scoreEvidence: {
+      ownerInitialScore: findEntity(snapshots[0], 'owner').gameplay.score,
+      ownerScoreAfterKill: findEntity(snapshots[1], 'owner').gameplay.score,
+      projectileScoreAfterKill: findEntity(snapshots[1], 'projectile').gameplay.score,
+      targetScoreReward: findEntity(snapshots[0], 'target').gameplay.scoreReward,
+      targetHealthAfterKill: findEntity(snapshots[1], 'target').health.health,
+      projectileOwnerRef: findEntity(snapshots[0], 'projectile').relations.owner
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -291,7 +353,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario()]
   };
 }
 

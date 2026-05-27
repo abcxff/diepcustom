@@ -87,6 +87,8 @@ struct Body {
   int styleColor = 0;
   double opacity = 1;
   int styleFlags = 1;
+  bool isPhysical = true;
+  int ownerId = -1;
   double vx = 0;
   double vy = 0;
   double velocityMagnitude = 0;
@@ -157,7 +159,7 @@ void applyPhysics(Body& b) {
 }
 
 bool isColliding(const Body& a, const Body& b) {
-  if (a.deleting || b.deleting) return false;
+  if (!a.isPhysical || !b.isPhysical || a.deleting || b.deleting) return false;
   double dx = a.x - b.x;
   double dy = a.y - b.y;
   double r = a.size + b.size;
@@ -172,7 +174,7 @@ void receiveKnockback(Body& self, const Body& other) {
   addVelocity(self, kbAngle, kbMagnitude);
 }
 
-void receiveDamage(Body& self, Body& source, double amount, int tick) {
+void receiveDamage(Body& self, Body& source, std::vector<Body>& bodies, double amount, int tick) {
   if (self.health <= 0.0001) { self.health = 0; return; }
   if (self.lastDamageAnimationTick != tick) {
     self.styleFlags ^= 2;
@@ -182,11 +184,15 @@ void receiveDamage(Body& self, Body& source, double amount, int tick) {
   self.health -= amount;
   if (self.health <= 0.0001) {
     self.health = 0;
-    source.score += self.scoreReward;
+    if (source.ownerId >= 0) {
+      for (auto& body : bodies) if (body.id == source.ownerId) { body.score += self.scoreReward; break; }
+    } else {
+      source.score += self.scoreReward;
+    }
   }
 }
 
-void handleDamage(Body& a, Body& b, int tick) {
+void handleDamage(Body& a, Body& b, std::vector<Body>& bodies, int tick) {
   if (a.health <= 0 || b.health <= 0) return;
   double common = std::max(b.minDamageMultiplier, a.minDamageMultiplier);
   common *= std::min(b.maxDamageMultiplier, a.maxDamageMultiplier);
@@ -195,8 +201,8 @@ void handleDamage(Body& a, Body& b, int tick) {
   const double ratio = std::max(1 - a.health / dF2, 1 - b.health / dF1);
   const double damage1to2 = dF1 * std::min(1.0, 1 - ratio);
   const double damage2to1 = dF2 * std::min(1.0, 1 - ratio);
-  receiveDamage(a, b, damage2to1, tick);
-  receiveDamage(b, a, damage1to2, tick);
+  receiveDamage(a, b, bodies, damage2to1, tick);
+  receiveDamage(b, a, bodies, damage1to2, tick);
 }
 
 void tickBody(Body& b, const Arena& arena) {
@@ -205,10 +211,13 @@ void tickBody(Body& b, const Arena& arena) {
 }
 
 void tickHeadless(std::vector<Body>& bodies, const Arena& arena, int tick) {
-  if (bodies.size() >= 2 && isColliding(bodies[0], bodies[1])) {
-    receiveKnockback(bodies[0], bodies[1]);
-    receiveKnockback(bodies[1], bodies[0]);
-    handleDamage(bodies[0], bodies[1], tick);
+  for (std::size_t i = 0; i < bodies.size(); ++i) {
+    for (std::size_t j = i + 1; j < bodies.size(); ++j) {
+      if (!isColliding(bodies[i], bodies[j])) continue;
+      receiveKnockback(bodies[i], bodies[j]);
+      receiveKnockback(bodies[j], bodies[i]);
+      handleDamage(bodies[i], bodies[j], bodies, tick);
+    }
   }
   for (auto& body : bodies) {
     if (body.removed) continue;
@@ -223,12 +232,18 @@ std::string refJson(const Body& b) {
   return "{\"id\":" + std::to_string(b.id) + ",\"hash\":" + std::to_string(b.hash) + "}";
 }
 
-std::string bodyJson(const Body& b) {
+std::string ownerJson(const Body& b, const std::vector<Body>& bodies) {
+  if (b.ownerId < 0) return "null";
+  for (const auto& candidate : bodies) if (candidate.id == b.ownerId && candidate.hash != 0) return refJson(candidate);
+  return "null";
+}
+
+std::string bodyJson(const Body& b, const std::vector<Body>& bodies) {
   std::ostringstream out;
   out << "{\"id\":" << b.id << ",\"hash\":" << b.hash << ",\"preservedHash\":" << b.preservedHash
       << ",\"className\":\"LivingEntity\",\"fixtureName\":" << q(b.fixtureName)
       << ",\"exists\":true,\"entityState\":" << b.entityState
-      << ",\"relations\":{\"parent\":null,\"owner\":null,\"team\":null}"
+      << ",\"relations\":{\"parent\":null,\"owner\":" << ownerJson(b, bodies) << ",\"team\":null}"
       << ",\"position\":{\"x\":" << num(b.x) << ",\"y\":" << num(b.y) << ",\"angle\":" << num(b.angle) << ",\"flags\":" << b.positionFlags << "}"
       << ",\"physics\":{\"sides\":" << b.sides << ",\"size\":" << num(b.size) << ",\"width\":" << num(b.width)
       << ",\"pushFactor\":" << num(b.pushFactor) << ",\"absorbtionFactor\":" << num(b.absorbtionFactor) << ",\"flags\":" << b.physicsFlags << "}"
@@ -263,7 +278,7 @@ std::string snapshotJson(const std::vector<Body>& bodies, const Arena& arena, co
       << ",\"entities\":[";
   for (std::size_t i = 0; i < bodies.size(); ++i) {
     if (i) out << ',';
-    out << bodyJson(bodies[i]);
+    out << bodyJson(bodies[i], bodies);
   }
   out << "]}";
   return out.str();
@@ -327,12 +342,42 @@ std::string scoreDeathScenarioJson() {
   return out.str();
 }
 
+
+std::string ownerPropagatedKillScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body owner;
+  owner.id = 0; owner.hash = owner.preservedHash = 1; owner.fixtureName = "owner"; owner.x = -200; owner.y = 0;
+  owner.health = owner.maxHealth = 80; owner.damagePerTick = 0; owner.size = owner.width = 25; owner.styleColor = ColorTank; owner.isPhysical = false;
+  Body projectile;
+  projectile.id = 1; projectile.hash = projectile.preservedHash = 1; projectile.fixtureName = "projectile"; projectile.x = 0; projectile.y = 0;
+  projectile.health = projectile.maxHealth = 10; projectile.damagePerTick = 12; projectile.size = projectile.width = 20; projectile.styleColor = ColorTank; projectile.ownerId = 0;
+  Body target;
+  target.id = 2; target.hash = target.preservedHash = 1; target.fixtureName = "target"; target.x = 25; target.y = 0;
+  target.health = target.maxHealth = 5; target.damagePerTick = 0.25; target.size = target.width = 20; target.styleColor = ColorEnemySquare; target.scoreReward = 23;
+  bodies.push_back(owner); bodies.push_back(projectile); bodies.push_back(target);
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  tickHeadless(bodies, arena, 1);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-projectile-kill-tick", 1));
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"owner-propagated-projectile-kill-score\",\"invariant\":\"A projectile-style living entity propagates its onKill event to its owner, awarding the target scoreReward to the owner instead of retaining it on the projectile.\""
+      << ",\"participants\":{\"owner\":" << refJson(bodies[0]) << ",\"projectile\":" << refJson(bodies[1]) << ",\"target\":" << refJson(bodies[2]) << "}"
+      << ",\"scoreEvidence\":{\"ownerInitialScore\":0,\"ownerScoreAfterKill\":23,\"projectileScoreAfterKill\":0,\"targetScoreReward\":23,\"targetHealthAfterKill\":0,\"projectileOwnerRef\":" << refJson(bodies[0]) << "}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay
