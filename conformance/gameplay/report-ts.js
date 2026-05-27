@@ -7,7 +7,7 @@ const LivingEntity = require('../../src/Entity/Live').default;
 const { CameraEntity } = require('../../src/Native/Camera');
 const { Entity } = require('../../src/Native/Entity');
 const { ArenaGroup, ScoreGroup } = require('../../src/Native/FieldGroups');
-const { Color } = require('../../src/Const/Enums');
+const { Color, PhysicsFlags } = require('../../src/Const/Enums');
 
 function createHeadlessGame() {
   const game = {
@@ -378,7 +378,7 @@ function projectileMovementLifetimeScenario() {
     size: 12,
     color: Color.Tank
   });
-  projectile.physicsData.flags = 16; // canEscapeArena; keep snapshot focused on projectile movement rather than bounds.
+  projectile.physicsData.flags = 16; // Existing TS projectile fixture flag; movement remains inside bounds, so this slice stays focused on lifetime motion.
   projectile.fixtureProjectile = {
     spawnTick: game.tick,
     baseSpeed: 6,
@@ -479,7 +479,7 @@ function arenaBoundsClampScenario() {
     size: 20,
     color: Color.EnemySquare
   });
-  escaping.physicsData.flags = 256; // PhysicsFlags.canEscapeArena
+  escaping.physicsData.flags = PhysicsFlags.canEscapeArena
 
   const snapshots = [worldSnapshot(game, 'initial-full-world')];
   tickHeadless(game);
@@ -501,6 +501,108 @@ function arenaBoundsClampScenario() {
   };
 }
 
+function teamOwnerCollisionRulesScenario() {
+  const game = createHeadlessGame();
+  const noOwnA = makeDamageBody(game, 'no-own-team-a', {
+    x: -300,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  const noOwnB = makeDamageBody(game, 'no-own-team-b', {
+    x: -275,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  noOwnA.physicsData.flags = PhysicsFlags.noOwnTeamCollision;
+
+  const onlyDifferentOwnerA = makeDamageBody(game, 'only-different-owner-a', {
+    x: 0,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  const onlyDifferentOwnerB = makeDamageBody(game, 'only-different-owner-b', {
+    x: 25,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  onlyDifferentOwnerA.physicsData.flags = PhysicsFlags.onlySameOwnerCollision;
+  onlyDifferentOwnerA.relationsData.owner = noOwnA;
+  onlyDifferentOwnerB.relationsData.owner = noOwnB;
+
+  const sharedOwner = makeDamageBody(game, 'shared-owner', {
+    x: 280,
+    y: 80,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 0,
+    size: 10,
+    color: Color.Tank
+  });
+  sharedOwner.isPhysical = false;
+  const onlySameOwnerA = makeDamageBody(game, 'only-same-owner-a', {
+    x: 280,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  const onlySameOwnerB = makeDamageBody(game, 'only-same-owner-b', {
+    x: 305,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  onlySameOwnerA.physicsData.flags = PhysicsFlags.onlySameOwnerCollision;
+  onlySameOwnerA.relationsData.owner = sharedOwner;
+  onlySameOwnerB.relationsData.owner = sharedOwner;
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-collision-rules-tick'));
+
+  return {
+    scenario: 'team-owner-collision-rules',
+    invariant: 'Same-team noOwnTeamCollision pairs do not collide, onlySameOwnerCollision rejects different owners, and onlySameOwnerCollision still permits same-owner collisions.',
+    participants: {
+      noOwnA: entityRef(noOwnA),
+      noOwnB: entityRef(noOwnB),
+      onlyDifferentOwnerA: entityRef(onlyDifferentOwnerA),
+      onlyDifferentOwnerB: entityRef(onlyDifferentOwnerB),
+      sharedOwner: entityRef(sharedOwner),
+      onlySameOwnerA: entityRef(onlySameOwnerA),
+      onlySameOwnerB: entityRef(onlySameOwnerB)
+    },
+    collisionEvidence: {
+      noOwnPairHealthAfterTick: [findEntity(snapshots[1], 'no-own-team-a').health.health, findEntity(snapshots[1], 'no-own-team-b').health.health],
+      differentOwnerPairHealthAfterTick: [findEntity(snapshots[1], 'only-different-owner-a').health.health, findEntity(snapshots[1], 'only-different-owner-b').health.health],
+      sameOwnerPairHealthAfterTick: [findEntity(snapshots[1], 'only-same-owner-a').health.health, findEntity(snapshots[1], 'only-same-owner-b').health.health],
+      sameOwnerPairVelocityAfterTick: [findEntity(snapshots[1], 'only-same-owner-a').velocity, findEntity(snapshots[1], 'only-same-owner-b').velocity]
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -512,7 +614,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario(), teamOwnerCollisionRulesScenario()]
   };
 }
 

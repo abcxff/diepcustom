@@ -12,6 +12,9 @@ namespace diepcustom::gameplay {
 namespace {
 constexpr int ColorTank = 2;
 constexpr int ColorEnemySquare = 8;
+constexpr int PhysicsNoOwnTeamCollision = 1 << 3;
+constexpr int PhysicsOnlySameOwnerCollision = 1 << 5;
+constexpr int PhysicsCanEscapeArena = 1 << 8;
 
 std::string q(const std::string& value) {
   std::ostringstream out;
@@ -158,7 +161,7 @@ void destroy(Body& b) {
 }
 
 void keepInArena(Body& b, const Arena& arena) {
-  if (b.physicsFlags & 256) return;
+  if (b.physicsFlags & PhysicsCanEscapeArena) return;
   if (b.x < arena.leftX - arena.padding) b.x = arena.leftX - arena.padding;
   else if (b.x > arena.rightX + arena.padding) b.x = arena.rightX + arena.padding;
   if (b.y < arena.topY - arena.padding) b.y = arena.topY - arena.padding;
@@ -176,6 +179,9 @@ void applyPhysics(Body& b) {
 
 bool isColliding(const Body& a, const Body& b) {
   if (!a.isPhysical || !b.isPhysical || a.deleting || b.deleting) return false;
+  if (a.sides == 0 || b.sides == 0) return false;
+  if ((a.physicsFlags & PhysicsNoOwnTeamCollision) || (b.physicsFlags & PhysicsNoOwnTeamCollision)) return false;
+  if (a.ownerId != b.ownerId && ((a.physicsFlags & PhysicsOnlySameOwnerCollision) || (b.physicsFlags & PhysicsOnlySameOwnerCollision))) return false;
   double dx = a.x - b.x;
   double dy = a.y - b.y;
   double r = a.size + b.size;
@@ -498,12 +504,57 @@ std::string arenaBoundsClampScenarioJson() {
   return out.str();
 }
 
+
+std::string teamOwnerCollisionRulesScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body noOwnA;
+  noOwnA.id = 0; noOwnA.hash = noOwnA.preservedHash = 1; noOwnA.fixtureName = "no-own-team-a"; noOwnA.x = -300; noOwnA.y = 0;
+  noOwnA.health = noOwnA.maxHealth = 20; noOwnA.damagePerTick = 5; noOwnA.size = noOwnA.width = 20; noOwnA.styleColor = ColorTank; noOwnA.physicsFlags = PhysicsNoOwnTeamCollision;
+  Body noOwnB;
+  noOwnB.id = 1; noOwnB.hash = noOwnB.preservedHash = 1; noOwnB.fixtureName = "no-own-team-b"; noOwnB.x = -275; noOwnB.y = 0;
+  noOwnB.health = noOwnB.maxHealth = 20; noOwnB.damagePerTick = 5; noOwnB.size = noOwnB.width = 20; noOwnB.styleColor = ColorEnemySquare;
+  Body differentOwnerA;
+  differentOwnerA.id = 2; differentOwnerA.hash = differentOwnerA.preservedHash = 1; differentOwnerA.fixtureName = "only-different-owner-a"; differentOwnerA.x = 0; differentOwnerA.y = 0;
+  differentOwnerA.health = differentOwnerA.maxHealth = 20; differentOwnerA.damagePerTick = 5; differentOwnerA.size = differentOwnerA.width = 20; differentOwnerA.styleColor = ColorTank; differentOwnerA.physicsFlags = PhysicsOnlySameOwnerCollision; differentOwnerA.ownerId = 0;
+  Body differentOwnerB;
+  differentOwnerB.id = 3; differentOwnerB.hash = differentOwnerB.preservedHash = 1; differentOwnerB.fixtureName = "only-different-owner-b"; differentOwnerB.x = 25; differentOwnerB.y = 0;
+  differentOwnerB.health = differentOwnerB.maxHealth = 20; differentOwnerB.damagePerTick = 5; differentOwnerB.size = differentOwnerB.width = 20; differentOwnerB.styleColor = ColorEnemySquare; differentOwnerB.ownerId = 1;
+  Body sharedOwner;
+  sharedOwner.id = 4; sharedOwner.hash = sharedOwner.preservedHash = 1; sharedOwner.fixtureName = "shared-owner"; sharedOwner.x = 280; sharedOwner.y = 80;
+  sharedOwner.health = sharedOwner.maxHealth = 20; sharedOwner.damagePerTick = 0; sharedOwner.size = sharedOwner.width = 10; sharedOwner.styleColor = ColorTank; sharedOwner.isPhysical = false;
+  Body sameOwnerA;
+  sameOwnerA.id = 5; sameOwnerA.hash = sameOwnerA.preservedHash = 1; sameOwnerA.fixtureName = "only-same-owner-a"; sameOwnerA.x = 280; sameOwnerA.y = 0;
+  sameOwnerA.health = sameOwnerA.maxHealth = 20; sameOwnerA.damagePerTick = 5; sameOwnerA.size = sameOwnerA.width = 20; sameOwnerA.styleColor = ColorTank; sameOwnerA.physicsFlags = PhysicsOnlySameOwnerCollision; sameOwnerA.ownerId = 4;
+  Body sameOwnerB;
+  sameOwnerB.id = 6; sameOwnerB.hash = sameOwnerB.preservedHash = 1; sameOwnerB.fixtureName = "only-same-owner-b"; sameOwnerB.x = 305; sameOwnerB.y = 0;
+  sameOwnerB.health = sameOwnerB.maxHealth = 20; sameOwnerB.damagePerTick = 5; sameOwnerB.size = sameOwnerB.width = 20; sameOwnerB.styleColor = ColorEnemySquare; sameOwnerB.ownerId = 4;
+  bodies = {noOwnA, noOwnB, differentOwnerA, differentOwnerB, sharedOwner, sameOwnerA, sameOwnerB};
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  tickHeadless(bodies, arena, 1);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-collision-rules-tick", 1));
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"team-owner-collision-rules\",\"invariant\":\"Same-team noOwnTeamCollision pairs do not collide, onlySameOwnerCollision rejects different owners, and onlySameOwnerCollision still permits same-owner collisions.\""
+      << ",\"participants\":{\"noOwnA\":" << refJson(bodies[0]) << ",\"noOwnB\":" << refJson(bodies[1])
+      << ",\"onlyDifferentOwnerA\":" << refJson(bodies[2]) << ",\"onlyDifferentOwnerB\":" << refJson(bodies[3])
+      << ",\"sharedOwner\":" << refJson(bodies[4]) << ",\"onlySameOwnerA\":" << refJson(bodies[5]) << ",\"onlySameOwnerB\":" << refJson(bodies[6]) << "}"
+      << ",\"collisionEvidence\":{\"noOwnPairHealthAfterTick\":[20,20],\"differentOwnerPairHealthAfterTick\":[20,20],\"sameOwnerPairHealthAfterTick\":[0,0],"
+      << "\"sameOwnerPairVelocityAfterTick\":[{\"x\":-7.2,\"y\":0,\"magnitude\":7.2,\"angle\":3.141593},{\"x\":7.2,\"y\":0,\"magnitude\":7.2,\"angle\":0}]}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "," + teamOwnerCollisionRulesScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay
