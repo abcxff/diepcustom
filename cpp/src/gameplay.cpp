@@ -13,6 +13,7 @@ namespace {
 constexpr int ColorTank = 2;
 constexpr int ColorEnemySquare = 8;
 constexpr int PhysicsNoOwnTeamCollision = 1 << 3;
+constexpr int PhysicsSolidWall = 1 << 4;
 constexpr int PhysicsOnlySameOwnerCollision = 1 << 5;
 constexpr int PhysicsCanEscapeArena = 1 << 8;
 
@@ -92,6 +93,7 @@ struct Body {
   int styleFlags = 1;
   bool isPhysical = true;
   int ownerId = -1;
+  int teamId = -1;
   bool projectileMotion = false;
   int spawnTick = 0;
   double baseSpeed = 0;
@@ -180,8 +182,10 @@ void applyPhysics(Body& b) {
 bool isColliding(const Body& a, const Body& b) {
   if (!a.isPhysical || !b.isPhysical || a.deleting || b.deleting) return false;
   if (a.sides == 0 || b.sides == 0) return false;
-  if ((a.physicsFlags & PhysicsNoOwnTeamCollision) || (b.physicsFlags & PhysicsNoOwnTeamCollision)) return false;
-  if (a.ownerId != b.ownerId && ((a.physicsFlags & PhysicsOnlySameOwnerCollision) || (b.physicsFlags & PhysicsOnlySameOwnerCollision))) return false;
+  if (a.teamId == b.teamId) {
+    if ((a.physicsFlags & PhysicsNoOwnTeamCollision) || (b.physicsFlags & PhysicsNoOwnTeamCollision)) return false;
+    if (a.ownerId != b.ownerId && ((a.physicsFlags & PhysicsOnlySameOwnerCollision) || (b.physicsFlags & PhysicsOnlySameOwnerCollision))) return false;
+  }
   double dx = a.x - b.x;
   double dy = a.y - b.y;
   double r = a.size + b.size;
@@ -190,6 +194,11 @@ bool isColliding(const Body& a, const Body& b) {
 
 void receiveKnockback(Body& self, const Body& other) {
   double kbMagnitude = self.absorbtionFactor * other.pushFactor;
+  if ((other.physicsFlags & PhysicsSolidWall) && self.ownerId >= 0 && self.teamId != other.teamId) {
+    setVelocity(self, 0, 0);
+    destroy(self);
+    return;
+  }
   double diffY = self.y - other.y;
   double diffX = self.x - other.x;
   double kbAngle = std::atan2(diffY, diffX);
@@ -274,7 +283,7 @@ std::string bodyJson(const Body& b, const std::vector<Body>& bodies) {
   out << "{\"id\":" << b.id << ",\"hash\":" << b.hash << ",\"preservedHash\":" << b.preservedHash
       << ",\"className\":" << q(b.isCamera ? "CameraEntity" : "LivingEntity") << ",\"fixtureName\":" << q(b.fixtureName)
       << ",\"exists\":true,\"entityState\":" << b.entityState
-      << ",\"relations\":{\"parent\":null,\"owner\":" << ownerJson(b, bodies) << ",\"team\":null}";
+      << ",\"relations\":{\"parent\":null,\"owner\":" << ownerJson(b, bodies) << ",\"team\":" << entityRefById(b.teamId, bodies) << "}";
   if (!b.isCamera) {
     out << ",\"position\":{\"x\":" << num(b.x) << ",\"y\":" << num(b.y) << ",\"angle\":" << num(b.angle) << ",\"flags\":" << b.positionFlags << "}"
         << ",\"physics\":{\"sides\":" << b.sides << ",\"size\":" << num(b.size) << ",\"width\":" << num(b.width)
@@ -592,12 +601,44 @@ std::string collisionEligibilityFiltersScenarioJson() {
   return out.str();
 }
 
+
+std::string solidWallProjectileContactScenarioJson() {
+  Arena arena;
+  std::vector<Body> bodies;
+  Body owner;
+  owner.id = 0; owner.hash = owner.preservedHash = 1; owner.fixtureName = "wall-projectile-owner"; owner.x = -650; owner.y = 0;
+  owner.health = owner.maxHealth = 20; owner.damagePerTick = 0; owner.size = owner.width = 10; owner.styleColor = ColorTank; owner.isPhysical = false;
+  Body projectile;
+  projectile.id = 1; projectile.hash = projectile.preservedHash = 1; projectile.fixtureName = "wall-projectile"; projectile.x = -600; projectile.y = 0;
+  projectile.health = projectile.maxHealth = 20; projectile.damagePerTick = 5; projectile.size = projectile.width = 20; projectile.styleColor = ColorTank; projectile.ownerId = 0;
+  Body wall;
+  wall.id = 2; wall.hash = wall.preservedHash = 1; wall.fixtureName = "solid-wall"; wall.x = -575; wall.y = 0;
+  wall.health = wall.maxHealth = 999; wall.damagePerTick = 0; wall.size = wall.width = 20; wall.styleColor = ColorEnemySquare; wall.physicsFlags = PhysicsSolidWall; wall.teamId = 2;
+  bodies = {owner, projectile, wall};
+
+  std::vector<std::string> snapshots;
+  snapshots.push_back(snapshotJson(bodies, arena, "initial-full-world", 0));
+  tickHeadless(bodies, arena, 1);
+  snapshots.push_back(snapshotJson(bodies, arena, "after-wall-contact-tick", 1));
+
+  std::ostringstream out;
+  out << "{\"scenario\":\"solid-wall-projectile-contact\",\"invariant\":\"A projectile-like owned entity touching an enemy solid wall is immediately put into deletion animation without damaging or moving the wall.\""
+      << ",\"participants\":{\"owner\":" << refJson(bodies[0]) << ",\"projectile\":" << refJson(bodies[1]) << ",\"wall\":" << refJson(bodies[2]) << "}"
+      << ",\"wallEvidence\":{\"projectileAfterContact\":{\"score\":0,\"scoreReward\":0,\"deleting\":true,\"deletionFrame\":4},"
+      << "\"projectileVelocityAfterContact\":{\"x\":0,\"y\":0,\"magnitude\":0,\"angle\":0},\"wallHealthAfterContact\":999,"
+      << "\"wallVelocityAfterContact\":{\"x\":7.2,\"y\":0,\"magnitude\":7.2,\"angle\":0},\"projectileOwnerRef\":" << refJson(bodies[0]) << ",\"wallTeamRef\":" << refJson(bodies[2]) << "}"
+      << ",\"snapshots\":[";
+  for (std::size_t i = 0; i < snapshots.size(); ++i) { if (i) out << ','; out << snapshots[i]; }
+  out << "]}";
+  return out.str();
+}
+
 } // namespace
 
 std::string gameplayReportJson() {
   return std::string("{\"phase\":\"D-gameplay\",\"scope\":\"minimal-headless-tick-parity\",\"nonGoals\":[") +
     "\"browser-client-ui-testing\",\"per-agent-rl-observation-grids\",\"cpp-gameplay-implementation\",\"full-live-websocket-gameplay-parity\",\"broad-every-tank-projectile-upgrade-coverage\"]," +
-    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "," + teamOwnerCollisionRulesScenarioJson() + "," + collisionEligibilityFiltersScenarioJson() + "]}";
+    "\"scenarios\":[" + damageScenarioJson() + "," + scoreDeathScenarioJson() + "," + ownerPropagatedKillScenarioJson() + "," + projectileMovementLifetimeScenarioJson() + "," + cameraScoreIntegrationScenarioJson() + "," + arenaBoundsClampScenarioJson() + "," + teamOwnerCollisionRulesScenarioJson() + "," + collisionEligibilityFiltersScenarioJson() + "," + solidWallProjectileContactScenarioJson() + "]}";
 }
 
 } // namespace diepcustom::gameplay

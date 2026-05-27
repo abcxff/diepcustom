@@ -691,6 +691,66 @@ function collisionEligibilityFiltersScenario() {
   };
 }
 
+function solidWallProjectileContactScenario() {
+  const game = createHeadlessGame();
+  const owner = makeDamageBody(game, 'wall-projectile-owner', {
+    x: -650,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 0,
+    size: 10,
+    color: Color.Tank
+  });
+  owner.isPhysical = false;
+
+  const projectile = makeDamageBody(game, 'wall-projectile', {
+    x: -600,
+    y: 0,
+    health: 20,
+    maxHealth: 20,
+    damagePerTick: 5,
+    size: 20,
+    color: Color.Tank
+  });
+  projectile.relationsData.owner = owner;
+
+  const wall = makeDamageBody(game, 'solid-wall', {
+    x: -575,
+    y: 0,
+    health: 999,
+    maxHealth: 999,
+    damagePerTick: 0,
+    size: 20,
+    color: Color.EnemySquare
+  });
+  wall.physicsData.flags = PhysicsFlags.isSolidWall;
+  wall.relationsData.team = wall;
+
+  const snapshots = [worldSnapshot(game, 'initial-full-world')];
+  tickHeadless(game);
+  snapshots.push(worldSnapshot(game, 'after-wall-contact-tick'));
+
+  return {
+    scenario: 'solid-wall-projectile-contact',
+    invariant: 'A projectile-like owned entity touching an enemy solid wall is immediately put into deletion animation without damaging or moving the wall.',
+    participants: {
+      owner: entityRef(owner),
+      projectile: entityRef(projectile),
+      wall: entityRef(wall)
+    },
+    wallEvidence: {
+      projectileAfterContact: findEntity(snapshots[1], 'wall-projectile').gameplay,
+      projectileVelocityAfterContact: findEntity(snapshots[1], 'wall-projectile').velocity,
+      wallHealthAfterContact: findEntity(snapshots[1], 'solid-wall').health.health,
+      wallVelocityAfterContact: findEntity(snapshots[1], 'solid-wall').velocity,
+      projectileOwnerRef: findEntity(snapshots[0], 'wall-projectile').relations.owner,
+      wallTeamRef: findEntity(snapshots[0], 'solid-wall').relations.team
+    },
+    snapshots
+  };
+}
+
 function report() {
   return {
     phase: 'D-gameplay',
@@ -702,7 +762,7 @@ function report() {
       'full-live-websocket-gameplay-parity',
       'broad-every-tank-projectile-upgrade-coverage'
     ],
-    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario(), teamOwnerCollisionRulesScenario(), collisionEligibilityFiltersScenario()]
+    scenarios: [damageScenario(), scoreDeathScenario(), ownerPropagatedKillScenario(), projectileMovementLifetimeScenario(), cameraScoreIntegrationScenario(), arenaBoundsClampScenario(), teamOwnerCollisionRulesScenario(), collisionEligibilityFiltersScenario(), solidWallProjectileContactScenario()]
   };
 }
 
