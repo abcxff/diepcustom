@@ -14,6 +14,19 @@ After doing so, download or clone this repository and install the dependencies w
 $ npm install
 ```
 
+## C++ Migration / Headless RL Parity
+
+This repository is being migrated toward a deterministic C++ core for headless RL-agent training while the TypeScript server remains the behavior reference. See [docs/cpp-migration-status.md](./docs/cpp-migration-status.md) for the current parity harness, completed slices, verification commands, and next recommended work.
+
+Key migration commands:
+```bash
+npm run test:conformance
+npm run test:cpp
+npm run test:parity
+npm run bench:gameplay
+npm run test:all
+```
+
 ## Running the Server
 
 Run the server with:
