@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "source": "src/Coder/Writer.ts",
+  "cases": [
+    {
+      "name": "unsigned-varint-boundaries",
+      "hex": "000102030a7f80018101ff01808001ffff03ffffffff07"
+    },
+    {
+      "name": "signed-varint-boundaries",
+      "hex": "ff91f4018102ff01010002fe0180028092f401"
+    },
+    {
+      "name": "fixed-width-little-endian",
+      "hex": "abefcd785634120000c03f"
+    },
+    {
+      "name": "varint-floats",
+      "hex": "ffd885cf04fe820600fe8006ffda85cf04"
+    },
+    {
+      "name": "null-terminated-unicode",
+      "hex": "54616e6b20f09f9a8020ce9420e6bca2e5ad9700"
+    },
+    {
+      "name": "raw-bytes",
+      "hex": "010203ff"
+    }
+  ],
+  "boundaryDecode": [
+    {
+      "name": "empty-vu",
+      "hex": "",
+      "method": "vu",
+      "ok": true,
+      "value": 0,
+      "at": 1
+    },
+    {
+      "name": "truncated-vu-continuation",
+      "hex": "80",
+      "method": "vu",
+      "ok": true,
+      "value": 0,
+      "at": 2
+    },
+    {
+      "name": "empty-stringNT",
+      "hex": "00",
+      "method": "stringNT",
+      "ok": true,
+      "value": "",
+      "at": 1
+    },
+    {
+      "name": "unterminated-stringNT",
+      "hex": "6162",
+      "method": "stringNT",
+      "ok": true,
+      "value": "a",
+      "at": 0
+    },
+    {
+      "name": "fixed-empty-buffer-u8",
+      "hex": "",
+      "method": "u8",
+      "ok": true,
+      "at": 1
+    }
+  ]
+}
