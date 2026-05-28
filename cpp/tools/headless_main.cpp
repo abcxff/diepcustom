@@ -50,27 +50,42 @@ int main(int argc, char** argv) {
     Config config;
     bool snapshotJson = false;
     bool reportJson = true;
+    bool observeAll = false;
+    double observationChecksum = 0;
     int ticks = config.maxTicks;
     for (int i = 1; i < argc; ++i) {
       const std::string arg = argv[i];
       if (arg == "--snapshot-json") snapshotJson = true;
       else if (arg == "--no-report-json") reportJson = false;
+      else if (arg == "--observe-all") observeAll = true;
       else if (auto value = valueAfterEquals(arg, "seed"); !value.empty()) config.seed = parseU64(value, "seed");
       else if (auto value = valueAfterEquals(arg, "agents"); !value.empty()) config.agents = parseInt(value, "agents");
       else if (auto value = valueAfterEquals(arg, "ticks"); !value.empty()) ticks = parseInt(value, "ticks");
       else if (auto value = valueAfterEquals(arg, "scenario"); !value.empty()) config.scenario = value;
       else throw std::invalid_argument("unknown argument: " + arg);
     }
-    config.maxTicks = ticks;
+    config.maxTicks = std::max(1, ticks);
     Simulation sim(config);
     const auto start = std::chrono::steady_clock::now();
     for (int tick = 0; tick < ticks; ++tick) {
       sim.step(scriptedActions(sim, tick));
+      if (observeAll) {
+        const int count = sim.observationFloatCount();
+        std::vector<float> observation(static_cast<std::size_t>(count));
+        for (int agent = 0; agent < sim.config().agents; ++agent) {
+          if (sim.writeObservation(agent, observation.data(), count) == count) {
+            for (float value : observation) observationChecksum += value;
+          }
+        }
+      }
     }
     const auto end = std::chrono::steady_clock::now();
     const double elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
     if (snapshotJson) std::cout << sim.fullWorldSnapshotJson() << "\n";
-    if (reportJson) std::cout << sim.finalReportJson(elapsedMs) << "\n";
+    if (reportJson) {
+      if (observeAll) std::cout << "{\"scenario\":\"" << sim.config().scenario << "\",\"seed\":" << sim.config().seed << ",\"agents\":" << sim.config().agents << ",\"ticks\":" << sim.tick() << ",\"activeEntities\":" << sim.activeEntityCount() << ",\"elapsedMs\":" << elapsedMs << ",\"ticksPerSecond\":" << (elapsedMs <= 0 ? 0 : (static_cast<double>(sim.tick()) / elapsedMs) * 1000.0) << ",\"observationChecksum\":" << observationChecksum << "}\n";
+      else std::cout << sim.finalReportJson(elapsedMs) << "\n";
+    }
     return 0;
   } catch (const std::exception& error) {
     std::cerr << "headless_sim: " << error.what() << "\n";

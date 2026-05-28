@@ -11,11 +11,15 @@ namespace diepcustom::headless {
 namespace {
 constexpr int ColorTank = 2;
 constexpr int ColorEnemySquare = 8;
+constexpr int ColorEnemyTriangle = 9;
+constexpr int ColorEnemyPentagon = 10;
+constexpr int ColorCrasher = 11;
 constexpr int PhysicsNoOwnTeamCollision = 1 << 3;
 constexpr int PhysicsSolidWall = 1 << 4;
 constexpr int PhysicsOnlySameOwnerCollision = 1 << 5;
 constexpr int PhysicsCanEscapeArena = 1 << 8;
 constexpr double Pi = 3.141592653589793238462643383279502884;
+constexpr double SqrtHalf = 0.70710678118654752440;
 
 std::uint64_t normalizeSeed(std::uint64_t seed) { return seed == 0 ? 0x9E3779B97F4A7C15ull : seed; }
 
@@ -89,6 +93,7 @@ void Simulation::reset(std::uint64_t seed) {
   nextHash_ = 1;
   entities_.clear();
   agentIds_.clear();
+  possibleAgentIds_.clear();
   initializeWorld();
 }
 
@@ -98,10 +103,19 @@ void Simulation::initializeWorld() {
   for (int i = 0; i < config_.agents; ++i) spawnAgent(i);
   if (config_.scenario == "dense-collision") {
     for (int i = 0; i < 24; ++i) spawnShape(i);
-  } else if (config_.scenario == "agents-projectiles") {
+  } else if (config_.scenario == "agents-projectiles" || config_.scenario == "basic-bullet-parity") {
     for (int i = 0; i < config_.agents; ++i) {
       if (Entity* agent = findEntity(agentIds_[static_cast<std::size_t>(i)])) fireProjectile(*agent);
     }
+  } else if (config_.scenario == "shape-manager-parity") {
+    for (int i = 0; i < 16; ++i) spawnManagedShape(i);
+  } else if (config_.scenario == "shape-spawn-parity" || config_.scenario == "rl-grid-smoke") {
+    spawnShape(0, "square");
+    spawnShape(1, "triangle");
+    spawnShape(2, "pentagon");
+    spawnShape(3, "crasher");
+  } else if (config_.scenario == "basic-tank-parity" || config_.scenario == "basic-ai-parity" || config_.scenario == "agents-no-fire") {
+    // Agent-only aliases used as parity gates by conformance scripts.
   } else {
     for (int i = 0; i < 4; ++i) spawnShape(i);
   }
@@ -120,34 +134,105 @@ void Simulation::spawnAgent(int index) {
   e.x = std::cos(angle) * radius;
   e.y = std::sin(angle) * radius;
   e.angle = angle;
-  e.health = e.maxHealth = 100;
-  e.damagePerTick = 2;
-  e.size = e.width = 30;
+  e.health = e.maxHealth = 50;
+  e.damagePerTick = 5;
+  e.maxDamageMultiplier = 6;
+  e.size = e.width = 50;
   e.styleColor = ColorTank;
   e.scoreReward = 25;
+  e.barrels.push_back(BarrelSnapshot{});
   entities_.push_back(e);
   agentIds_.push_back(e.id);
+  possibleAgentIds_.push_back(e.id);
 }
 
 void Simulation::spawnShape(int index) {
+  static const char* types[] = {"square", "triangle", "pentagon", "crasher"};
+  spawnShape(index, types[static_cast<std::size_t>(index % 4)]);
+}
+
+void Simulation::configureShape(Entity& e, const std::string& shapeKind) {
+  e.kind = shapeKind == "crasher" ? "crasher" : "shape";
+  if (shapeKind == "triangle") {
+    e.sides = 3;
+    e.health = e.maxHealth = 30;
+    e.size = e.width = 55 * SqrtHalf;
+    e.styleColor = ColorEnemyTriangle;
+    e.scoreReward = 25;
+  } else if (shapeKind == "pentagon") {
+    e.sides = 5;
+    e.health = e.maxHealth = 100;
+    e.size = e.width = 75 * SqrtHalf;
+    e.absorbtionFactor = 0.5;
+    e.pushFactor = 11;
+    e.styleColor = ColorEnemyPentagon;
+    e.scoreReward = 130;
+  } else if (shapeKind == "crasher") {
+    e.sides = 3;
+    e.health = e.maxHealth = 10;
+    e.size = e.width = 35 * SqrtHalf;
+    e.absorbtionFactor = 2;
+    e.pushFactor = 8;
+    e.styleColor = ColorCrasher;
+    e.scoreReward = 15;
+    e.baseSpeed = 1.5;
+    e.movementAngle = rng_.nextDouble01() * 2.0 * Pi;
+    e.vx = std::cos(e.movementAngle) * e.baseSpeed;
+    e.vy = std::sin(e.movementAngle) * e.baseSpeed;
+  } else {
+    e.sides = 4;
+    e.health = e.maxHealth = 10;
+    e.size = e.width = 55 * SqrtHalf;
+    e.styleColor = ColorEnemySquare;
+    e.scoreReward = 10;
+  }
+  e.damagePerTick = shapeKind == "pentagon" ? 3 : 2;
+}
+
+void Simulation::spawnShapeAt(int index, const std::string& shapeKind, double x, double y) {
   Entity e;
   e.id = nextId_++;
   e.hash = nextHash_++;
-  e.kind = "shape";
   e.teamId = -100 - index;
-  if (config_.scenario == "dense-collision") {
-    e.x = -120 + (index % 8) * 32;
-    e.y = -48 + (index / 8) * 32;
-  } else {
-    e.x = -500 + index * 250 + (rng_.nextDouble01() - 0.5) * 20.0;
-    e.y = 120 + index * 40 + (rng_.nextDouble01() - 0.5) * 20.0;
-  }
-  e.health = e.maxHealth = 20;
-  e.damagePerTick = 1;
-  e.size = e.width = 22;
-  e.styleColor = ColorEnemySquare;
-  e.scoreReward = 10;
+  e.x = x;
+  e.y = y;
+  configureShape(e, shapeKind);
   entities_.push_back(e);
+}
+
+void Simulation::spawnShape(int index, const std::string& shapeKind) {
+  double x;
+  double y;
+  if (config_.scenario == "dense-collision") {
+    x = -120 + (index % 8) * 32;
+    y = -48 + (index / 8) * 32;
+  } else {
+    x = -500 + index * 250 + (rng_.nextDouble01() - 0.5) * 20.0;
+    y = 120 + index * 40 + (rng_.nextDouble01() - 0.5) * 20.0;
+  }
+  spawnShapeAt(index, shapeKind, x, y);
+}
+
+
+void Simulation::spawnManagedShape(int index) {
+  const int x = static_cast<int>(rng_.nextDouble01() * (arena_.rightX - arena_.leftX) + arena_.leftX);
+  const int y = static_cast<int>(rng_.nextDouble01() * (arena_.bottomY - arena_.topY) + arena_.topY);
+  const double maxXY = std::max(static_cast<double>(x), static_cast<double>(y));
+  const double minXY = std::min(static_cast<double>(x), static_cast<double>(y));
+  std::string type = "square";
+  if (maxXY < arena_.rightX / 10.0 && minXY > arena_.leftX / 10.0) {
+    type = rng_.nextDouble01() <= 0.05 ? "alphaPentagon" : "pentagon";
+  } else if (maxXY < arena_.rightX / 5.0 && minXY > arena_.leftX / 5.0) {
+    type = rng_.nextDouble01() < 0.2 ? "largeCrasher" : "crasher";
+  } else {
+    const double rand = rng_.nextDouble01();
+    if (rand < 0.04) type = "pentagon";
+    else if (rand < 0.20) type = "triangle";
+    else type = "square";
+  }
+  if (type == "alphaPentagon") type = "pentagon";
+  if (type == "largeCrasher") type = "crasher";
+  spawnShapeAt(index, type, x, y);
 }
 
 Simulation::Entity* Simulation::findEntity(int id) {
@@ -169,6 +254,7 @@ StepResult Simulation::step(const std::vector<Action>& actions) {
   StepResult result;
   result.rewards.assign(static_cast<std::size_t>(std::max(0, config_.agents)), 0.0);
   tick_ += 1;
+  if (config_.scenario == "basic-ai-parity") applyBasicAi();
   applyActions(actions, result);
   resolveCollisions(result);
   integrateEntities();
@@ -178,22 +264,83 @@ StepResult Simulation::step(const std::vector<Action>& actions) {
   return result;
 }
 
+StepResult Simulation::stepMany(const std::vector<Action>& actions, int ticks) {
+  StepResult aggregate;
+  aggregate.rewards.assign(static_cast<std::size_t>(std::max(0, config_.agents)), 0.0);
+  if (ticks <= 0) {
+    aggregate.tick = tick_;
+    aggregate.done = tick_ >= config_.maxTicks || agentIds_.empty();
+    return aggregate;
+  }
+  for (int i = 0; i < ticks; ++i) {
+    const StepResult current = step(actions);
+    if (current.rewards.size() > aggregate.rewards.size()) aggregate.rewards.resize(current.rewards.size(), 0.0);
+    for (std::size_t r = 0; r < current.rewards.size(); ++r) aggregate.rewards[r] += current.rewards[r];
+    aggregate.tick = current.tick;
+    aggregate.done = current.done;
+    if (aggregate.done) break;
+  }
+  return aggregate;
+}
+
+void Simulation::applyBasicAi() {
+  for (auto& agent : entities_) {
+    if (agent.kind != "agent" || agent.deleting) continue;
+    const Entity* closest = nullptr;
+    double closestDistSq = 1700.0 * 1700.0;
+    for (const auto& candidate : entities_) {
+      if (candidate.id == agent.id || candidate.teamId == agent.teamId || candidate.deleting) continue;
+      if (!(candidate.kind == "agent" || candidate.kind == "shape" || candidate.kind == "crasher")) continue;
+      const double dx = candidate.x - agent.x;
+      const double dy = candidate.y - agent.y;
+      const double distSq = dx * dx + dy * dy;
+      if (distSq < closestDistSq) { closest = &candidate; closestDistSq = distSq; }
+    }
+    if (!closest) {
+      agent.aiState = 0;
+      agent.aiTargetId = -1;
+      const double angle = std::atan2(agent.aiMouseY, agent.aiMouseX) + 0.01;
+      agent.aiMouseX = std::cos(angle) * 100.0;
+      agent.aiMouseY = std::sin(angle) * 100.0;
+      agent.aiMoveX = 0;
+      agent.aiMoveY = 0;
+      agent.aiFlags = 0;
+    } else {
+      agent.aiState = 1;
+      agent.aiTargetId = closest->id;
+      agent.aiMouseX = closest->x;
+      agent.aiMouseY = closest->y;
+      const double dx = closest->x - agent.x;
+      const double dy = closest->y - agent.y;
+      const double mag = std::sqrt(dx * dx + dy * dy);
+      agent.aiMoveX = mag <= 0.000001 ? 0 : dx / mag;
+      agent.aiMoveY = mag <= 0.000001 ? 0 : dy / mag;
+      agent.aiFlags = 1;
+      agent.angle = std::atan2(dy, dx);
+    }
+  }
+}
+
 void Simulation::applyActions(const std::vector<Action>& actions, StepResult&) {
   for (auto& entity : entities_) if (entity.cooldown > 0) entity.cooldown -= 1;
   for (const auto& action : actions) {
     Entity* agent = findEntity(action.agentId);
     if (!agent || agent->kind != "agent" || agent->deleting) continue;
-    const double moveMag = std::sqrt(action.moveX * action.moveX + action.moveY * action.moveY);
+    const double clampedMoveX = std::max(-1.0, std::min(1.0, action.moveX));
+    const double clampedMoveY = std::max(-1.0, std::min(1.0, action.moveY));
+    const double clampedAimX = std::max(-1.0, std::min(1.0, action.aimX));
+    const double clampedAimY = std::max(-1.0, std::min(1.0, action.aimY));
+    const double moveMag = std::sqrt(clampedMoveX * clampedMoveX + clampedMoveY * clampedMoveY);
     if (moveMag > 0.000001) {
       const double scale = std::min(1.0, moveMag);
-      agent->vx += (action.moveX / moveMag) * scale * 1.25;
-      agent->vy += (action.moveY / moveMag) * scale * 1.25;
+      agent->vx += (clampedMoveX / moveMag) * scale * 1.25;
+      agent->vy += (clampedMoveY / moveMag) * scale * 1.25;
     }
-    if (std::fabs(action.aimX) > 0.000001 || std::fabs(action.aimY) > 0.000001) {
-      agent->angle = std::atan2(action.aimY, action.aimX);
+    if (std::fabs(clampedAimX) > 0.000001 || std::fabs(clampedAimY) > 0.000001) {
+      agent->angle = std::atan2(clampedAimY, clampedAimX);
     }
     if (action.fire && agent->cooldown == 0) {
-      agent->cooldown = action.altFire ? 12 : 8;
+      agent->cooldown = 15;
       fireProjectile(*agent);
     }
   }
@@ -206,20 +353,27 @@ void Simulation::fireProjectile(Entity& owner) {
   projectile.kind = "projectile";
   projectile.ownerId = owner.id;
   projectile.teamId = owner.teamId;
-  projectile.x = owner.x + std::cos(owner.angle) * (owner.size + 8);
-  projectile.y = owner.y + std::sin(owner.angle) * (owner.size + 8);
-  projectile.angle = owner.angle;
-  projectile.health = projectile.maxHealth = 12;
-  projectile.damagePerTick = 6;
-  projectile.size = projectile.width = 10;
-  projectile.pushFactor = 4;
+  projectile.x = owner.x + std::cos(owner.angle) * 95.0;
+  projectile.y = owner.y + std::sin(owner.angle) * 95.0;
+  const double scatterAngle = (Pi / 180.0) * 1.0 * (rng_.nextDouble01() - 0.5) * 10.0;
+  projectile.scatterAngle = scatterAngle;
+  projectile.angle = owner.angle + scatterAngle;
+  projectile.health = projectile.maxHealth = 2;
+  projectile.damagePerTick = 7;
+  projectile.minDamageMultiplier = 0.25;
+  projectile.maxDamageMultiplier = 1;
+  projectile.size = projectile.width = 21;
+  projectile.pushFactor = 7.0 / 3.0;
+  projectile.absorbtionFactor = 1;
   projectile.styleColor = ColorTank;
   projectile.projectileMotion = true;
   projectile.spawnTick = tick_;
-  projectile.lifeLength = 50;
-  projectile.movementAngle = owner.angle;
-  projectile.baseSpeed = 9;
-  projectile.baseAccel = 0;
+  projectile.lifeLength = 75;
+  projectile.movementAngle = projectile.angle;
+  projectile.baseAccel = 20;
+  projectile.baseSpeed = 50.0 - rng_.nextDouble01();
+  owner.vx += std::cos(projectile.angle + Pi) * 2.0;
+  owner.vy += std::sin(projectile.angle + Pi) * 2.0;
   projectile.vx = owner.vx;
   projectile.vy = owner.vy;
   refreshVelocity(projectile.vx, projectile.vy, projectile.velocityMagnitude, projectile.velocityAngle);
@@ -374,12 +528,28 @@ std::string Simulation::fullWorldSnapshotJson() const {
         << ",\"agentIndex\":" << e.agentIndex << ",\"ownerId\":" << e.ownerId << ",\"teamId\":" << e.teamId
         << ",\"position\":{\"x\":" << num(e.x) << ",\"y\":" << num(e.y) << ",\"angle\":" << num(e.angle) << "}"
         << ",\"velocity\":{\"x\":" << num(e.vx) << ",\"y\":" << num(e.vy) << ",\"magnitude\":" << num(e.velocityMagnitude) << ",\"angle\":" << num(e.velocityAngle) << "}"
-        << ",\"physics\":{\"sides\":" << e.sides << ",\"size\":" << num(e.size) << ",\"width\":" << num(e.width) << ",\"flags\":" << e.physicsFlags << "}"
+        << ",\"physics\":{\"sides\":" << e.sides << ",\"size\":" << num(e.size) << ",\"width\":" << num(e.width) << ",\"flags\":" << e.physicsFlags << ",\"absorbtionFactor\":" << num(e.absorbtionFactor) << ",\"pushFactor\":" << num(e.pushFactor) << "}"
+        << ",\"style\":{\"color\":" << e.styleColor << "}"
+        << ",\"styleColor\":" << e.styleColor
         << ",\"health\":{\"health\":" << num(e.health) << ",\"maxHealth\":" << num(e.maxHealth) << "}"
         << ",\"damage\":{\"damagePerTick\":" << num(e.damagePerTick) << ",\"lastDamageTick\":" << e.lastDamageTick << "}"
         << ",\"score\":{\"score\":" << num(e.score) << ",\"scoreReward\":" << num(e.scoreReward) << "}"
+        << ",\"ai\":{\"state\":" << e.aiState << ",\"targetId\":" << e.aiTargetId << ",\"mouse\":{\"x\":" << num(e.aiMouseX) << ",\"y\":" << num(e.aiMouseY) << "},\"movement\":{\"x\":" << num(e.aiMoveX) << ",\"y\":" << num(e.aiMoveY) << "},\"flags\":" << e.aiFlags << "}"
+        << ",\"barrels\":[";
+    for (std::size_t b = 0; b < e.barrels.size(); ++b) {
+      const auto& barrel = e.barrels[b];
+      if (b) out << ',';
+      out << "{\"angle\":" << num(barrel.angle) << ",\"offset\":" << num(barrel.offset) << ",\"distance\":" << num(barrel.distance)
+          << ",\"size\":" << num(barrel.size) << ",\"width\":" << num(barrel.width) << ",\"delay\":" << num(barrel.delay)
+          << ",\"reload\":" << num(barrel.reload) << ",\"recoil\":" << num(barrel.recoil) << ",\"isTrapezoid\":" << (barrel.isTrapezoid ? "true" : "false")
+          << ",\"trapezoidDirection\":" << num(barrel.trapezoidDirection) << ",\"addon\":null,\"bullet\":{\"type\":" << q(barrel.bulletType)
+          << ",\"sizeRatio\":" << num(barrel.bulletSizeRatio) << ",\"health\":" << num(barrel.bulletHealth) << ",\"damage\":" << num(barrel.bulletDamage)
+          << ",\"speed\":" << num(barrel.bulletSpeed) << ",\"scatterRate\":" << num(barrel.bulletScatterRate) << ",\"lifeLength\":" << num(barrel.bulletLifeLength)
+          << ",\"absorbtionFactor\":" << num(barrel.bulletAbsorbtionFactor) << "}}";
+    }
+    out << "]"
         << ",\"lifecycle\":{\"deleting\":" << (e.deleting ? "true" : "false") << ",\"removed\":" << (e.removed ? "true" : "false") << ",\"deletionFrame\":" << e.deletionFrame << "}"
-        << ",\"projectile\":{\"active\":" << (e.projectileMotion ? "true" : "false") << ",\"spawnTick\":" << e.spawnTick << ",\"lifeLength\":" << e.lifeLength << "}}";
+        << ",\"projectile\":{\"active\":" << (e.projectileMotion ? "true" : "false") << ",\"spawnTick\":" << e.spawnTick << ",\"lifeLength\":" << e.lifeLength << ",\"movementAngle\":" << num(e.movementAngle) << ",\"baseSpeed\":" << num(e.baseSpeed) << ",\"baseAccel\":" << num(e.baseAccel) << ",\"scatterAngle\":" << num(e.scatterAngle) << "}}";
   }
   out << "]}";
   return out.str();
@@ -392,6 +562,94 @@ std::string Simulation::finalReportJson(double elapsedMs) const {
       << ",\"ticks\":" << tick_ << ",\"activeEntities\":" << activeEntityCount() << ",\"elapsedMs\":" << num(elapsedMs)
       << ",\"ticksPerSecond\":" << num(ticksPerSecond) << ",\"rngDraws\":" << rng_.drawCount() << "}";
   return out.str();
+}
+
+int Simulation::observationFloatCount() const {
+  return observationSpec_.rows * observationSpec_.cols * observationSpec_.channels;
+}
+
+void Simulation::addObservationOccupancy(const Entity& entity, const Entity& self, float* buffer, int bufferLen) const {
+  const int rows = observationSpec_.rows;
+  const int cols = observationSpec_.cols;
+  const int channels = observationSpec_.channels;
+  const int col = static_cast<int>(std::floor((entity.x - self.x) / observationSpec_.cellSize)) + cols / 2;
+  const int row = static_cast<int>(std::floor((entity.y - self.y) / observationSpec_.cellSize)) + rows / 2;
+  if (row < 0 || row >= rows || col < 0 || col >= cols) return;
+  const int base = (row * cols + col) * channels;
+  if (base + channels > bufferLen) return;
+  const bool isSelf = entity.id == self.id;
+  const bool isProjectile = entity.kind == "projectile";
+  const bool friendly = entity.teamId == self.teamId;
+  int occupancyChannel = -1;
+  if (isSelf) occupancyChannel = 0;
+  else if (entity.kind == "agent") occupancyChannel = 1;
+  else if (entity.kind == "shape" || entity.kind == "crasher") occupancyChannel = 2;
+  else if (isProjectile && friendly) occupancyChannel = 3;
+  else if (isProjectile) occupancyChannel = 4;
+  if (occupancyChannel >= 0) buffer[base + occupancyChannel] = 1.0f;
+  buffer[base + 6] = std::max(buffer[base + 6], static_cast<float>(entity.maxHealth <= 0 ? 0 : std::max(0.0, entity.health) / entity.maxHealth));
+  buffer[base + 7] = std::max(buffer[base + 7], static_cast<float>(std::min(1.0, std::max(0.0, entity.score + entity.scoreReward) / 1000.0)));
+}
+
+void Simulation::addObservationBoundary(const Entity& self, float* buffer, int bufferLen) const {
+  const int rows = observationSpec_.rows;
+  const int cols = observationSpec_.cols;
+  const int channels = observationSpec_.channels;
+  for (int row = 0; row < rows; ++row) {
+    for (int col = 0; col < cols; ++col) {
+      const double x = self.x + (col - cols / 2) * observationSpec_.cellSize;
+      const double y = self.y + (row - rows / 2) * observationSpec_.cellSize;
+      if (x < arena_.leftX || x > arena_.rightX || y < arena_.topY || y > arena_.bottomY) {
+        const int base = (row * cols + col) * channels;
+        if (base + 5 < bufferLen) buffer[base + 5] = 1.0f;
+      }
+    }
+  }
+}
+
+int Simulation::writeObservation(int agentId, float* buffer, int bufferLen) const {
+  const int required = observationFloatCount();
+  if (!buffer || bufferLen < required) return required;
+  std::fill(buffer, buffer + bufferLen, 0.0f);
+  const Entity* self = findEntity(agentId);
+  if (!self || self->kind != "agent") return -1;
+  addObservationBoundary(*self, buffer, bufferLen);
+  for (const auto& entity : entities_) {
+    if (!entity.removed && !entity.deleting) addObservationOccupancy(entity, *self, buffer, bufferLen);
+  }
+  return required;
+}
+
+int Simulation::writeObservations(float* buffer, int bufferLen) const {
+  const int perAgent = observationFloatCount();
+  const int required = perAgent * static_cast<int>(possibleAgentIds_.size());
+  if (!buffer || bufferLen < required) return required;
+  std::fill(buffer, buffer + bufferLen, 0.0f);
+  for (std::size_t i = 0; i < possibleAgentIds_.size(); ++i) {
+    const int agentId = possibleAgentIds_[i];
+    if (std::find(agentIds_.begin(), agentIds_.end(), agentId) == agentIds_.end()) continue;
+    const int offset = static_cast<int>(i) * perAgent;
+    const int written = writeObservation(agentId, buffer + offset, perAgent);
+    if (written < 0) continue;
+  }
+  return required;
+}
+
+int Simulation::writeAliveMask(int* buffer, int bufferLen) const {
+  const int required = static_cast<int>(possibleAgentIds_.size());
+  if (!buffer || bufferLen < required) return required;
+  for (int i = 0; i < required; ++i) {
+    const int agentId = possibleAgentIds_[static_cast<std::size_t>(i)];
+    buffer[i] = std::find(agentIds_.begin(), agentIds_.end(), agentId) == agentIds_.end() ? 0 : 1;
+  }
+  return required;
+}
+
+int Simulation::writeAgentIds(int* buffer, int bufferLen) const {
+  const int required = static_cast<int>(agentIds_.size());
+  if (!buffer || bufferLen < required) return required;
+  for (int i = 0; i < required; ++i) buffer[i] = agentIds_[static_cast<std::size_t>(i)];
+  return required;
 }
 
 int Simulation::tick() const { return tick_; }

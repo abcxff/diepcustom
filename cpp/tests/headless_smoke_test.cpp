@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 using diepcustom::headless::Action;
 using diepcustom::headless::Config;
@@ -29,6 +30,17 @@ int main() {
   const std::string c = runScript(124, 32, "agents-projectiles");
   assert(a == b);
   assert(a != c);
+
+  Simulation grid(Config{123, 1, 5, "rl-grid-smoke"});
+  const std::string beforeObs = grid.fullWorldSnapshotJson();
+  const int obsCount = grid.observationFloatCount();
+  assert(obsCount == 21 * 21 * 8);
+  assert(grid.writeObservation(0, nullptr, 0) == obsCount);
+  std::vector<float> obs(static_cast<std::size_t>(obsCount));
+  assert(grid.writeObservation(0, obs.data(), obsCount) == obsCount);
+  assert(std::any_of(obs.begin(), obs.end(), [](float value) { return value > 0.0f; }));
+  assert(grid.writeObservation(9999, obs.data(), obsCount) == -1);
+  assert(grid.fullWorldSnapshotJson() == beforeObs);
 
   Simulation empty(Config{123, 0, 5, "empty-arena"});
   const auto done = empty.step({});

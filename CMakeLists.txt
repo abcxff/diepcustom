@@ -24,11 +24,17 @@ add_library(diepcustom_gameplay
 add_library(diepcustom_headless
   cpp/src/headless.cpp
 )
+
+add_library(diepcustom_headless_c SHARED
+  cpp/src/headless_c_api.cpp
+)
 target_include_directories(diepcustom_physics PUBLIC cpp/include)
 target_include_directories(diepcustom_protocol PUBLIC cpp/include)
 target_include_directories(diepcustom_entity_core PUBLIC cpp/include)
 target_include_directories(diepcustom_gameplay PUBLIC cpp/include)
 target_include_directories(diepcustom_headless PUBLIC cpp/include)
+target_include_directories(diepcustom_headless_c PUBLIC cpp/include)
+target_link_libraries(diepcustom_headless_c PRIVATE diepcustom_headless)
 target_link_libraries(diepcustom_entity_core PUBLIC diepcustom_protocol)
 
 add_executable(protocol_golden_test cpp/tests/protocol_golden_test.cpp)
@@ -49,6 +55,9 @@ target_link_libraries(gameplay_report PRIVATE diepcustom_gameplay)
 add_executable(headless_smoke_test cpp/tests/headless_smoke_test.cpp)
 target_link_libraries(headless_smoke_test PRIVATE diepcustom_headless)
 
+add_executable(headless_c_api_smoke_test cpp/tests/headless_c_api_smoke_test.cpp)
+target_link_libraries(headless_c_api_smoke_test PRIVATE diepcustom_headless_c)
+
 add_executable(headless_sim cpp/tools/headless_main.cpp)
 target_link_libraries(headless_sim PRIVATE diepcustom_headless)
 
@@ -57,3 +66,4 @@ add_test(NAME protocol_golden_test COMMAND protocol_golden_test)
 add_test(NAME entity_core_report_smoke COMMAND entity_core_report)
 add_test(NAME gameplay_report_smoke COMMAND gameplay_report)
 add_test(NAME headless_smoke_test COMMAND headless_smoke_test)
+add_test(NAME headless_c_api_smoke_test COMMAND headless_c_api_smoke_test)
