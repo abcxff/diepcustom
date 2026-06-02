@@ -20,6 +20,8 @@ constexpr int PhysicsOnlySameOwnerCollision = 1 << 5;
 constexpr int PhysicsCanEscapeArena = 1 << 8;
 constexpr double Pi = 3.141592653589793238462643383279502884;
 constexpr double SqrtHalf = 0.70710678118654752440;
+constexpr int BasicTankId = 0;
+constexpr int MaxPlayerLevel = 45;
 
 std::uint64_t normalizeSeed(std::uint64_t seed) { return seed == 0 ? 0x9E3779B97F4A7C15ull : seed; }
 
@@ -52,6 +54,38 @@ std::string num(double value) {
 void refreshVelocity(double vx, double vy, double& magnitude, double& angle) {
   magnitude = std::sqrt(vx * vx + vy * vy);
   angle = magnitude == 0 ? 0 : std::atan2(vy, vx);
+}
+
+double levelToScore(int level) {
+  if (level <= 0) return 0.0;
+  if (level >= MaxPlayerLevel) level = MaxPlayerLevel;
+  double score = 0.0;
+  for (int i = 1; i < level; ++i) score += (40.0 / 9.0) * std::pow(1.06, i - 1) * std::min(31, i);
+  return score;
+}
+
+int scoreToLevel(double score) {
+  int level = 1;
+  while (level < MaxPlayerLevel && score - levelToScore(level + 1) >= 0.0) level += 1;
+  return level;
+}
+
+int calculateStatCount(int level) {
+  if (level <= 0) return 0;
+  if (level <= 28) return level - 1;
+  return level / 3 + 18;
+}
+
+int spentStatCount(const std::array<int, HeadlessStatCount>& statLevels) {
+  int spent = 0;
+  for (int value : statLevels) spent += value;
+  return spent;
+}
+
+const TankRuntimeDefinition* tankDefinitionFor(int tankId) {
+  if (tankId < 0 || tankId >= HeadlessTankDefinitionCount) return nullptr;
+  const auto& definition = kTankRuntimeDefinitions[static_cast<std::size_t>(tankId)];
+  return definition.valid ? &definition : nullptr;
 }
 } // namespace
 
@@ -114,7 +148,7 @@ void Simulation::initializeWorld() {
     spawnShape(1, "triangle");
     spawnShape(2, "pentagon");
     spawnShape(3, "crasher");
-  } else if (config_.scenario == "basic-tank-parity" || config_.scenario == "basic-ai-parity" || config_.scenario == "agents-no-fire") {
+  } else if (config_.scenario == "basic-tank-parity" || config_.scenario == "basic-ai-parity" || config_.scenario == "agents-no-fire" || config_.scenario == "upgrade-ready") {
     // Agent-only aliases used as parity gates by conformance scripts.
   } else {
     for (int i = 0; i < 4; ++i) spawnShape(i);
@@ -137,10 +171,12 @@ void Simulation::spawnAgent(int index) {
   e.health = e.maxHealth = 50;
   e.damagePerTick = 5;
   e.maxDamageMultiplier = 6;
+  e.currentTankId = BasicTankId;
   e.size = e.width = 50;
   e.styleColor = ColorTank;
   e.scoreReward = 25;
-  e.barrels.push_back(BarrelSnapshot{});
+  if (config_.scenario == "upgrade-ready") e.score = levelToScore(MaxPlayerLevel);
+  applyTankDefinition(e);
   entities_.push_back(e);
   agentIds_.push_back(e.id);
   possibleAgentIds_.push_back(e.id);
@@ -246,7 +282,7 @@ const Simulation::Entity* Simulation::findEntity(int id) const {
 }
 
 int Simulation::agentIndexForId(int id) const {
-  for (std::size_t i = 0; i < agentIds_.size(); ++i) if (agentIds_[i] == id) return static_cast<int>(i);
+  for (std::size_t i = 0; i < possibleAgentIds_.size(); ++i) if (possibleAgentIds_[i] == id) return static_cast<int>(i);
   return -1;
 }
 
@@ -339,6 +375,8 @@ void Simulation::applyActions(const std::vector<Action>& actions, StepResult&) {
     if (std::fabs(clampedAimX) > 0.000001 || std::fabs(clampedAimY) > 0.000001) {
       agent->angle = std::atan2(clampedAimY, clampedAimX);
     }
+    tryApplyStatUpgrade(*agent, action.statUpgradeChoice);
+    tryApplyTankUpgradeSlot(*agent, action.tankUpgradeChoice);
     if (action.fire && agent->cooldown == 0) {
       agent->cooldown = 15;
       fireProjectile(*agent);
@@ -346,7 +384,60 @@ void Simulation::applyActions(const std::vector<Action>& actions, StepResult&) {
   }
 }
 
+void Simulation::applyTankDefinition(Entity& entity) {
+  const TankRuntimeDefinition* definition = tankDefinitionFor(entity.currentTankId);
+  if (!definition) return;
+  entity.maxHealth = definition->maxHealth;
+  entity.health = std::min(entity.health, entity.maxHealth);
+  entity.absorbtionFactor = definition->absorbtionFactor;
+  entity.sides = definition->sides;
+  entity.barrels.assign(static_cast<std::size_t>(std::max(0, definition->barrelCount)), BarrelSnapshot{});
+  for (int statIndex = 0; statIndex < HeadlessStatCount; ++statIndex) {
+    const int maxAllowed = definition->statCaps[static_cast<std::size_t>(statIndex)];
+    if (entity.statLevels[static_cast<std::size_t>(statIndex)] > maxAllowed) {
+      entity.statLevels[static_cast<std::size_t>(statIndex)] = maxAllowed;
+    }
+  }
+}
+
+int Simulation::levelFor(const Entity& entity) const { return scoreToLevel(entity.score); }
+
+int Simulation::statsAvailableFor(const Entity& entity) const {
+  return std::max(0, calculateStatCount(levelFor(entity)) - spentStatCount(entity.statLevels));
+}
+
+bool Simulation::canApplyStatUpgrade(const Entity& entity, int statIndex) const {
+  const TankRuntimeDefinition* definition = tankDefinitionFor(entity.currentTankId);
+  if (!definition || statIndex < 0 || statIndex >= HeadlessStatCount) return false;
+  return statsAvailableFor(entity) > 0 &&
+         entity.statLevels[static_cast<std::size_t>(statIndex)] < definition->statCaps[static_cast<std::size_t>(statIndex)];
+}
+
+bool Simulation::canApplyTankUpgradeSlot(const Entity& entity, int slotIndex) const {
+  const TankRuntimeDefinition* definition = tankDefinitionFor(entity.currentTankId);
+  if (!definition || slotIndex < 0 || slotIndex >= HeadlessTankUpgradeSlots || slotIndex >= definition->upgradeCount) return false;
+  const int nextTankId = definition->upgradeIds[static_cast<std::size_t>(slotIndex)];
+  const TankRuntimeDefinition* nextDefinition = tankDefinitionFor(nextTankId);
+  return nextDefinition && levelFor(entity) >= nextDefinition->levelRequirement;
+}
+
+bool Simulation::tryApplyStatUpgrade(Entity& entity, int statIndex) {
+  if (statIndex == HeadlessNoUpgradeChoice || !canApplyStatUpgrade(entity, statIndex)) return false;
+  entity.statLevels[static_cast<std::size_t>(statIndex)] += 1;
+  return true;
+}
+
+bool Simulation::tryApplyTankUpgradeSlot(Entity& entity, int slotIndex) {
+  if (slotIndex == HeadlessNoUpgradeChoice || !canApplyTankUpgradeSlot(entity, slotIndex)) return false;
+  const TankRuntimeDefinition* definition = tankDefinitionFor(entity.currentTankId);
+  if (!definition) return false;
+  entity.currentTankId = definition->upgradeIds[static_cast<std::size_t>(slotIndex)];
+  applyTankDefinition(entity);
+  return true;
+}
+
 void Simulation::fireProjectile(Entity& owner) {
+  if (owner.barrels.empty()) return;
   Entity projectile;
   projectile.id = nextId_++;
   projectile.hash = nextHash_++;
@@ -649,6 +740,65 @@ int Simulation::writeAgentIds(int* buffer, int bufferLen) const {
   const int required = static_cast<int>(agentIds_.size());
   if (!buffer || bufferLen < required) return required;
   for (int i = 0; i < required; ++i) buffer[i] = agentIds_[static_cast<std::size_t>(i)];
+  return required;
+}
+
+int Simulation::agentStateFloatCount() const { return 10; }
+
+int Simulation::writeAgentStates(float* buffer, int bufferLen) const {
+  const int fields = agentStateFloatCount();
+  const int required = fields * static_cast<int>(possibleAgentIds_.size());
+  if (!buffer || bufferLen < required) return required;
+  std::fill(buffer, buffer + bufferLen, 0.0f);
+  for (std::size_t i = 0; i < possibleAgentIds_.size(); ++i) {
+    const int agentId = possibleAgentIds_[i];
+    const int base = static_cast<int>(i) * fields;
+    buffer[base + 0] = static_cast<float>(agentId);
+    const Entity* agent = findEntity(agentId);
+    if (!agent || agent->kind != "agent") continue;
+    buffer[base + 1] = 1.0f;
+    buffer[base + 2] = static_cast<float>(agent->x);
+    buffer[base + 3] = static_cast<float>(agent->y);
+    buffer[base + 4] = static_cast<float>(agent->vx);
+    buffer[base + 5] = static_cast<float>(agent->vy);
+    buffer[base + 6] = static_cast<float>(agent->health);
+    buffer[base + 7] = static_cast<float>(agent->maxHealth);
+    buffer[base + 8] = static_cast<float>(agent->score);
+    buffer[base + 9] = static_cast<float>(agent->teamId);
+  }
+  return required;
+}
+
+int Simulation::agentProgressionFloatCount() const { return 5 + HeadlessStatCount + HeadlessStatCount + HeadlessTankUpgradeSlots; }
+
+int Simulation::writeAgentProgressions(float* buffer, int bufferLen) const {
+  const int fields = agentProgressionFloatCount();
+  const int required = fields * static_cast<int>(possibleAgentIds_.size());
+  if (!buffer || bufferLen < required) return required;
+  std::fill(buffer, buffer + bufferLen, 0.0f);
+  for (std::size_t i = 0; i < possibleAgentIds_.size(); ++i) {
+    const int agentId = possibleAgentIds_[i];
+    const int base = static_cast<int>(i) * fields;
+    const Entity* agent = findEntity(agentId);
+    if (!agent || agent->kind != "agent") continue;
+    const int level = levelFor(*agent);
+    const int statsAvailable = statsAvailableFor(*agent);
+    bool canTankUpgrade = false;
+    buffer[base + 0] = static_cast<float>(level);
+    buffer[base + 1] = static_cast<float>(agent->currentTankId);
+    buffer[base + 2] = static_cast<float>(statsAvailable);
+    buffer[base + 3] = statsAvailable > 0 ? 1.0f : 0.0f;
+    for (int slotIndex = 0; slotIndex < HeadlessTankUpgradeSlots; ++slotIndex) {
+      const float legal = canApplyTankUpgradeSlot(*agent, slotIndex) ? 1.0f : 0.0f;
+      buffer[base + 5 + (HeadlessStatCount * 2) + slotIndex] = legal;
+      canTankUpgrade = canTankUpgrade || legal > 0.0f;
+    }
+    buffer[base + 4] = canTankUpgrade ? 1.0f : 0.0f;
+    for (int statIndex = 0; statIndex < HeadlessStatCount; ++statIndex) {
+      buffer[base + 5 + statIndex] = static_cast<float>(agent->statLevels[static_cast<std::size_t>(statIndex)]);
+      buffer[base + 5 + HeadlessStatCount + statIndex] = canApplyStatUpgrade(*agent, statIndex) ? 1.0f : 0.0f;
+    }
+  }
   return required;
 }
 

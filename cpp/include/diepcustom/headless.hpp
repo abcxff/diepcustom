@@ -1,14 +1,21 @@
 #pragma once
 
+#include "diepcustom/headless_tank_defs.generated.hpp"
+
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 namespace diepcustom::headless {
 
+inline constexpr int HeadlessStatCount = 8;
+inline constexpr int HeadlessNoUpgradeChoice = -1;
+
 struct Action {
   // V1 multi-agent action layout: one struct per controlled agent.
-  // Continuous move/aim components are clamped to [-1, 1]; fire flags are booleans; upgrades are reserved.
+  // Continuous move/aim components are clamped to [-1, 1]; fire flags are booleans.
+  // Upgrade choices are optional and use -1 as the no-op sentinel.
   int agentId = -1;
   double moveX = 0;
   double moveY = 0;
@@ -16,7 +23,8 @@ struct Action {
   double aimY = 0;
   bool fire = false;
   bool altFire = false;
-  int upgradeChoice = 0;
+  int statUpgradeChoice = HeadlessNoUpgradeChoice;
+  int tankUpgradeChoice = HeadlessNoUpgradeChoice;
 };
 
 struct StepResult {
@@ -67,6 +75,10 @@ public:
   int writeObservations(float* buffer, int bufferLen) const;
   int writeAliveMask(int* buffer, int bufferLen) const;
   int writeAgentIds(int* buffer, int bufferLen) const;
+  int agentStateFloatCount() const;
+  int writeAgentStates(float* buffer, int bufferLen) const;
+  int agentProgressionFloatCount() const;
+  int writeAgentProgressions(float* buffer, int bufferLen) const;
 
   int tick() const;
   int activeEntityCount() const;
@@ -133,6 +145,7 @@ private:
     int styleColor = 0;
     double score = 0;
     double scoreReward = 0;
+    int currentTankId = 0;
     bool isPhysical = true;
     bool deleting = false;
     bool removed = false;
@@ -152,6 +165,7 @@ private:
     double aiMoveX = 0;
     double aiMoveY = 0;
     int aiFlags = 0;
+    std::array<int, HeadlessStatCount> statLevels{};
     std::vector<BarrelSnapshot> barrels;
   };
 
@@ -166,6 +180,13 @@ private:
   const Entity* findEntity(int id) const;
   void applyBasicAi();
   void applyActions(const std::vector<Action>& actions, StepResult& result);
+  void applyTankDefinition(Entity& entity);
+  int levelFor(const Entity& entity) const;
+  int statsAvailableFor(const Entity& entity) const;
+  bool canApplyStatUpgrade(const Entity& entity, int statIndex) const;
+  bool canApplyTankUpgradeSlot(const Entity& entity, int slotIndex) const;
+  bool tryApplyStatUpgrade(Entity& entity, int statIndex);
+  bool tryApplyTankUpgradeSlot(Entity& entity, int slotIndex);
   void fireProjectile(Entity& owner);
   void resolveCollisions(StepResult& result);
   void integrateEntities();

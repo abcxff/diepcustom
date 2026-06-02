@@ -23,7 +23,8 @@ typedef struct {
   double aim_y;
   int fire;
   int alt_fire;
-  int upgrade_choice;
+  int stat_upgrade_choice;
+  int tank_upgrade_choice;
 } diep_action;
 
 typedef struct {
@@ -74,6 +75,10 @@ diep_step_result diep_step_many(diep_sim* sim, const diep_action* actions, int a
 int diep_snapshot_json(diep_sim* sim, char* buffer, int buffer_len);
 int diep_observation(diep_sim* sim, int agent_id, float* buffer, int buffer_len);
 int diep_observations(diep_sim* sim, float* buffer, int buffer_len);
+int diep_agent_state_fields(void);
+int diep_agent_states(diep_sim* sim, float* buffer, int buffer_len);
+int diep_agent_progression_fields(void);
+int diep_agent_progressions(diep_sim* sim, float* buffer, int buffer_len);
 
 #ifdef __cplusplus
 }

@@ -55,7 +55,7 @@ Core files:
 - `cpp/src/headless_c_api.cpp`
 - `cpp/tests/headless_c_api_smoke_test.cpp`
 
-Current ABI version: **3**.
+Current ABI version: **6**.
 
 Public additions/progress:
 
@@ -98,9 +98,11 @@ Implemented API:
 - `HeadlessSim.observation(agent_id)`
 - `HeadlessSim.observations()`
 - `HeadlessSim.observations_array(out=None)`
+- `HeadlessSim.agent_states_array(out=None)`
+- `HeadlessSim.agent_progressions_array(out=None)`
 - `HeadlessSim.step_many_observations_array(...)`
 - `HeadlessSim.alive_mask()`
-- `abi_version()`, currently expected to be `3`
+- `abi_version()`, currently expected to be `6`
 
 Important behavior:
 
@@ -119,7 +121,13 @@ Implemented behavior:
 - Exposes `DiepCustomParallelEnv` and `parallel_env` alias.
 - Uses multi-agent action dictionaries directly.
 - Does not shape rewards by default.
-- Optional `reward_fn` or `raw_rewards=True` allow external ownership of rewards.
+- Optional `reward_config`, `reward_fn`, or `raw_rewards=True` allow Python-side ownership of rewards.
+- `reward_config` accepts scalar weights for built-in components: `raw`, `score_delta`, `health_delta`, `damage_taken`, `alive`, `death`, `truncation`, and `step`.
+- `env.set_reward_config(...)` can retune configured reward weights without recreating the environment.
+- `observation_mode='state'` switches PettingZoo observations from the grid tensor to the lightweight C ABI state vector.
+- `fast_reward_state=True` computes configured reward components from the lightweight C ABI state buffer instead of JSON snapshots.
+- `include_snapshot_info=False` avoids full JSON snapshots in `infos` for hot training loops.
+- `infos[agent]['reward_components']` exposes the unweighted values used for configured rewards.
 - Uses C ABI fixed-slot observations internally.
 - Uses `alive_mask()` to decide terminations and current `env.agents`.
 - PettingZoo `env.agents` can shrink after terminations, while the underlying observation batch remains constant-shape.
@@ -131,23 +139,25 @@ Action forms accepted by `action_to_diep(...)`:
   "move": [move_x, move_y],
   "aim": [aim_x, aim_y],
   "buttons": [fire, alt_fire],
+  "stat_upgrade_choice": 0,
+  "tank_upgrade_choice": 1,
 }
 ```
 
 or flat sequence:
 
 ```python
-[move_x, move_y, aim_x, aim_y, fire, alt_fire]
+[move_x, move_y, aim_x, aim_y, fire, alt_fire, stat_upgrade_choice, tank_upgrade_choice]
 ```
 
-Missing/malformed fields become no-op components. No internal AI action is injected.
+Both upgrade fields are optional and default to `-1` (no upgrade). Invalid or currently illegal upgrade requests are ignored. Missing/malformed fields otherwise become no-op components. No internal AI action is injected.
 
 ### Documentation updated
 
 - `docs/headless-rl-action-abi.md`
-  - Documents v1 action layout, fast ABI additions, and ABI v3 fixed-slot observations/alive mask.
+  - Documents ABI v6 action/progression layout, explicit stat+tank upgrade channels, and fixed-shape legality masks.
 - `docs/headless-pettingzoo-api.md`
-  - Documents PettingZoo wrapper usage, fast tickless path, constant-shape buffers, and reward ownership.
+  - Documents PettingZoo wrapper usage, upgrade-aware `grid_hud.progression`, fast tickless path, constant-shape buffers, and reward ownership.
 
 ### Tests and conformance added/updated
 
@@ -256,8 +266,9 @@ Do not commit `.venv/` or Python cache folders.
 
 ## Quick start for a fresh agent
 
+From the repository root:
+
 ```bash
-cd /Users/saake/Hermes_Staging/Diep/diepcustom
 npm run test:cpp
 python3 conformance/headless/python_ctypes_smoke.py
 .venv/bin/python conformance/headless/python_pettingzoo_api_test.py
@@ -274,4 +285,3 @@ python3 -m venv .venv
 .venv/bin/python -m pip install --upgrade pip
 .venv/bin/python -m pip install pettingzoo gymnasium numpy
 ```
-

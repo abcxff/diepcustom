@@ -14,9 +14,9 @@ std::string runScript(std::uint64_t seed, int ticks, const std::string& scenario
   Simulation sim(Config{seed, 3, ticks, scenario});
   for (int tick = 0; tick < ticks; ++tick) {
     std::vector<Action> actions;
-    actions.push_back(Action{0, 1.0, 0.0, 1.0, 0.0, tick % 4 == 0, false, 0});
-    actions.push_back(Action{1, -0.5, 0.25, -1.0, 0.0, tick % 5 == 0, false, 0});
-    actions.push_back(Action{2, 0.0, -1.0, 0.0, -1.0, tick % 7 == 0, true, 0});
+    actions.push_back(Action{0, 1.0, 0.0, 1.0, 0.0, tick % 4 == 0, false, -1, -1});
+    actions.push_back(Action{1, -0.5, 0.25, -1.0, 0.0, tick % 5 == 0, false, -1, -1});
+    actions.push_back(Action{2, 0.0, -1.0, 0.0, -1.0, tick % 7 == 0, true, -1, -1});
     const auto result = sim.step(actions);
     assert(result.tick == tick + 1);
     assert(result.rewards.size() == 3);

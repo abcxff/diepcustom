@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -31,6 +32,31 @@ std::uint64_t parseU64(const std::string& value, const std::string& name) {
   const unsigned long long parsed = std::strtoull(value.c_str(), &end, 10);
   if (!end || *end != '\0') throw std::invalid_argument("invalid integer for " + name);
   return static_cast<std::uint64_t>(parsed);
+}
+
+std::string jsonString(const std::string& input) {
+  std::ostringstream out;
+  out << '"';
+  for (const unsigned char c : input) {
+    switch (c) {
+      case '"': out << "\\\""; break;
+      case '\\': out << "\\\\"; break;
+      case '\b': out << "\\b"; break;
+      case '\f': out << "\\f"; break;
+      case '\n': out << "\\n"; break;
+      case '\r': out << "\\r"; break;
+      case '\t': out << "\\t"; break;
+      default:
+        if (c < 0x20) {
+          static const char* hex = "0123456789abcdef";
+          out << "\\u00" << hex[c >> 4] << hex[c & 0x0f];
+        } else {
+          out << static_cast<char>(c);
+        }
+    }
+  }
+  out << '"';
+  return out.str();
 }
 
 std::vector<Action> scriptedActions(const Simulation& sim, int tick) {
@@ -67,7 +93,7 @@ int main(int argc, char** argv) {
     config.maxTicks = std::max(1, ticks);
     Simulation sim(config);
     const auto start = std::chrono::steady_clock::now();
-    for (int tick = 0; tick < ticks; ++tick) {
+    for (int tick = 0; tick < config.maxTicks; ++tick) {
       sim.step(scriptedActions(sim, tick));
       if (observeAll) {
         const int count = sim.observationFloatCount();
@@ -83,7 +109,7 @@ int main(int argc, char** argv) {
     const double elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
     if (snapshotJson) std::cout << sim.fullWorldSnapshotJson() << "\n";
     if (reportJson) {
-      if (observeAll) std::cout << "{\"scenario\":\"" << sim.config().scenario << "\",\"seed\":" << sim.config().seed << ",\"agents\":" << sim.config().agents << ",\"ticks\":" << sim.tick() << ",\"activeEntities\":" << sim.activeEntityCount() << ",\"elapsedMs\":" << elapsedMs << ",\"ticksPerSecond\":" << (elapsedMs <= 0 ? 0 : (static_cast<double>(sim.tick()) / elapsedMs) * 1000.0) << ",\"observationChecksum\":" << observationChecksum << "}\n";
+      if (observeAll) std::cout << "{\"scenario\":" << jsonString(sim.config().scenario) << ",\"seed\":" << sim.config().seed << ",\"agents\":" << sim.config().agents << ",\"ticks\":" << sim.tick() << ",\"activeEntities\":" << sim.activeEntityCount() << ",\"elapsedMs\":" << elapsedMs << ",\"ticksPerSecond\":" << (elapsedMs <= 0 ? 0 : (static_cast<double>(sim.tick()) / elapsedMs) * 1000.0) << ",\"observationChecksum\":" << observationChecksum << "}\n";
       else std::cout << sim.finalReportJson(elapsedMs) << "\n";
     }
     return 0;

@@ -35,20 +35,21 @@ std::vector<diepcustom::headless::Action> toActions(const diep_action* actions, 
     cppActions.reserve(static_cast<std::size_t>(action_count));
     for (int i = 0; i < action_count; ++i) {
       const auto& a = actions[i];
-      cppActions.push_back(diepcustom::headless::Action{a.agent_id, a.move_x, a.move_y, a.aim_x, a.aim_y, a.fire != 0, a.alt_fire != 0, a.upgrade_choice});
+      cppActions.push_back(diepcustom::headless::Action{
+          a.agent_id, a.move_x, a.move_y, a.aim_x, a.aim_y, a.fire != 0, a.alt_fire != 0, a.stat_upgrade_choice, a.tank_upgrade_choice});
     }
   }
   return cppActions;
 }
 } // namespace
 
-extern "C" int diep_abi_version(void) { return 3; }
+extern "C" int diep_abi_version(void) { return 6; }
 
 extern "C" int diep_last_error(diep_sim* sim) { return sim ? sim->last_error : DIEP_ERROR_NULL; }
 
 extern "C" diep_observation_shape diep_get_observation_shape(void) { return diep_observation_shape{21, 21, 8, DIEP_LAYOUT_CHANNEL_LAST}; }
 
-extern "C" diep_action_shape diep_get_action_shape(void) { return diep_action_shape{8, DIEP_ACTION_LAYOUT_V1_STRUCT, 1, 4, 5, 3}; }
+extern "C" diep_action_shape diep_get_action_shape(void) { return diep_action_shape{9, DIEP_ACTION_LAYOUT_V1_STRUCT, 1, 4, 5, 4}; }
 
 extern "C" int diep_agent_ids(diep_sim* sim, int* buffer, int buffer_len) {
   if (!sim || !sim->sim) return DIEP_ERROR_NULL;
@@ -140,6 +141,36 @@ extern "C" int diep_observations(diep_sim* sim, float* buffer, int buffer_len) {
   if (!sim || !sim->sim) return DIEP_ERROR_NULL;
   try {
     const int result = sim->sim->writeObservations(buffer, buffer_len);
+    if (result < 0) { setError(sim, DIEP_ERROR_INVALID_AGENT); return DIEP_ERROR_INVALID_AGENT; }
+    setError(sim, DIEP_OK);
+    return result;
+  } catch (...) {
+    setError(sim, DIEP_ERROR_EXCEPTION);
+    return DIEP_ERROR_EXCEPTION;
+  }
+}
+
+extern "C" int diep_agent_state_fields(void) { return 10; }
+
+extern "C" int diep_agent_states(diep_sim* sim, float* buffer, int buffer_len) {
+  if (!sim || !sim->sim) return DIEP_ERROR_NULL;
+  try {
+    const int result = sim->sim->writeAgentStates(buffer, buffer_len);
+    if (result < 0) { setError(sim, DIEP_ERROR_INVALID_AGENT); return DIEP_ERROR_INVALID_AGENT; }
+    setError(sim, DIEP_OK);
+    return result;
+  } catch (...) {
+    setError(sim, DIEP_ERROR_EXCEPTION);
+    return DIEP_ERROR_EXCEPTION;
+  }
+}
+
+extern "C" int diep_agent_progression_fields(void) { return 27; }
+
+extern "C" int diep_agent_progressions(diep_sim* sim, float* buffer, int buffer_len) {
+  if (!sim || !sim->sim) return DIEP_ERROR_NULL;
+  try {
+    const int result = sim->sim->writeAgentProgressions(buffer, buffer_len);
     if (result < 0) { setError(sim, DIEP_ERROR_INVALID_AGENT); return DIEP_ERROR_INVALID_AGENT; }
     setError(sim, DIEP_OK);
     return result;
