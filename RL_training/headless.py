@@ -108,6 +108,9 @@ def load_library():
         lib.diep_agent_progression_fields.restype = ctypes.c_int
         lib.diep_agent_progressions.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
         lib.diep_agent_progressions.restype = ctypes.c_int
+        abi = lib.diep_abi_version()
+        if abi != ABI_VERSION:
+            raise RuntimeError(f'diepcustom_headless_c ABI mismatch: expected {ABI_VERSION}, got {abi}')
         _LIB = lib
     return _LIB
 

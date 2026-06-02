@@ -16,7 +16,8 @@ function positiveIntegerFromEnv(name, defaultValue) {
 const iterations = positiveIntegerFromEnv('ITERATIONS', 25);
 const warmups = positiveIntegerFromEnv('WARMUPS', 3);
 const tsCommand = [process.execPath, path.join(root, 'conformance/gameplay/report-ts.js')];
-const cppCommand = [path.join(root, 'build/cpp/gameplay_report')];
+const cppBinaryName = process.platform === 'win32' ? 'gameplay_report.exe' : 'gameplay_report';
+const cppCommand = [path.join(root, 'build/cpp', cppBinaryName)];
 
 function run(command) {
   const [bin, ...args] = command;

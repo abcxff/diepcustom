@@ -203,7 +203,7 @@ class DiepCustomParallelEnv(ParallelEnv):
         if np is not None:
             all_observations = self._sim.observations_array(out=self._observation_buffer)
             self._observation_buffer = all_observations
-            return OrderedDict((agent, all_observations[agent_index(agent)]) for agent in agents)
+            return OrderedDict((agent, all_observations[agent_index(agent)].copy()) for agent in agents)
         return OrderedDict((agent, self._format_observation(self._sim.observation(self._name_to_id[agent]))) for agent in agents)
 
     def _state_observations_for(self, agents, states):

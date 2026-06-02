@@ -112,8 +112,15 @@ class AgentRoster:
 
     def bind(self, env_agent_names: list[str] | tuple[str, ...]) -> OrderedDict[str, ConfiguredAgent]:
         names = list(env_agent_names)
-        explicit = {profile.env_agent_name: profile for profile in self.profiles if profile.env_agent_name is not None}
+        explicit_profiles = [profile for profile in self.profiles if profile.env_agent_name is not None]
         implicit = [profile for profile in self.profiles if profile.env_agent_name is None]
+        explicit_name_counts: dict[str, int] = {}
+        for profile in explicit_profiles:
+            explicit_name_counts[profile.env_agent_name] = explicit_name_counts.get(profile.env_agent_name, 0) + 1
+        duplicate_explicit = sorted(name for name, count in explicit_name_counts.items() if count > 1)
+        if duplicate_explicit:
+            raise ValueError(f'duplicate explicit env_agent_name values: {duplicate_explicit}')
+        explicit = {profile.env_agent_name: profile for profile in explicit_profiles}
         bindings: OrderedDict[str, ConfiguredAgent] = OrderedDict()
         implicit_index = 0
 

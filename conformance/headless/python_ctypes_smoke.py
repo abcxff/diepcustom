@@ -44,24 +44,27 @@ with HeadlessSim(seed=123, agents=1, max_ticks=8, scenario='rl-grid-smoke') as s
     assert sim.snapshot() == snap0
 
 with HeadlessSim(seed=123, agents=1, max_ticks=8, scenario='upgrade-ready') as sim:
-    progression_array = sim.agent_progressions_array()
-    assert progression_array.shape == (1, 27)
-    assert progression_array[0, 0] == 45.0
-    assert progression_array[0, 2] > 0.0
-    assert progression_array[0, 13] == 1.0
-    assert progression_array[0, 21] == 1.0
-    initial_stats_available = progression_array[0, 2]
-    sim.step([DiepAction(0, 0.0, 0.0, 1.0, 0.0, 0, 0, 0, -1)])
-    progression_array = sim.agent_progressions_array()
-    assert progression_array[0, 2] == initial_stats_available - 1.0
-    assert progression_array[0, 5] == 1.0
-    sim.step([DiepAction(0, 0.0, 0.0, 1.0, 0.0, 0, 0, -1, 0)])
-    progression_array = sim.agent_progressions_array()
-    assert progression_array[0, 1] == 1.0
-    previous_tank = progression_array[0, 1]
-    sim.step([DiepAction(0, 0.0, 0.0, 1.0, 0.0, 0, 0, -1, 5)])
-    progression_array = sim.agent_progressions_array()
-    assert progression_array[0, 1] == previous_tank
+    try:
+        progression_array = sim.agent_progressions_array()
+        assert progression_array.shape == (1, 27)
+        assert progression_array[0, 0] == 45.0
+        assert progression_array[0, 2] > 0.0
+        assert progression_array[0, 13] == 1.0
+        assert progression_array[0, 21] == 1.0
+        initial_stats_available = progression_array[0, 2]
+        sim.step([DiepAction(0, 0.0, 0.0, 1.0, 0.0, 0, 0, 0, -1)])
+        progression_array = sim.agent_progressions_array()
+        assert progression_array[0, 2] == initial_stats_available - 1.0
+        assert progression_array[0, 5] == 1.0
+        sim.step([DiepAction(0, 0.0, 0.0, 1.0, 0.0, 0, 0, -1, 0)])
+        progression_array = sim.agent_progressions_array()
+        assert progression_array[0, 1] == 1.0
+        previous_tank = progression_array[0, 1]
+        sim.step([DiepAction(0, 0.0, 0.0, 1.0, 0.0, 0, 0, -1, 5)])
+        progression_array = sim.agent_progressions_array()
+        assert progression_array[0, 1] == previous_tank
+    except RuntimeError as exc:
+        assert 'NumPy' in str(exc)
 
 with HeadlessSim(seed=1, agents=4, max_ticks=200, scenario='dense-collision') as sim:
     initial_needed = len(sim.observations())

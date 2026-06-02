@@ -14,7 +14,7 @@ def elapsed_rate(count, started):
 
 
 def make_actions(agent_ids):
-    return [DiepAction(agent_id, 0.25, 0.0, 1.0, 0.0, 0, 0, 0) for agent_id in agent_ids]
+    return [DiepAction(agent_id, 0.25, 0.0, 1.0, 0.0, 0, 0, -1, -1) for agent_id in agent_ids]
 
 
 def main():

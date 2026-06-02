@@ -1,6 +1,7 @@
 class SplitMix64Reference {
   constructor(seed = 1n) {
-    this.state = seed === 0n ? 0x9E3779B97F4A7C15n : BigInt(seed);
+    const normalizedSeed = BigInt(seed);
+    this.state = normalizedSeed === 0n ? 0x9E3779B97F4A7C15n : normalizedSeed;
     this.draws = 0;
   }
 
