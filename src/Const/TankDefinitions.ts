@@ -72,6 +72,8 @@ export interface BarrelDefinition {
     offset: number;
     /** The y offset of the barrel (distance from the tanks main body) at base radius (50). Will have no effect on clientside tankrendering.*/
     distance?: number;
+    /** Overrides the distance from tank center at which bullets spawned by this barrel appear. Defaults to `size` if not set. */
+    bulletSpawnDistance?: number;
     /** The size of the barrel. Think of Sniper, the longer side is the size.  */
     size: number;
     /** The width of the barrel. Think of Sniper, the shorter side is the width. Width is used to determine bullet size */

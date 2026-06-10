@@ -96,9 +96,10 @@ export default class Bullet extends LivingEntity {
         this.lifeLength = bulletDefinition.lifeLength * 75;
 
         const {x, y} = tank.getWorldPosition();
+        const bulletSpawnDistance = (barrel.definition.bulletSpawnDistance ?? barrel.definition.size) * scaleFactor;
         
-        this.positionData.values.x = x + (Math.cos(shootAngle) * barrel.physicsData.values.size) - Math.sin(shootAngle) * barrel.definition.offset * scaleFactor + Math.cos(shootAngle) * (barrel.definition.distance || 0);
-        this.positionData.values.y = y + (Math.sin(shootAngle) * barrel.physicsData.values.size) + Math.cos(shootAngle) * barrel.definition.offset * scaleFactor + Math.sin(shootAngle) * (barrel.definition.distance || 0);
+        this.positionData.values.x = x + (Math.cos(shootAngle) * bulletSpawnDistance) - Math.sin(shootAngle) * barrel.definition.offset * scaleFactor + Math.cos(shootAngle) * ((barrel.definition.distance ?? 0) * scaleFactor);
+        this.positionData.values.y = y + (Math.sin(shootAngle) * bulletSpawnDistance) + Math.cos(shootAngle) * barrel.definition.offset * scaleFactor + Math.sin(shootAngle) * ((barrel.definition.distance ?? 0) * scaleFactor);
         this.positionData.values.angle = shootAngle;
     }
 
