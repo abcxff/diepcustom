@@ -1,0 +1,5 @@
+sb3-contrib
+stable-baselines3
+gymnasium
+pettingzoo
+numpy

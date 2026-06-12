@@ -35,11 +35,11 @@ typedef struct {
 } diep_step_result;
 
 typedef struct {
+  int channels;
   int rows;
   int cols;
-  int channels;
   int layout;
-} diep_observation_shape;
+} diep_combat_observation_shape;
 
 typedef struct {
   int fields;
@@ -57,13 +57,16 @@ enum {
   DIEP_ERROR_EXCEPTION = -3,
   DIEP_ERROR_INVALID_AGENT = -4,
   DIEP_LAYOUT_CHANNEL_LAST = 1,
+  DIEP_LAYOUT_CHANNEL_FIRST = 2,
   DIEP_ACTION_LAYOUT_V1_STRUCT = 1
 };
 
 int diep_abi_version(void);
 int diep_last_error(diep_sim* sim);
-diep_observation_shape diep_get_observation_shape(void);
+diep_combat_observation_shape diep_get_combat_observation_shape(void);
 diep_action_shape diep_get_action_shape(void);
+int diep_combat_self_fields(void);
+int diep_combat_prev_action_fields(void);
 int diep_agent_ids(diep_sim* sim, int* buffer, int buffer_len);
 int diep_alive_mask(diep_sim* sim, int* buffer, int buffer_len);
 
@@ -73,12 +76,18 @@ void diep_reset(diep_sim* sim, uint64_t seed);
 diep_step_result diep_step(diep_sim* sim, const diep_action* actions, int action_count);
 diep_step_result diep_step_many(diep_sim* sim, const diep_action* actions, int action_count, int ticks);
 int diep_snapshot_json(diep_sim* sim, char* buffer, int buffer_len);
-int diep_observation(diep_sim* sim, int agent_id, float* buffer, int buffer_len);
-int diep_observations(diep_sim* sim, float* buffer, int buffer_len);
+int diep_combat_observation(diep_sim* sim, int agent_id, float* buffer, int buffer_len);
+int diep_combat_observations(diep_sim* sim, float* buffer, int buffer_len);
+int diep_combat_self_observation(diep_sim* sim, int agent_id, float* buffer, int buffer_len);
+int diep_combat_self_observations(diep_sim* sim, float* buffer, int buffer_len);
+int diep_combat_prev_action_observation(diep_sim* sim, int agent_id, float* buffer, int buffer_len);
+int diep_combat_prev_action_observations(diep_sim* sim, float* buffer, int buffer_len);
 int diep_agent_state_fields(void);
 int diep_agent_states(diep_sim* sim, float* buffer, int buffer_len);
 int diep_agent_progression_fields(void);
 int diep_agent_progressions(diep_sim* sim, float* buffer, int buffer_len);
+int diep_episode_stats_fields(void);
+int diep_episode_stats(diep_sim* sim, double* buffer, int buffer_len);
 
 #ifdef __cplusplus
 }

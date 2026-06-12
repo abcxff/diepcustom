@@ -24,6 +24,7 @@ import { NameFlags, Tank } from "../../Const/Enums";
 import Dominator from "../../Entity/Misc/Dominator";
 import TeamBase from "../../Entity/Misc/TeamBase";
 import { SandboxShapeManager } from "../Sandbox";
+import { getAutoSizedArenaDimension } from "./common";
 
 /**
  * Sandbox Gamemode Arena
@@ -37,31 +38,13 @@ export default class SpikeboxArena extends ArenaEntity {
 
         this.updateBounds(2500, 2500);
 
-        // const spike = new TankBody(this.game, new CameraEntity(this.game), new Inputs());
-
-        // spike.cameraEntity.camera.player = spike;
-        // spike.setTank(Tank.Spike);
-        // spike.style.flags &= ~StyleFlags.invincibility;
-        // spike.physics.flags |= ObjectFlags.base;
-        // /* @ts-ignore */
-        // spike.damageReduction = 0;
-        // Object.defineProperty(spike, "damagePerTick", {
-        //     get() {
-        //         return 0;
-        //     },
-        //     set() {}
-        // });
-        // spike.physics.values.pushFactor = 24;
-        // spike.physics.absorbtionFactor = 0.0;
-        // spike.cameraEntity.setLevel(101);
-        // spike.style.color = Colors.TeamBlue;
 
         const spike = new Dominator(this, new TeamBase(game, this, 0, 0, 750, 750, false), Tank.Spike);
         spike.nameData.flags &= ~NameFlags.hiddenName
     }
 
     public tick(tick: number) {
-        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
+        const arenaSize = getAutoSizedArenaDimension(this.game.clients.size);
         if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
 
         super.tick(tick);

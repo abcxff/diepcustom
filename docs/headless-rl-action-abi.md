@@ -1,4 +1,4 @@
-# Headless RL ABI (v1-v6)
+# Headless RL ABI (v1-v8)
 
 ## Multi-agent action layout
 One `diep_action` struct is supplied per controlled agent each step. The simulator accepts sparse action arrays: omitted live agents become explicit no-op actions for that step.
@@ -18,9 +18,9 @@ Upgrade legality behavior:
 - tank upgrades require a legal slot on the current tank and the target tank's level requirement
 
 C ABI metadata:
-- `diep_abi_version()` returns the current ABI version (`6`).
+- `diep_abi_version()` returns the current ABI version (`8`).
 - `diep_get_action_shape()` returns the current action struct layout metadata.
-- `diep_get_observation_shape()` returns `21 x 21 x 8`, channel-last.
+- `diep_get_combat_observation_shape()` returns `17 x 21 x 21`, channel-first.
 - `diep_agent_ids()` returns the current live agent id list or the required buffer length.
 - `diep_last_error()` reports the last per-handle error code.
 
@@ -29,22 +29,29 @@ The action layout is append-only across ABI versions. Field reinterpretation is 
 
 Error metadata includes `DIEP_ERROR_INVALID_AGENT` for observation requests against missing/non-agent ids; buffer sizing probes are successful metadata calls and leave `diep_last_error()` as `DIEP_OK`.
 
-## ABI v2 fast training additions
+## ABI v2-v3 fast training history
 - `diep_step_many(sim, actions, action_count, ticks)` advances fixed actions for multiple ticks without crossing the Python/C boundary per tick.
-- `diep_observations(sim, buffer, buffer_len)` writes all currently live agent observations in `[agent][row][col][channel]` order.
 - These APIs are tickless: they do not sleep, render, network, or serialize JSON.
 - Rewards remain simulator raw rewards only; external trainers own reward shaping.
 
-## ABI v3 fixed-slot multi-agent observations
-RL frameworks require constant observation shapes across an episode, so batched observation output is fixed to:
+## ABI v7 combat-only observation buffers
+The legacy generic grid observation APIs were removed. Combat training now uses three fixed combat buffers:
 
 ```text
-(max_possible_agents, 21, 21, 8) float32, channel-last
+(max_possible_agents, 18, 21, 21) float32  # combat grid, channel-first
+(max_possible_agents, 27) float32          # combat self features
+(max_possible_agents, 5) float32           # previous action features
 ```
 
-`diep_observations` always writes one slot per configured possible agent. Dead or inactive agent slots are zero-filled and remain present until reset. Call `diep_alive_mask` to obtain a parallel binary mask of length `max_possible_agents`; `1` means the slot's agent is currently alive, `0` means the agent has terminated.
+Dead or inactive agent slots are zero-filled and remain present until reset. Call `diep_alive_mask` to obtain a parallel binary mask of length `max_possible_agents`; `1` means the slot's agent is currently alive, `0` means the agent has terminated.
 
-## ABI v4 lightweight agent states
+C ABI calls:
+- `diep_combat_observation(...)` writes one agent combat grid.
+- `diep_combat_observations(...)` writes all fixed-slot combat grids.
+- `diep_combat_self_observation(...)` / `diep_combat_self_observations(...)` expose the 27-field self vector.
+- `diep_combat_prev_action_observation(...)` / `diep_combat_prev_action_observations(...)` expose the 5-field previous-action vector.
+
+## ABI v4-v8 lightweight agent states
 High-throughput reward computation does not need full JSON snapshots or the full spatial observation grid. The lightweight state API writes one compact row per possible agent:
 
 ```text
@@ -61,8 +68,8 @@ C ABI calls:
 - `diep_agent_state_fields()` returns `10`.
 - `diep_agent_states(sim, buffer, buffer_len)` writes all possible-agent state rows.
 
-## ABI v5 progression state buffer
-ABI v5 added a separate compact progression buffer so `grid_hud` can expose progression data without changing the existing state-vector contract.
+## ABI v5-v6 progression state buffer
+ABI v5 added a separate compact progression buffer so Python training code can access upgrade legality and progression state without changing the existing state-vector contract.
 
 ## ABI v6 legal upgrade state
 The progression buffer now has fixed shape:
@@ -88,4 +95,4 @@ C ABI calls:
 - `diep_agent_progression_fields()` returns `27`.
 - `diep_agent_progressions(sim, buffer, buffer_len)` writes all possible-agent progression rows.
 
-This keeps `grid` and `self` unchanged while letting `grid_hud.progression` expose explicit legal stat/tank choices for RL agents.
+This keeps the lower-level reward/progression ABI stable while letting Python combat training code inspect explicit legal stat/tank choices for RL agents.

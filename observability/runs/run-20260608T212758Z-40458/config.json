@@ -1,0 +1,21 @@
+{
+  "agents": 4,
+  "learner_agent": "agent_0",
+  "reward_config": {
+    "alive": 0.05,
+    "damage_taken": -0.001,
+    "death": -5.0,
+    "health_delta": 0.003,
+    "raw": 0.0,
+    "score_delta": 0.005,
+    "step": -0.001,
+    "truncation": 1.0
+  },
+  "run_id": "run-20260608T212758Z-40458",
+  "scenario": "upgrade-ready",
+  "seed": 1,
+  "stats_log_agents": [
+    "agent_0"
+  ],
+  "wandb_mode": "offline"
+}

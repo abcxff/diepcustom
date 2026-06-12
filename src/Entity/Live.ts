@@ -157,7 +157,4 @@ export default class LivingEntity extends ObjectEntity {
         this.damagedEntities.length = 0;
     }
 
-    public tick(tick: number) {
-        super.tick(tick);
-    }
 }

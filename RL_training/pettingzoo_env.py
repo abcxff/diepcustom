@@ -1,4 +1,4 @@
-"""Small PettingZoo ParallelEnv wrapper for DiepCustom headless training."""
+"""Combat-only PettingZoo ParallelEnv wrapper for DiepCustom headless training."""
 
 from collections import OrderedDict
 
@@ -9,7 +9,10 @@ except ImportError:  # optional dependency; class still follows ParallelEnv cont
         metadata = {}
 
 from .actions import action_to_diep
-from .headless import AGENT_STATE_FIELDS, HeadlessSim, action_shape, observation_shape
+from .auto_upgrade import preset_auto_upgrade_policy
+from .headless import AGENT_STATE_FIELDS, HeadlessSim, action_shape
+from .observations import make_combat_observation_space
+from .observations.combat import COMBAT_UNKNOWN_TANK_TYPE
 from .rewards import (
     REWARD_FIELDS,
     RewardConfig,
@@ -19,17 +22,12 @@ from .rewards import (
     weighted_rewards,
 )
 from .spaces import (
-    SELF_OBSERVATION_FIELDS,
     make_action_space,
-    make_agent_state_space,
-    make_grid_hud_observation_space,
-    make_observation_space,
     np,
 )
 
 _AGENT_STATE_INDEX = {name: index for index, name in enumerate(AGENT_STATE_FIELDS)}
 _HEALTH_INDEX = _AGENT_STATE_INDEX['health']
-_MAX_HEALTH_INDEX = _AGENT_STATE_INDEX['max_health']
 _SCORE_INDEX = _AGENT_STATE_INDEX['score']
 _ALIVE_INDEX = _AGENT_STATE_INDEX['alive']
 _PROGRESSION_LEVEL_INDEX = 0
@@ -40,7 +38,7 @@ _PROGRESSION_CAN_TANK_UPGRADE_INDEX = 4
 _PROGRESSION_STAT_LEVELS_START_INDEX = 5
 _PROGRESSION_LEGAL_STAT_LEVELS_START_INDEX = 13
 _PROGRESSION_LEGAL_TANK_LEVELS_START_INDEX = 21
-_SUPPORTED_OBSERVATION_MODES = ('grid', 'state', 'grid_hud')
+_DEFAULT_COMBAT_BUILDS = ('predator', 'pentashot', 'fighter', 'annihilator')
 
 
 def agent_name(agent_index):
@@ -52,12 +50,7 @@ def agent_index(agent_name_value):
 
 
 class DiepCustomParallelEnv(ParallelEnv):
-    """PettingZoo ParallelEnv-compatible wrapper for Python RL training.
-
-    Use reward_config for simple Python-side reward shaping, reward_fn for custom
-    logic, observation_mode='state' for fast vector observations, observation_mode='grid'
-    for spatial observations, or observation_mode='grid_hud' for grid + player HUD.
-    """
+    """PettingZoo ParallelEnv-compatible wrapper for combat-only Python RL training."""
 
     metadata = {'name': 'diepcustom_headless_v1', 'render_modes': ['snapshot'], 'is_parallelizable': True}
 
@@ -71,14 +64,15 @@ class DiepCustomParallelEnv(ParallelEnv):
         reward_config=None,
         raw_rewards=False,
         render_mode=None,
-        observation_mode='grid',
+        observation_mode='combat',
         fast_reward_state=False,
         include_snapshot_info=True,
+        combat_builds=_DEFAULT_COMBAT_BUILDS,
     ):
         if agents <= 0:
             raise ValueError('agents must be positive')
-        if observation_mode not in _SUPPORTED_OBSERVATION_MODES:
-            raise ValueError("observation_mode must be 'grid', 'state', or 'grid_hud'")
+        if observation_mode != 'combat':
+            raise ValueError("observation_mode must be 'combat'")
 
         self.seed_value = seed
         self.agent_count = agents
@@ -88,23 +82,29 @@ class DiepCustomParallelEnv(ParallelEnv):
         self.reward_config = make_reward_config(reward_config) if reward_config is not None else None
         self.raw_rewards = raw_rewards
         self.render_mode = render_mode
-        self.observation_mode = observation_mode
-        self.fast_reward_state = bool(fast_reward_state or observation_mode in ('state', 'grid_hud'))
+        self.observation_mode = 'combat'
+        self.fast_reward_state = bool(fast_reward_state)
         self.include_snapshot_info = include_snapshot_info
+        self.combat_builds = tuple(combat_builds or _DEFAULT_COMBAT_BUILDS)
 
         self._sim = HeadlessSim(seed=seed, agents=agents, max_ticks=max_ticks, scenario=scenario)
         self.possible_agents = [agent_name(i) for i in range(agents)]
         self.agents = list(self.possible_agents)
-        self._observation_shape = observation_shape()
         self._action_shape = action_shape()
-        observation_space = self._make_observation_space()
+        self._combat_upgrade_policies = {
+            name: preset_auto_upgrade_policy(self.combat_builds[index % len(self.combat_builds)])
+            for index, name in enumerate(self.possible_agents)
+        } if self.combat_builds else {}
+        observation_space = make_combat_observation_space()
         self._observation_spaces = {name: observation_space for name in self.possible_agents}
         self._action_spaces = {name: make_action_space() for name in self.possible_agents}
         self._last_snapshot = None
         self._last_agent_states = None
-        self._observation_buffer = None
         self._agent_state_buffer = None
         self._agent_progression_buffer = None
+        self._combat_grid_buffer = None
+        self._combat_self_buffer = None
+        self._combat_prev_action_buffer = None
         self._refresh_agent_ids()
 
     @property
@@ -123,9 +123,11 @@ class DiepCustomParallelEnv(ParallelEnv):
         self._sim.reset(self.seed_value)
         self.agents = list(self.possible_agents)
         self._refresh_agent_ids()
-        observations = self._observations()
-        self._last_agent_states = self._agent_states_array().copy() if self.fast_reward_state else None
-        self._last_snapshot = self._sim.snapshot() if self._needs_snapshot_for_step() else None
+        current_agent_states = self._agent_states_array() if self.fast_reward_state else None
+        snapshot = self._sim.snapshot() if self._needs_snapshot_for_step() else None
+        observations = self._observations_for(self.agents)
+        self._last_agent_states = current_agent_states.copy() if current_agent_states is not None else None
+        self._last_snapshot = snapshot
         snapshot_tick = self._last_snapshot.get('tick', 0) if self._last_snapshot else 0
         infos = {agent: {'agent_id': self._name_to_id[agent], 'snapshot_tick': snapshot_tick} for agent in self.agents}
         return observations, infos
@@ -145,7 +147,7 @@ class DiepCustomParallelEnv(ParallelEnv):
         self._last_agent_states = current_agent_states.copy() if current_agent_states is not None else None
         live_agents = self._alive_agent_names(current_agent_states)
         live_ids = {self._name_to_id[agent] for agent in live_agents}
-        observations = self._observations_for(step_agents, current_agent_states)
+        observations = self._observations_for(step_agents)
         self.agents = [] if result['done'] else live_agents
 
         rewards = self._rewards(result, snapshot, previous_snapshot, step_agents, previous_agent_states, current_agent_states)
@@ -172,61 +174,42 @@ class DiepCustomParallelEnv(ParallelEnv):
             return self._state_reward_components(result, agents, previous_agent_states, current_agent_states)
         return reward_components(self, result, snapshot, previous_snapshot, agents)
 
-    def _make_observation_space(self):
-        if self.observation_mode == 'state':
-            return make_agent_state_space()
-        if self.observation_mode == 'grid_hud':
-            return make_grid_hud_observation_space(self._observation_shape)
-        return make_observation_space(self._observation_shape)
-
     def _refresh_agent_ids(self):
         self._agent_ids = self._sim.agent_ids()
         self._name_to_id = {name: self._agent_ids[i] for i, name in enumerate(self.possible_agents)}
 
     def _action_structs(self, agents, actions):
         actions = actions or {}
-        return [action_to_diep(self._name_to_id[agent], actions.get(agent)) for agent in agents]
+        enriched_actions = self._combat_actions_for(agents, actions)
+        return [action_to_diep(self._name_to_id[agent], enriched_actions.get(agent)) for agent in agents]
 
-    def _observations(self):
-        return self._observations_for(self.agents)
+    def _observations_for(self, agents):
+        grid_observations = self._sim.combat_observations_array(out=self._combat_grid_buffer)
+        self._combat_grid_buffer = grid_observations
+        self_observations = self._sim.combat_self_observations_array(out=self._combat_self_buffer)
+        self._combat_self_buffer = self_observations
+        prev_action_observations = self._sim.combat_prev_action_observations_array(out=self._combat_prev_action_buffer)
+        self._combat_prev_action_buffer = prev_action_observations
+        progressions = self._agent_progressions_array()
+        return OrderedDict(
+            (
+                agent,
+                {
+                    'grid_obs': grid_observations[agent_index(agent)].copy(),
+                    'self_obs': self_observations[agent_index(agent)].copy(),
+                    'prev_action_obs': prev_action_observations[agent_index(agent)].copy(),
+                    'tank_type_obs': self._tank_type_observation(progressions[agent_index(agent)]),
+                },
+            )
+            for agent in agents
+        )
 
-    def _observations_for(self, agents, agent_states=None):
-        if self.observation_mode == 'state':
-            states = self._agent_states_array() if agent_states is None else agent_states
-            return self._state_observations_for(agents, states)
-        if self.observation_mode == 'grid_hud':
-            states = self._agent_states_array() if agent_states is None else agent_states
-            return self._grid_hud_observations_for(agents, states)
-        return self._grid_observations_for(agents)
-
-    def _grid_observations_for(self, agents):
-        if np is not None:
-            all_observations = self._sim.observations_array(out=self._observation_buffer)
-            self._observation_buffer = all_observations
-            return OrderedDict((agent, all_observations[agent_index(agent)].copy()) for agent in agents)
-        return OrderedDict((agent, self._format_observation(self._sim.observation(self._name_to_id[agent]))) for agent in agents)
-
-    def _state_observations_for(self, agents, states):
-        return OrderedDict((agent, states[agent_index(agent)].copy()) for agent in agents)
-
-    def _self_observation(self, state_row):
-        health = float(state_row[_HEALTH_INDEX])
-        max_health = float(state_row[_MAX_HEALTH_INDEX])
-        health_norm = health / max_health if max_health > 0.0 else 0.0
-        score = float(state_row[_SCORE_INDEX])
-        alive = float(state_row[_ALIVE_INDEX])
-        if np is not None:
-            return np.asarray((health_norm, health, max_health, score, alive), dtype=np.float32)
-        return [health_norm, health, max_health, score, alive]
-
-    def _self_observations_for(self, agents, states):
-        return OrderedDict((agent, self._self_observation(states[agent_index(agent)])) for agent in agents)
-
-    def _grid_hud_observations_for(self, agents, states):
-        grid_observations = self._grid_observations_for(agents)
-        self_observations = self._self_observations_for(agents, states)
-        progression_observations = self._progression_observations_for(agents)
-        return OrderedDict((agent, {'grid': grid_observations[agent], 'self': self_observations[agent], 'progression': progression_observations[agent]}) for agent in agents)
+    @staticmethod
+    def _tank_type_observation(progression_row):
+        tank_id = int(progression_row[_PROGRESSION_CURRENT_TANK_INDEX])
+        if tank_id < 0 or tank_id >= COMBAT_UNKNOWN_TANK_TYPE:
+            return COMBAT_UNKNOWN_TANK_TYPE
+        return tank_id
 
     def _agent_states_array(self):
         states = self._sim.agent_states_array(out=self._agent_state_buffer)
@@ -261,11 +244,33 @@ class DiepCustomParallelEnv(ParallelEnv):
         progressions = self._agent_progressions_array()
         return OrderedDict((agent, self._progression_observation(progressions[agent_index(agent)])) for agent in agents)
 
-    def _format_observation(self, flat):
-        shape = (self._observation_shape['rows'], self._observation_shape['cols'], self._observation_shape['channels'])
-        if np is not None:
-            return np.asarray(flat, dtype=np.float32).reshape(shape)
-        return flat
+    def _combat_actions_for(self, agents, actions):
+        progressions = self._progression_observations_for(agents)
+        enriched = OrderedDict()
+        for agent in agents:
+            source_action = actions.get(agent)
+            action_value = self._combat_action_with_auto_upgrade(agent, source_action, progressions[agent])
+            enriched[agent] = action_value
+        return enriched
+
+    def _combat_action_with_auto_upgrade(self, agent, action, progression):
+        policy = self._combat_upgrade_policies.get(agent)
+        if policy is None:
+            return action
+        if isinstance(action, dict):
+            return policy.apply(action, progression)
+        defaults = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0, -1.0]
+        try:
+            raw_values = list(action)
+        except TypeError:
+            raw_values = []
+        values = list(defaults)
+        for index, value in enumerate(raw_values[:8]):
+            values[index] = value
+        upgrade_action = policy.apply({}, progression)
+        values[6] = float(upgrade_action['stat_upgrade_choice'])
+        values[7] = float(upgrade_action['tank_upgrade_choice'])
+        return values
 
     def _raw_reward_map(self, result, agents=None):
         agents = self.agents if agents is None else agents
@@ -303,7 +308,11 @@ class DiepCustomParallelEnv(ParallelEnv):
         return components
 
     def _needs_snapshot_for_step(self):
-        return self.include_snapshot_info or self.reward_fn is not None or (self.reward_config is not None and not self.fast_reward_state)
+        return (
+            self.include_snapshot_info
+            or self.reward_fn is not None
+            or (self.reward_config is not None and not self.fast_reward_state)
+        )
 
     def _rewards(self, result, snapshot, previous_snapshot=None, agents=None, previous_agent_states=None, current_agent_states=None):
         agents = self.agents if agents is None else agents
@@ -342,6 +351,6 @@ parallel_env = DiepCustomParallelEnv
 
 __all__ = [
     'DiepCustomParallelEnv', 'parallel_env', 'RewardConfig', 'REWARD_FIELDS',
-    'SELF_OBSERVATION_FIELDS', 'make_reward_config', 'reward_components', 'configured_rewards', 'action_to_diep',
+    'make_reward_config', 'reward_components', 'configured_rewards', 'action_to_diep',
     'agent_name', 'agent_index',
 ]

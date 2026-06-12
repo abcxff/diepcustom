@@ -55,7 +55,4 @@ export default class FallenBooster extends AbstractBoss {
         }
     }
 
-    public tick(tick: number) {
-        super.tick(tick);
-    }
 }

@@ -109,14 +109,14 @@ std::uint32_t Reader::u32() {
 std::uint32_t Reader::vu() {
     std::uint32_t out = 0;
     int shift = 0;
-    while (at_ < buffer_.size() && (buffer_[at_] & 0x80u) != 0u) {
-        out |= static_cast<std::uint32_t>(buffer_[at_++] & 0x7fu) << shift;
+    while (shift < 35) {
+        const auto byte = u8();
+        if (shift == 28 && (byte & 0xf0u) != 0u) throw std::invalid_argument("varint exceeds uint32");
+        if (shift < 32) out |= static_cast<std::uint32_t>(byte & 0x7fu) << shift;
+        if ((byte & 0x80u) == 0u) return out;
         shift += 7;
     }
-    const auto byte = at_ < buffer_.size() ? buffer_[at_] : 0;
-    ++at_;
-    out |= static_cast<std::uint32_t>(byte & 0x7fu) << shift;
-    return out;
+    throw std::invalid_argument("varint exceeds uint32");
 }
 
 std::int32_t Reader::vi() {

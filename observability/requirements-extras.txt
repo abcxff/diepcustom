@@ -1,0 +1,10 @@
+# Install on top of RL_testing/requirements.txt
+#
+# Milestone B (logging):
+wandb>=0.16
+pytest>=7.0
+
+# Milestone C (video) — uncomment when implementing eval_with_visuals.py:
+# opencv-python>=4.8
+# imageio>=2.31
+# imageio-ffmpeg>=0.4

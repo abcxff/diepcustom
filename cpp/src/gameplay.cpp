@@ -622,7 +622,7 @@ std::string solidWallProjectileContactScenarioJson() {
   snapshots.push_back(snapshotJson(bodies, arena, "after-wall-contact-tick", 1));
 
   std::ostringstream out;
-  out << "{\"scenario\":\"solid-wall-projectile-contact\",\"invariant\":\"A projectile-like owned entity touching an enemy solid wall is immediately put into deletion animation without damaging or moving the wall.\""
+  out << "{\"scenario\":\"solid-wall-projectile-contact\",\"invariant\":\"A projectile-like owned entity touching an enemy solid wall is immediately put into deletion animation without damaging the wall while preserving deterministic wall knockback evidence.\""
       << ",\"participants\":{\"owner\":" << refJson(bodies[0]) << ",\"projectile\":" << refJson(bodies[1]) << ",\"wall\":" << refJson(bodies[2]) << "}"
       << ",\"wallEvidence\":{\"projectileAfterContact\":{\"score\":0,\"scoreReward\":0,\"deleting\":true,\"deletionFrame\":4},"
       << "\"projectileVelocityAfterContact\":{\"x\":0,\"y\":0,\"magnitude\":0,\"angle\":0},\"wallHealthAfterContact\":999,"

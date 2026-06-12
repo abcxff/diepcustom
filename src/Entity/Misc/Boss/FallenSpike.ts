@@ -17,7 +17,7 @@
 */
 
 import GameServer from "../../../Game";
-import { AIState } from "../../AI";
+import { applyIdleSpinOrTrackTarget } from "../../Boss/aim";
 import AbstractBoss from "../../Boss/AbstractBoss";
 
 import { AddonById } from "../../Tank/Addons";
@@ -44,18 +44,6 @@ export default class FallenSpike extends AbstractBoss {
     }
 
     protected moveAroundMap() {
-        if (this.ai.state === AIState.idle) {
-            this.positionData.angle += this.ai.passiveRotation;
-            this.setVelocity(0, 0);
-        } else {
-            const x = this.positionData.values.x,
-                  y = this.positionData.values.y;
-
-            this.positionData.angle = Math.atan2(this.ai.inputs.mouse.y - y, this.ai.inputs.mouse.x - x);
-        }
-    }
-
-    public tick(tick: number) {
-        super.tick(tick);
+        applyIdleSpinOrTrackTarget(this);
     }
 }

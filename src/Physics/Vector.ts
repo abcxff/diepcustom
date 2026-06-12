@@ -52,7 +52,7 @@ export default class Vector implements VectorAbstract {
     }
 
     public add(vector: VectorAbstract) {
-        this.x += vector.x,
+        this.x += vector.x;
         this.y += vector.y;
     }
 
@@ -84,7 +84,7 @@ export default class Vector implements VectorAbstract {
     }
 
     public get magnitude() {
-       return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+       return Math.hypot(this.x, this.y);
     }
 
     public get angle() {

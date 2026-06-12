@@ -22,15 +22,19 @@ import { doVerboseLogs } from "./config";
 import { VectorAbstract } from "./Physics/Vector";
 import ObjectEntity from "./Entity/Object";
 
+const getTimestamp = () => `[${new Date().toTimeString().slice(0, 8)}]`;
+
 /** Logs data prefixed with the Date. */
 export const log = (...args: any[]) => {
-    console.log(`[${Date().split(" ")[4]}]`, ...args)
+    console.log(getTimestamp(), ...args);
 }
 
 /** Logs data prefixed with the Date in a yellow format. */
 export const warn = (...args: any[]) => {
-    args = args.map(s => typeof s === "string" ? chalk.yellow(s) : s);
-    console.log(chalk.yellow(`[${Date().split(" ")[4]}] WARNING: `), ...args);
+    console.log(
+        chalk.yellow(`${getTimestamp()} WARNING:`),
+        ...args.map(value => typeof value === "string" ? chalk.yellow(value) : value)
+    );
 }
 
 /** Logs a raw object. */
@@ -43,10 +47,14 @@ export const inspectLog = (object: any, c = 14) => {
  * Unordered removal.
  */
 export const removeFast = (array: any[], index: number) => {
-    if (index < 0 || index >= array.length) throw new RangeError("Index out of range. In `removeFast`")
+    if (index < 0 || index >= array.length) throw new RangeError("Index out of range. In `removeFast`");
 
-    if (index === array.length - 1) array.pop();
-    else array[index] = array.pop();
+    if (index === array.length - 1) {
+        array.pop();
+        return;
+    }
+
+    array[index] = array.pop()!;
 }
 
 /**

@@ -78,7 +78,4 @@ export default class Guardian extends AbstractBoss {
         this.positionData.angle = Math.atan2(this.inputs.movement.y, this.inputs.movement.x)
     }
 
-    public tick(tick: number) {
-        super.tick(tick);
-    }
 }

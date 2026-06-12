@@ -26,6 +26,7 @@ import Client from "../../Client";
 import { TeamEntity } from "../../Entity/Misc/TeamEntity";
 import { Color } from "../../Const/Enums";
 import { SandboxShapeManager } from "../Sandbox";
+import { getAutoSizedArenaDimension } from "./common";
 
 /**
  * Manage shape count
@@ -68,7 +69,7 @@ export default class JungleArena extends ArenaEntity {
     }
 
     public tick(tick: number) {
-        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
+        const arenaSize = getAutoSizedArenaDimension(this.game.clients.size);
         if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
 
         super.tick(tick);

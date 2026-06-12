@@ -33,7 +33,7 @@
     "bench:headless": "npm run test:cpp && node conformance/headless/benchmark-headless.js"
   },
   "engines": {
-    "node": ">=16.17.0"
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "chalk": "^4.1.1",

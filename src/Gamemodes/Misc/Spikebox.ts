@@ -25,6 +25,7 @@ import { CameraEntity } from "../../Native/Camera";
 import TankBody from "../../Entity/Tank/TankBody";
 import { Color, PhysicsFlags, StyleFlags, Tank } from "../../Const/Enums";
 import { SandboxShapeManager } from "../Sandbox";
+import { getAutoSizedArenaDimension } from "./common";
 
 /**
  * Sandbox Gamemode Arena
@@ -59,7 +60,7 @@ export default class SpikeboxArena extends ArenaEntity {
     }
 
     public tick(tick: number) {
-        const arenaSize = Math.floor(25 * Math.sqrt(Math.max(this.game.clients.size, 1))) * 100;
+        const arenaSize = getAutoSizedArenaDimension(this.game.clients.size);
         if (this.width !== arenaSize || this.height !== arenaSize) this.updateBounds(arenaSize, arenaSize);
 
         super.tick(tick);

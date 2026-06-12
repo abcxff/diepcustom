@@ -22,7 +22,7 @@ import TankDefinitions from "../../../Const/TankDefinitions";
 import AbstractBoss from "../../Boss/AbstractBoss";
 
 import { Tank } from "../../../Const/Enums";
-import { AIState } from "../../AI";
+import { applyIdleSpinOrTrackTarget } from "../../Boss/aim";
 
 /**
  * Class which represents the boss "Fallen Mega Trapper"
@@ -51,18 +51,6 @@ export default class FallenMegaTrapper extends AbstractBoss {
     }
 
     protected moveAroundMap() {
-        if (this.ai.state === AIState.idle) {
-            this.positionData.angle += this.ai.passiveRotation;
-            this.setVelocity(0, 0);
-        } else {
-            const x = this.positionData.values.x,
-                  y = this.positionData.values.y;
-
-            this.positionData.angle = Math.atan2(this.ai.inputs.mouse.y - y, this.ai.inputs.mouse.x - x);
-        }
-    }
-
-    public tick(tick: number) {
-        super.tick(tick);
+        applyIdleSpinOrTrackTarget(this);
     }
 }

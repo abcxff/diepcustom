@@ -35,16 +35,16 @@ Implemented capabilities:
 - Multi-agent action stepping.
 - `Simulation::stepMany(...)` for tickless/batched stepping.
 - Full-world JSON snapshots for parity/debugging.
-- Local observation grids: `21 x 21 x 8`, channel-last float32 layout.
-- Batched fixed-slot observations padded to `(max_possible_agents, 21, 21, 8)`.
-- Dead/inactive agent observation slots are zero-filled.
+- Combat grids: `18 x 21 x 21`, channel-first float32 layout.
+- Batched fixed-slot combat grids padded to `(max_possible_agents, 18, 21, 21)`.
+- Dead/inactive combat slots are zero-filled.
 - Separate alive mask tracks which possible-agent slots are currently live.
 
 Important behavior:
 
 - `agentIds_` is live/current agents.
 - `possibleAgentIds_` is the fixed episode slot order created at reset/spawn time.
-- `writeObservations(...)` now uses `possibleAgentIds_`, not live `agentIds_`, so tensor shape does not shrink mid-episode.
+- `writeCombatGrids(...)` uses `possibleAgentIds_`, not live `agentIds_`, so tensor shape does not shrink mid-episode.
 - `writeAliveMask(...)` returns one `int` per possible agent: `1 = alive`, `0 = terminated/dead`.
 
 ### C ABI
@@ -55,23 +55,23 @@ Core files:
 - `cpp/src/headless_c_api.cpp`
 - `cpp/tests/headless_c_api_smoke_test.cpp`
 
-Current ABI version: **6**.
+Current ABI version: **8**.
 
 Public additions/progress:
 
 - `diep_step_many(...)` for batched/tickless stepping.
-- `diep_observations(...)` for fixed-slot batched observations.
+- `diep_combat_observations(...)` for fixed-slot batched combat grids.
 - `diep_alive_mask(...)` for fixed-slot live/dead state.
-- `diep_get_observation_shape()` returns `21, 21, 8, channel-last`.
+- `diep_get_combat_observation_shape()` returns `18, 21, 21, channel-first`.
 - `diep_get_action_shape()` describes the frozen v1 struct action layout.
 - Buffer-too-small calls return required lengths.
 - Invalid/null handles return safe error codes or no-op results according to the current C ABI pattern.
 
-Observation ABI contract:
+Combat observation ABI contract:
 
 ```text
-diep_observations -> float32 buffer shaped as:
-(max_possible_agents, 21, 21, 8)
+diep_combat_observations -> float32 buffer shaped as:
+(max_possible_agents, 18, 21, 21)
 ```
 
 Alive mask ABI contract:
@@ -88,33 +88,34 @@ diep_alive_mask -> int buffer shaped as:
 
 Core file:
 
-- `conformance/headless/python/diep_headless.py`
+- `RL_training/headless.py`
 
 Implemented API:
 
 - `HeadlessSim.step(...)`
 - `HeadlessSim.step_many(...)`
 - `HeadlessSim.snapshot()`
-- `HeadlessSim.observation(agent_id)`
-- `HeadlessSim.observations()`
-- `HeadlessSim.observations_array(out=None)`
+- `HeadlessSim.combat_observation(agent_id)`
+- `HeadlessSim.combat_observations()`
+- `HeadlessSim.combat_observations_array(out=None)`
+- `HeadlessSim.combat_self_observations_array(out=None)`
+- `HeadlessSim.combat_prev_action_observations_array(out=None)`
 - `HeadlessSim.agent_states_array(out=None)`
 - `HeadlessSim.agent_progressions_array(out=None)`
-- `HeadlessSim.step_many_observations_array(...)`
 - `HeadlessSim.alive_mask()`
-- `abi_version()`, currently expected to be `6`
+- `abi_version()`, currently expected to be `8`
 
 Important behavior:
 
-- `observations_array()` now always returns shape `(possible_agent_count, 21, 21, 8)`.
+- `combat_observations_array()` now always returns shape `(possible_agent_count, 18, 21, 21)`.
 - If a caller passes `out`, it must have that exact shape and `float32` dtype.
-- NumPy is optional for the wrapper overall, but required for `observations_array()`.
+- NumPy is optional for the wrapper overall, but required for combat/state/progression array helpers.
 
 ### PettingZoo ParallelEnv wrapper
 
 Core file:
 
-- `conformance/headless/python/pettingzoo_env.py`
+- `RL_training/pettingzoo_env.py`
 
 Implemented behavior:
 
@@ -124,7 +125,7 @@ Implemented behavior:
 - Optional `reward_config`, `reward_fn`, or `raw_rewards=True` allow Python-side ownership of rewards.
 - `reward_config` accepts scalar weights for built-in components: `raw`, `score_delta`, `health_delta`, `damage_taken`, `alive`, `death`, `truncation`, and `step`.
 - `env.set_reward_config(...)` can retune configured reward weights without recreating the environment.
-- `observation_mode='state'` switches PettingZoo observations from the grid tensor to the lightweight C ABI state vector.
+- `observation_mode='combat'` is now the only supported PettingZoo observation mode.
 - `fast_reward_state=True` computes configured reward components from the lightweight C ABI state buffer instead of JSON snapshots.
 - `include_snapshot_info=False` avoids full JSON snapshots in `infos` for hot training loops.
 - `infos[agent]['reward_components']` exposes the unweighted values used for configured rewards.
@@ -157,7 +158,7 @@ Both upgrade fields are optional and default to `-1` (no upgrade). Invalid or cu
 - `docs/headless-rl-action-abi.md`
   - Documents ABI v6 action/progression layout, explicit stat+tank upgrade channels, and fixed-shape legality masks.
 - `docs/headless-pettingzoo-api.md`
-  - Documents PettingZoo wrapper usage, upgrade-aware `grid_hud.progression`, fast tickless path, constant-shape buffers, and reward ownership.
+  - Documents combat-only PettingZoo wrapper usage, fast tickless path, constant-shape buffers, and reward ownership.
 
 ### Tests and conformance added/updated
 
@@ -167,8 +168,9 @@ Files:
 - `conformance/headless/python_pettingzoo_smoke.py`
 - `conformance/headless/python_pettingzoo_api_test.py`
 - `conformance/headless/python_training_benchmark.py`
-- `conformance/headless/pettingzoo-env.test.js`
+- `conformance/headless/determinism.test.js`
 - `conformance/headless/python-ctypes.test.js`
+- `conformance/headless/pettingzoo-env.test.js`
 - `cpp/tests/headless_c_api_smoke_test.cpp`
 
 Coverage now includes:
@@ -221,18 +223,9 @@ observationReport: ~9.5k ticks/sec with observe-all path
 
 ## Current git/worktree note
 
-The repo has many uncommitted changes from the broader RL/headless work, not just the fixed-slot observation slice. A fresh agent should inspect `git status --short` before committing or branching.
+Check the current worktree state with `git status --short` before batching RL/headless changes into commits. This repo often carries parallel parity, Python-wrapper, and docs work at the same time.
 
-Known untracked/modified areas include:
-
-- CMake and package scripts.
-- Headless C++ simulator files.
-- C ABI header/source/test.
-- Headless parity conformance folder.
-- Python ctypes/PettingZoo wrappers and tests.
-- Docs for RL action ABI and PettingZoo API.
-
-Do not commit `.venv/` or Python cache folders.
+Do not commit `.venv/`, Python cache folders, build outputs, or generated local artifacts.
 
 ## Remaining risks / next recommended steps
 

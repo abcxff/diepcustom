@@ -45,7 +45,7 @@ env = DiepCustomParallelEnv(
     seed=1,
     agents=2,
     max_ticks=1000,
-    observation_mode='grid_hud',
+    observation_mode='combat',
     include_snapshot_info=False,
     reward_config={
         'score_delta': 1.0,
@@ -74,19 +74,17 @@ Tune weights in your training script: `env.set_reward_config(score_delta=2.0, de
 
 Debug components with: `infos[agent]['reward_components']`.
 
-## Observation modes
+## Observation mode
 
-`observation_mode='grid_hud'`: recommended realistic default for player-like agents. Returns `{'grid': ..., 'self': ..., 'progression': ...}` where `self` is `(health_norm, health, max_health, score, alive)` and `progression` carries level, current tank, available stat points, `stat_levels`, `legal_stat_upgrades`, and `legal_tank_upgrades`. Automatically enables the fast state buffer plus progression plumbing.
+Only `observation_mode='combat'` is supported.
 
-`observation_mode='state'`: compact per-agent vector; best when you want the full lightweight state row for MLP policies; enables fast reward state automatically.
-
-`observation_mode='grid'`: spatial tensor per agent; useful for CNN-style policies when no HUD/self vector is needed.
+It returns `{'grid_obs': ..., 'self_obs': ..., 'prev_action_obs': ...}` and is the policy-facing observation used by the current SB3 combat harnesses.
 
 ## Fast training defaults
 
 ```python
 DiepCustomParallelEnv(
-    observation_mode='grid_hud',
+    observation_mode='combat',
     include_snapshot_info=False,
 )
 ```
@@ -102,7 +100,7 @@ DiepCustomParallelEnv(
 ## Practical workflow
 
 1. Import `DiepCustomParallelEnv` from `RL_training`.
-2. Start with `observation_mode='grid_hud'` for player-like agents, or `state` for fully vectorized policies.
+2. Start with `observation_mode='combat'`.
 3. Tune `reward_config` in your training script.
 4. Inspect `reward_components` when debugging.
 5. Run smoke/API tests before long training runs.

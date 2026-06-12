@@ -8,3 +8,4 @@ ext/
 package/
 client/public/
 replit.nix
+.grepai/

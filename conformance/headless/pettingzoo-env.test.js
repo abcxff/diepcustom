@@ -15,6 +15,14 @@ test('PettingZoo-compatible Python ParallelEnv wrapper exposes multi-agent actio
   execFileSync('python3', ['conformance/headless/python_pettingzoo_smoke.py'], { cwd: root, stdio: 'inherit' });
 });
 
+test('Combat observation builder and env smoke checks pass', () => {
+  execFileSync('python3', ['conformance/headless/python_combat_observation_smoke.py'], { cwd: root, stdio: 'inherit' });
+});
+
+test('Combat observation C++ parity checks pass', () => {
+  execFileSync('python3', ['conformance/headless/python_combat_observation_parity.py'], { cwd: root, stdio: 'inherit' });
+});
+
 test('PettingZoo official Parallel API test passes when optional dependencies are installed', () => {
   const venvPython = path.join(root, '.venv/bin/python');
   if (!fs.existsSync(venvPython)) {
@@ -28,4 +36,16 @@ test('Python tickless training benchmark runs batched C ABI paths', () => {
   const venvPython = path.join(root, '.venv/bin/python');
   const python = fs.existsSync(venvPython) ? venvPython : 'python3';
   execFileSync(python, ['conformance/headless/python_training_benchmark.py'], { cwd: root, stdio: 'inherit' });
+});
+
+test('SB3 combat smoke passes when optional dependencies are installed', () => {
+  const venvPython = path.join(root, '.venv/bin/python');
+  const python = fs.existsSync(venvPython) ? venvPython : 'python3';
+  execFileSync(python, ['conformance/headless/python_sb3_combat_smoke.py'], { cwd: root, stdio: 'inherit' });
+});
+
+test('Gym combat wrapper smoke passes when Gymnasium is installed', () => {
+  const venvPython = path.join(root, '.venv/bin/python');
+  const python = fs.existsSync(venvPython) ? venvPython : 'python3';
+  execFileSync(python, ['conformance/headless/python_gym_combat_wrapper_smoke.py'], { cwd: root, stdio: 'inherit' });
 });

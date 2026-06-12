@@ -1,0 +1,17 @@
+{
+  "agents": 4,
+  "episodes": 1,
+  "mode": "eval",
+  "model": "/tmp/train-video-20260608T190021-model.zip",
+  "reward_config": {
+    "alive": 0.05,
+    "damage_taken": -0.001,
+    "death": -5.0,
+    "health_delta": 0.003,
+    "score_delta": 0.005,
+    "step": -0.001,
+    "truncation": 1.0
+  },
+  "scenario": "upgrade-ready",
+  "seed": 1
+}

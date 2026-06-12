@@ -42,22 +42,22 @@ def main():
             for _ in range(ticks):
                 sim.step(actions)
                 try:
-                    observations = sim.observations_array(out=out)
+                    observations = sim.combat_observations_array(out=out)
                 except ValueError:
                     out = None
-                    observations = sim.observations_array(out=out)
+                    observations = sim.combat_observations_array(out=out)
                 out = observations
             obs_rate = elapsed_rate(ticks, started)
-            assert observations.shape[1:] == (21, 21, 8)
+            assert observations.shape[1:] == (18, 21, 21)
             assert observations.dtype == np.float32
             assert np.isfinite(observations).all()
         else:
             started = time.perf_counter()
             for _ in range(ticks):
                 sim.step(actions)
-                observations = sim.observations()
+                observations = sim.combat_observations()
             obs_rate = elapsed_rate(ticks, started)
-            assert len(observations) == agents * 21 * 21 * 8
+            assert len(observations) == agents * 18 * 21 * 21
 
     with HeadlessSim(seed=123, agents=agents, max_ticks=ticks + 10, scenario='agents-no-fire') as sim:
         actions = make_actions(sim.agent_ids())
@@ -81,7 +81,7 @@ def main():
         'agents': agents,
         'step_ticks_per_second': round(step_rate, 2),
         'step_many_ticks_per_second': round(step_many_rate, 2),
-        'step_plus_observations_ticks_per_second': round(obs_rate, 2),
+        'step_plus_combat_observations_ticks_per_second': round(obs_rate, 2),
         'step_plus_agent_states_ticks_per_second': round(state_rate, 2),
         'numpy': np is not None,
     })

@@ -96,10 +96,10 @@ int main(int argc, char** argv) {
     for (int tick = 0; tick < config.maxTicks; ++tick) {
       sim.step(scriptedActions(sim, tick));
       if (observeAll) {
-        const int count = sim.observationFloatCount();
+        const int count = sim.combatGridFloatCount();
         std::vector<float> observation(static_cast<std::size_t>(count));
         for (int agent = 0; agent < sim.config().agents; ++agent) {
-          if (sim.writeObservation(agent, observation.data(), count) == count) {
+          if (sim.writeCombatGrid(agent, observation.data(), count) == count) {
             for (float value : observation) observationChecksum += value;
           }
         }

@@ -15,15 +15,33 @@ DIEP_ERROR_INVALID_ARGUMENT = -2
 DIEP_ERROR_EXCEPTION = -3
 DIEP_ERROR_INVALID_AGENT = -4
 DIEP_LAYOUT_CHANNEL_LAST = 1
+DIEP_LAYOUT_CHANNEL_FIRST = 2
 DIEP_ACTION_LAYOUT_V1_STRUCT = 1
-ABI_VERSION = 6
+ABI_VERSION = 10
 AGENT_STATE_FIELDS = ('agent_id', 'alive', 'x', 'y', 'vx', 'vy', 'health', 'max_health', 'score', 'team_id')
+EPISODE_STATS_FIELDS = (
+    'lifetime_steps',
+    'score_total',
+    'score_from_farming',
+    'score_from_pvp',
+    'damage_dealt',
+    'damage_taken',
+    'shots_fired',
+    'shots_hit',
+    'kills',
+    'death_count',
+    'death_cause',
+    'level_reached',
+    'tank_class',
+    'upgrade_choices',
+)
 PROGRESSION_STATE_FIELDS = (
     'level', 'current_tank', 'stats_available', 'can_stat_upgrade', 'can_tank_upgrade',
     'stat_0', 'stat_1', 'stat_2', 'stat_3', 'stat_4', 'stat_5', 'stat_6', 'stat_7',
     'legal_stat_0', 'legal_stat_1', 'legal_stat_2', 'legal_stat_3', 'legal_stat_4', 'legal_stat_5', 'legal_stat_6', 'legal_stat_7',
     'legal_tank_0', 'legal_tank_1', 'legal_tank_2', 'legal_tank_3', 'legal_tank_4', 'legal_tank_5',
 )
+COMBAT_PREV_ACTION_FIELD_COUNT = 5
 
 
 def _library_path():
@@ -54,8 +72,8 @@ class DiepStepResult(ctypes.Structure):
     _fields_ = [('tick', ctypes.c_int), ('done', ctypes.c_int), ('reward_count', ctypes.c_int), ('rewards', ctypes.POINTER(ctypes.c_double))]
 
 
-class DiepObservationShape(ctypes.Structure):
-    _fields_ = [('rows', ctypes.c_int), ('cols', ctypes.c_int), ('channels', ctypes.c_int), ('layout', ctypes.c_int)]
+class DiepCombatObservationShape(ctypes.Structure):
+    _fields_ = [('channels', ctypes.c_int), ('rows', ctypes.c_int), ('cols', ctypes.c_int), ('layout', ctypes.c_int)]
 
 
 class DiepActionShape(ctypes.Structure):
@@ -76,10 +94,14 @@ def load_library():
         lib.diep_abi_version.restype = ctypes.c_int
         lib.diep_last_error.argtypes = [ctypes.c_void_p]
         lib.diep_last_error.restype = ctypes.c_int
-        lib.diep_get_observation_shape.argtypes = []
-        lib.diep_get_observation_shape.restype = DiepObservationShape
+        lib.diep_get_combat_observation_shape.argtypes = []
+        lib.diep_get_combat_observation_shape.restype = DiepCombatObservationShape
         lib.diep_get_action_shape.argtypes = []
         lib.diep_get_action_shape.restype = DiepActionShape
+        lib.diep_combat_self_fields.argtypes = []
+        lib.diep_combat_self_fields.restype = ctypes.c_int
+        lib.diep_combat_prev_action_fields.argtypes = []
+        lib.diep_combat_prev_action_fields.restype = ctypes.c_int
         lib.diep_agent_ids.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int), ctypes.c_int]
         lib.diep_agent_ids.restype = ctypes.c_int
         lib.diep_alive_mask.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_int), ctypes.c_int]
@@ -96,10 +118,18 @@ def load_library():
         lib.diep_step_many.restype = DiepStepResult
         lib.diep_snapshot_json.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
         lib.diep_snapshot_json.restype = ctypes.c_int
-        lib.diep_observation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
-        lib.diep_observation.restype = ctypes.c_int
-        lib.diep_observations.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
-        lib.diep_observations.restype = ctypes.c_int
+        lib.diep_combat_observation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        lib.diep_combat_observation.restype = ctypes.c_int
+        lib.diep_combat_observations.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        lib.diep_combat_observations.restype = ctypes.c_int
+        lib.diep_combat_self_observation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        lib.diep_combat_self_observation.restype = ctypes.c_int
+        lib.diep_combat_self_observations.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        lib.diep_combat_self_observations.restype = ctypes.c_int
+        lib.diep_combat_prev_action_observation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        lib.diep_combat_prev_action_observation.restype = ctypes.c_int
+        lib.diep_combat_prev_action_observations.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
+        lib.diep_combat_prev_action_observations.restype = ctypes.c_int
         lib.diep_agent_state_fields.argtypes = []
         lib.diep_agent_state_fields.restype = ctypes.c_int
         lib.diep_agent_states.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
@@ -108,6 +138,10 @@ def load_library():
         lib.diep_agent_progression_fields.restype = ctypes.c_int
         lib.diep_agent_progressions.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int]
         lib.diep_agent_progressions.restype = ctypes.c_int
+        lib.diep_episode_stats_fields.argtypes = []
+        lib.diep_episode_stats_fields.restype = ctypes.c_int
+        lib.diep_episode_stats.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.c_int]
+        lib.diep_episode_stats.restype = ctypes.c_int
         abi = lib.diep_abi_version()
         if abi != ABI_VERSION:
             raise RuntimeError(f'diepcustom_headless_c ABI mismatch: expected {ABI_VERSION}, got {abi}')
@@ -119,9 +153,9 @@ def abi_version():
     return load_library().diep_abi_version()
 
 
-def observation_shape():
-    shape = load_library().diep_get_observation_shape()
-    return {'rows': shape.rows, 'cols': shape.cols, 'channels': shape.channels, 'layout': shape.layout}
+def combat_observation_shape():
+    shape = load_library().diep_get_combat_observation_shape()
+    return {'channels': shape.channels, 'rows': shape.rows, 'cols': shape.cols, 'layout': shape.layout}
 
 
 def action_shape():
@@ -142,6 +176,18 @@ def agent_state_shape():
 
 def agent_progression_shape():
     return {'agents': None, 'fields': load_library().diep_agent_progression_fields(), 'field_names': PROGRESSION_STATE_FIELDS}
+
+
+def episode_stats_shape():
+    return {'agents': None, 'fields': load_library().diep_episode_stats_fields(), 'field_names': EPISODE_STATS_FIELDS}
+
+
+def combat_self_shape():
+    return {'agents': None, 'fields': load_library().diep_combat_self_fields()}
+
+
+def combat_prev_action_shape():
+    return {'agents': None, 'fields': load_library().diep_combat_prev_action_fields()}
 
 
 def noop_action(agent_id):
@@ -238,34 +284,89 @@ class HeadlessSim:
             raise RuntimeError(f'diep_snapshot_json failed: {written}')
         return json.loads(buf.value.decode())
 
-    def observation(self, agent_id):
+    def combat_observation(self, agent_id):
         self._require_open()
-        needed = self.lib.diep_observation(self.handle, agent_id, None, 0)
+        needed = self.lib.diep_combat_observation(self.handle, agent_id, None, 0)
         if needed < 0:
             raise ValueError(f'invalid agent id: {agent_id}')
         arr = (ctypes.c_float * needed)()
-        written = self.lib.diep_observation(self.handle, agent_id, arr, needed)
+        written = self.lib.diep_combat_observation(self.handle, agent_id, arr, needed)
         if written != needed:
-            raise RuntimeError(f'diep_observation wrote {written}, expected {needed}')
+            raise RuntimeError(f'diep_combat_observation wrote {written}, expected {needed}')
         return list(arr)
 
-    def observations(self):
+    def combat_observations(self):
         self._require_open()
-        needed = self.lib.diep_observations(self.handle, None, 0)
+        needed = self.lib.diep_combat_observations(self.handle, None, 0)
         if needed < 0:
-            raise RuntimeError(f'diep_observations failed: {needed}')
+            raise RuntimeError(f'diep_combat_observations failed: {needed}')
         arr = (ctypes.c_float * needed)()
-        written = self.lib.diep_observations(self.handle, arr, needed)
+        written = self.lib.diep_combat_observations(self.handle, arr, needed)
         if written != needed:
-            raise RuntimeError(f'diep_observations wrote {written}, expected {needed}')
+            raise RuntimeError(f'diep_combat_observations wrote {written}, expected {needed}')
         return list(arr)
 
-    def observations_array(self, out=None):
-        if np is None:
-            raise RuntimeError('NumPy is required for observations_array')
+    def combat_self_observation(self, agent_id):
         self._require_open()
-        shape = observation_shape()
-        expected_shape = (self.possible_agent_count, shape['rows'], shape['cols'], shape['channels'])
+        needed = self.lib.diep_combat_self_observation(self.handle, agent_id, None, 0)
+        if needed < 0:
+            raise ValueError(f'invalid agent id: {agent_id}')
+        arr = (ctypes.c_float * needed)()
+        written = self.lib.diep_combat_self_observation(self.handle, agent_id, arr, needed)
+        if written != needed:
+            raise RuntimeError(f'diep_combat_self_observation wrote {written}, expected {needed}')
+        return list(arr)
+
+    def combat_self_observations(self):
+        self._require_open()
+        needed = self.lib.diep_combat_self_observations(self.handle, None, 0)
+        if needed < 0:
+            raise RuntimeError(f'diep_combat_self_observations failed: {needed}')
+        arr = (ctypes.c_float * needed)()
+        written = self.lib.diep_combat_self_observations(self.handle, arr, needed)
+        if written != needed:
+            raise RuntimeError(f'diep_combat_self_observations wrote {written}, expected {needed}')
+        return list(arr)
+
+    def combat_prev_action_observation(self, agent_id):
+        self._require_open()
+        needed = self.lib.diep_combat_prev_action_observation(self.handle, agent_id, None, 0)
+        if needed < 0:
+            raise ValueError(f'invalid agent id: {agent_id}')
+        arr = (ctypes.c_float * needed)()
+        written = self.lib.diep_combat_prev_action_observation(self.handle, agent_id, arr, needed)
+        if written != needed:
+            raise RuntimeError(f'diep_combat_prev_action_observation wrote {written}, expected {needed}')
+        return list(arr)
+
+    def combat_prev_action_observations(self):
+        self._require_open()
+        needed = self.lib.diep_combat_prev_action_observations(self.handle, None, 0)
+        if needed < 0:
+            raise RuntimeError(f'diep_combat_prev_action_observations failed: {needed}')
+        arr = (ctypes.c_float * needed)()
+        written = self.lib.diep_combat_prev_action_observations(self.handle, arr, needed)
+        if written != needed:
+            raise RuntimeError(f'diep_combat_prev_action_observations wrote {written}, expected {needed}')
+        return list(arr)
+
+    def episode_stats(self):
+        self._require_open()
+        needed = self.lib.diep_episode_stats(self.handle, None, 0)
+        if needed < 0:
+            raise RuntimeError(f'diep_episode_stats failed: {needed}')
+        arr = (ctypes.c_double * needed)()
+        written = self.lib.diep_episode_stats(self.handle, arr, needed)
+        if written != needed:
+            raise RuntimeError(f'diep_episode_stats wrote {written}, expected {needed}')
+        return list(arr)
+
+    def combat_observations_array(self, out=None):
+        if np is None:
+            raise RuntimeError('NumPy is required for combat_observations_array')
+        self._require_open()
+        shape = combat_observation_shape()
+        expected_shape = (self.possible_agent_count, shape['channels'], shape['rows'], shape['cols'])
         if out is None:
             out = np.empty(expected_shape, dtype=np.float32)
         if out.shape != expected_shape or out.dtype != np.float32:
@@ -273,9 +374,9 @@ class HeadlessSim:
         if not out.flags.c_contiguous:
             raise ValueError('out must be C-contiguous')
         ptr = out.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-        written = self.lib.diep_observations(self.handle, ptr, int(out.size))
+        written = self.lib.diep_combat_observations(self.handle, ptr, int(out.size))
         if written != int(out.size):
-            raise RuntimeError(f'diep_observations wrote {written}, expected {out.size}')
+            raise RuntimeError(f'diep_combat_observations wrote {written}, expected {out.size}')
         return out
 
     def agent_states_array(self, out=None):
@@ -314,10 +415,59 @@ class HeadlessSim:
             raise RuntimeError(f'diep_agent_progressions wrote {written}, expected {out.size}')
         return out
 
-    def step_many_observations_array(self, actions=(), ticks=1, out=None):
-        result = self.step_many(actions, ticks)
-        observations = self.observations_array(out=out)
-        return result, observations
+    def combat_self_observations_array(self, out=None):
+        if np is None:
+            raise RuntimeError('NumPy is required for combat_self_observations_array')
+        self._require_open()
+        fields = int(self.lib.diep_combat_self_fields())
+        expected_shape = (self.possible_agent_count, fields)
+        if out is None:
+            out = np.empty(expected_shape, dtype=np.float32)
+        if out.shape != expected_shape or out.dtype != np.float32:
+            raise ValueError(f'out must have shape {expected_shape} and dtype float32')
+        if not out.flags.c_contiguous:
+            raise ValueError('out must be C-contiguous')
+        ptr = out.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+        written = self.lib.diep_combat_self_observations(self.handle, ptr, int(out.size))
+        if written != int(out.size):
+            raise RuntimeError(f'diep_combat_self_observations wrote {written}, expected {out.size}')
+        return out
+
+    def combat_prev_action_observations_array(self, out=None):
+        if np is None:
+            raise RuntimeError('NumPy is required for combat_prev_action_observations_array')
+        self._require_open()
+        fields = int(self.lib.diep_combat_prev_action_fields())
+        expected_shape = (self.possible_agent_count, fields)
+        if out is None:
+            out = np.empty(expected_shape, dtype=np.float32)
+        if out.shape != expected_shape or out.dtype != np.float32:
+            raise ValueError(f'out must have shape {expected_shape} and dtype float32')
+        if not out.flags.c_contiguous:
+            raise ValueError('out must be C-contiguous')
+        ptr = out.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+        written = self.lib.diep_combat_prev_action_observations(self.handle, ptr, int(out.size))
+        if written != int(out.size):
+            raise RuntimeError(f'diep_combat_prev_action_observations wrote {written}, expected {out.size}')
+        return out
+
+    def episode_stats_array(self, out=None):
+        if np is None:
+            raise RuntimeError('NumPy is required for episode_stats_array')
+        self._require_open()
+        fields = int(self.lib.diep_episode_stats_fields())
+        expected_shape = (self.possible_agent_count, fields)
+        if out is None:
+            out = np.empty(expected_shape, dtype=np.float64)
+        if out.shape != expected_shape or out.dtype != np.float64:
+            raise ValueError(f'out must have shape {expected_shape} and dtype float64')
+        if not out.flags.c_contiguous:
+            raise ValueError('out must be C-contiguous')
+        ptr = out.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
+        written = self.lib.diep_episode_stats(self.handle, ptr, int(out.size))
+        if written != int(out.size):
+            raise RuntimeError(f'diep_episode_stats wrote {written}, expected {out.size}')
+        return out
 
     def step_many_agent_states_array(self, actions=(), ticks=1, out=None):
         result = self.step_many(actions, ticks)
@@ -329,8 +479,14 @@ class HeadlessSim:
         progressions = self.agent_progressions_array(out=out)
         return result, progressions
 
-    def observation_shape(self):
-        return observation_shape()
+    def combat_observation_shape(self):
+        return combat_observation_shape()
+
+    def combat_self_shape(self):
+        return combat_self_shape()
+
+    def combat_prev_action_shape(self):
+        return combat_prev_action_shape()
 
     def action_shape(self):
         return action_shape()
@@ -338,8 +494,9 @@ class HeadlessSim:
 
 __all__ = [
     'DIEP_OK', 'DIEP_ERROR_NULL', 'DIEP_ERROR_INVALID_ARGUMENT', 'DIEP_ERROR_EXCEPTION',
-    'DIEP_ERROR_INVALID_AGENT', 'DIEP_LAYOUT_CHANNEL_LAST', 'DIEP_ACTION_LAYOUT_V1_STRUCT',
-    'ABI_VERSION', 'AGENT_STATE_FIELDS', 'PROGRESSION_STATE_FIELDS', 'DiepConfig', 'DiepAction', 'DiepStepResult',
-    'DiepObservationShape', 'DiepActionShape', 'load_library', 'abi_version',
-    'observation_shape', 'action_shape', 'agent_state_shape', 'agent_progression_shape', 'noop_action', 'HeadlessSim',
+    'DIEP_ERROR_INVALID_AGENT', 'DIEP_LAYOUT_CHANNEL_LAST', 'DIEP_LAYOUT_CHANNEL_FIRST', 'DIEP_ACTION_LAYOUT_V1_STRUCT',
+    'ABI_VERSION', 'AGENT_STATE_FIELDS', 'EPISODE_STATS_FIELDS', 'PROGRESSION_STATE_FIELDS', 'DiepConfig', 'DiepAction', 'DiepStepResult',
+    'DiepCombatObservationShape', 'DiepActionShape', 'COMBAT_PREV_ACTION_FIELD_COUNT',
+    'load_library', 'abi_version', 'combat_observation_shape', 'combat_self_shape',
+    'combat_prev_action_shape', 'action_shape', 'agent_state_shape', 'agent_progression_shape', 'episode_stats_shape', 'noop_action', 'HeadlessSim',
 ]
