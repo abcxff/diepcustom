@@ -131,7 +131,7 @@ export class CameraEntity extends Entity {
 
         if (newLevel !== this.cameraData.values.level) {
             this.setLevel(newLevel);
-            this.cameraData.score = score;
+            this.cameraData.score = player.scoreData.score = score;
         }
 
         if (newLevel < levelToScoreTable.length) {
