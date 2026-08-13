@@ -103,7 +103,7 @@ export const enum Tank {
     Mothership    = 27,
     Predator      = 28,
     Sprayer       = 29,
-    Trapper       = 30,
+    Trapper       = 31,
     GunnerTrapper = 32,
     Overtrapper   = 33,
     MegaTrapper   = 34,
