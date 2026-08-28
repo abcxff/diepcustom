@@ -132,7 +132,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         const tank = getTankById(id);
         const camera = this.cameraEntity;
 
-        if (!tank) throw new TypeError("Invalid tank ID:", tank);
+        if (!tank) throw new TypeError(`Invalid tank ID: ${tank}`);
 
         this.definition = tank;
         if (!Entity.exists(camera)) throw new Error("No camera");
