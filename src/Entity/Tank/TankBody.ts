@@ -22,6 +22,7 @@ import type GameServer from "../../Game";
 import type { CameraEntity } from "../../Native/Camera";
 
 import AbstractShape from "../Shape/AbstractShape";
+import AbstractBoss from "../Boss/AbstractBoss";
 import NecromancerSquare from "./Projectile/NecromancerSquare";
 import LivingEntity from "../Live";
 import ObjectEntity from "../Object";
@@ -32,6 +33,7 @@ import { Entity } from "../../Native/Entity";
 import { NameGroup, ScoreGroup } from "../../Native/FieldGroups";
 import { Addon, AddonById } from "./Addons";
 import { getTankById, TankDefinition, visibilityRateDamage } from "../../Const/TankDefinitions";
+import { sendAchievementEvent } from "../../Const/Achievements";
 import { DevTank } from "../../Const/DevTankDefinitions";
 import { Inputs } from "../AI";
 import { ArenaState } from "../../Native/Arena";
@@ -130,7 +132,10 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         const tank = getTankById(id);
         const camera = this.cameraEntity;
 
-        if (!tank) throw new TypeError("Invalid tank ID");
+        if (!tank){
+            console.log(id);
+            throw new TypeError("Invalid tank ID");
+        }
         this.definition = tank;
         if (!Entity.exists(camera)) throw new Error("No camera");
 
@@ -156,10 +161,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         else if (this.positionData.flags & PositionFlags.canMoveThroughWalls) this.positionData.flags ^= PositionFlags.canMoveThroughWalls;
 
         camera.cameraData.tank = this._currentTank = id;
-        const client = camera.getClient();
-        if (client && tank.upgradeMessage) {
-            client.notify(tank.upgradeMessage, 0x000000, 10000);
-        }
 
         // Build addons, then tanks, then addons.
         const preAddon = tank.preAddon;
@@ -184,9 +185,28 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         
         this.scale(1); // Update addons and etc
         this.calculateStatData(); // Re-calculate everything once this is done
+        const client = camera.getClient();
+        if (client) {
+            sendAchievementEvent(client, "classChange", {
+                "class": id
+            });
+
+            if (tank.upgradeMessage) client.notify(tank.upgradeMessage, 0x000000, 10000);
+        }
     }
     /** See LivingEntity.onKill */
-    public onKill(entity: LivingEntity) {
+    public onKill(entity: LivingEntity, weapon?: LivingEntity) {
+        const client = this.cameraEntity.getClient();
+        if (client) {
+            sendAchievementEvent(client, "kill", {
+                "weapon.isTank": !weapon,
+                "victim.arenaMobID": entity.arenaMobID,
+                "victim.isTank": TankBody.isTank(entity),
+                "victim.isBoss": AbstractBoss.isBoss(entity),
+                "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
+            });
+        }
+
         if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.cameraEntity.addScore(entity.scoreReward);
 
         if ((entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName))) {

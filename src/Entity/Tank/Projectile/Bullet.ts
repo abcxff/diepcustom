@@ -104,7 +104,7 @@ export default class Bullet extends LivingEntity {
 
     /** Extends LivingEntity.onKill - passes kill to the owner. */
     public onKill(killedEntity: LivingEntity) {
-        (this.tank as unknown as LivingEntity)?.onKill?.(killedEntity);
+        (this.tank as unknown as LivingEntity)?.onKill?.(killedEntity, this);
     }
 
     public tick(tick: number) {

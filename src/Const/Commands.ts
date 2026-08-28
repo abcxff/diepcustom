@@ -53,6 +53,7 @@ import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
 import { ClientBound, Stat, StatCount, PhysicsFlags, StyleFlags, Tank } from "./Enums";
 import { getTankByName } from "./TankDefinitions";
+import { sendAchievements, achievementHashMap, getAchievementByName } from "./Achievements";
 
 const RELATIVE_POS_REGEX = new RegExp(/~(-?\d+)?/);
 
@@ -69,6 +70,7 @@ export const enum CommandID {
     gameAnnounce = "game_announce",
     gameGoldenName = "game_golden_name",
     gameNeutral = "game_neutral",
+    gameAchievement = "game_achievement",
     adminSummon = "admin_summon",
     adminKillAll = "admin_kill_all",
     adminKillEntity = "admin_kill_entity",
@@ -164,9 +166,16 @@ export const commandDefinitions = {
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
-     game_neutral: {
+    game_neutral: {
         id: CommandID.gameNeutral,
         description: "Sets your tank's team to the neutral team",
+        permissionLevel: AccessLevel.FullAccess,
+        isCheat: false
+    },
+    game_achievement: {
+        id: CommandID.gameAchievement,
+        usage: "[achievementName]",
+        description: "Increments the given achievement. Example usage: game_achievement \"Shiny!\"",
         permissionLevel: AccessLevel.FullAccess,
         isCheat: false
     },
@@ -313,7 +322,7 @@ export const commandCallbacks = {
         .float(parseInt(time))
         .stringNT(id).send();
     },
-    game_golden_name: (client: Client, activeArg?: string) => {
+    game_golden_name: (client: Client) => {
         client.setHasCheated(!client.hasCheated());
     },
     game_neutral: (client: Client) => {
@@ -324,6 +333,13 @@ export const commandCallbacks = {
         if (!ObjectEntity.isObject(player)) return;
         
         TeamEntity.setTeam(team, player);
+    },
+    game_achievement: (client: Client, nameArg: string) => {
+        const achievement = getAchievementByName(nameArg);
+        if (!achievement) return;
+        
+        const hash = achievementHashMap.get(achievement);
+        sendAchievements(client, [hash]);
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;

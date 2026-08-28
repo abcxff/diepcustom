@@ -23,6 +23,7 @@ import * as config from "./config"
 import * as util from "./util";
 import GameServer from "./Game";
 import TankDefinitions from "./Const/TankDefinitions";
+import Achievements from "./Const/Achievements";
 import { commandDefinitions } from "./Const/Commands";
 import { ColorsHexCode } from "./Const/Enums";
 
@@ -106,6 +107,9 @@ app.get("/*", (res, req) => {
             case "/colors":
                 res.writeStatus("200 OK").end(JSON.stringify(ColorsHexCode));
                 return;
+            case "/achievements":
+                res.writeStatus("200 OK").end(JSON.stringify(Achievements));
+                return;
         }
     }
 
@@ -144,7 +148,7 @@ app.get("/*", (res, req) => {
 
         res.writeStatus("404 Not Found").end(fs.readFileSync(config.clientLocation + "/404.html"));
         return;
-    } 
+    }
 });
 
 app.listen(PORT, (success) => {
@@ -155,10 +159,10 @@ app.listen(PORT, (success) => {
     // RULES(0): No two game servers should share the same endpoint
     //
     // NOTES(0): As of now, both servers run on the same process (and thread) here
-    const ffa = new GameServer(FFAArena, "FFA");
-    const sbx = new GameServer(SandboxArena, "Sandbox");
-    
-    games.push(ffa, sbx);
+    const ffa = new GameServer("ffa", "FFA");
+    const sandbox = new GameServer("sandbox", "Sandbox");
+
+    games.push(ffa, sandbox);
 
     util.saveToLog("Servers up", "All servers booted up.", 0x37F554);
     util.log("Dumping endpoint -> gamemode routing table");
