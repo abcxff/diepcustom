@@ -26,6 +26,7 @@ import { Entity, EntityStateFlags } from "./Entity";
 import { CameraGroup, RelationsGroup } from "./FieldGroups";
 import { CameraFlags, ClientBound, levelToScore, levelToScoreTable, PhysicsFlags, Stat } from "../Const/Enums";
 import { getTankById } from "../Const/TankDefinitions";
+import { sendAchievementEvent } from "../Const/Achievements";
 import { removeFast } from "../util";
 
 import { compileCreation, compileUpdate } from "./UpcreateCompiler";
@@ -76,6 +77,14 @@ export class CameraEntity extends Entity {
 
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor ?? 1);
         this.calculateLevelData();
+        
+        const client = this.getClient();
+        if (!client) return;
+
+        sendAchievementEvent(client, "levelUp", {
+            "level": level,
+            "class": this.cameraData.values.tank
+        });
     }
     /** Returns the camera's client if it exists */
     public getClient(): Client | null {
@@ -94,8 +103,16 @@ export class CameraEntity extends Entity {
         if (player?.scoreData) player.scoreData.score += score;
 
         this.calculateLevelData();
+        
+        const client = this.getClient();
+        if (!client) return;
+
+        sendAchievementEvent(client, "score", {
+            "total": this.cameraData.values.score,
+            "delta": score,
+        });
     }
-    
+
     public setScore(score: number) {
         this.cameraData.score = score;
 
@@ -103,22 +120,46 @@ export class CameraEntity extends Entity {
         if (player?.scoreData) player.scoreData.score = score;
 
         this.calculateLevelData();
+        
+        const client = this.getClient();
+        if (!client) return;
+
+        sendAchievementEvent(client, "score", {
+            "total": this.cameraData.values.score,
+            "delta": score,
+        });
     }
-    
+
     public addStat(statId: Stat, amount: number) {
         this.cameraData.statLevels[statId] += amount;
         
         const player = this.cameraData.values.player;
     
         if (TankBody.isTank(player)) player.calculateStatData();
+        
+        const client = this.getClient();
+        if (!client) return;
+
+        sendAchievementEvent(client, "statUpgraded", {
+            "id": statId,
+            "isMaxLevel": this.cameraData.values.statLevels[statId] >= this.cameraData.values.statLimits[statId]
+        });
     }
-    
+
     public setStat(statId: Stat, amount: number) {
         this.cameraData.statLevels[statId] = amount;
         
         const player = this.cameraData.values.player;
     
         if (TankBody.isTank(player)) player.calculateStatData();
+        
+        const client = this.getClient();
+        if (!client) return;
+
+        sendAchievementEvent(client, "statUpgraded", {
+            "id": statId,
+            "isMaxLevel": this.cameraData.values.statLevels[statId] >= this.cameraData.values.statLimits[statId]
+        });
     }
 
     public calculateLevelData() {
