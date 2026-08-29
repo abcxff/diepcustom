@@ -19,7 +19,12 @@
 import _Achievements from "./Achievements.json";
 import Client from "../Client";
 import Writer from "../Coder/Writer";
-import { ClientBound } from "./Enums";
+import { ClientBound, Tank } from "./Enums";
+import { DevTank } from "./DevTankDefinitions";
+
+const OP_EQUALS = 0;
+const OP_GTE = 1;
+const OP_LTE = 2;
 
 /** The event types achievements can have */
 export type eventId = "kill" | "score" | "levelUp" | "statUpgraded" | "classChange" | "latency";
@@ -37,28 +42,39 @@ export interface AchievementDefinition {
     desc: string;
     /** Conditions needed to unlock */
     conds: AchievementCondition[];
-    /** Achievement hash which is send to clients */
+    /** Achievement hash which is sent to clients */
     hash: string;
 }
 
 export interface AchievementTags {
+    /** Current value */
     "value"?: string | number;
+    /** Total value */
     "total"?: string | number;
     /** Value change */
     "delta"?: string | number;
     /** Tank ID */
-    "class"?: number;
+    "class"?: Tank | DevTank;
     /** Tank level */
     "level"?: number;
     /** Stat ID */
     "id"?: number;
     /** Is max stat level */
     "isMaxLevel"?: boolean;
+    /** Used for ramming case */
     "weapon.isTank"?: boolean;
+    /** Was the victim a tank? */
     "victim.isTank"?: boolean;
+    /** Was the victim a boss? */
     "victim.isBoss"?: boolean;
+    /** Was the victim a shiny shape? */
     "victim.isShiny"?: boolean;
+    /** Victim tank ID */
+    "victim.class"?: Tank | DevTank;
+    /** Victim mob ID */
     "victim.arenaMobID"?: string | null;
+    /** Created during parsing */
+    "op"?: number | null;
 }
 
 export interface AchievementCondition {
@@ -68,7 +84,7 @@ export interface AchievementCondition {
     threshold?: number;
 }
 
-// From https://github.com/jtpio/murmurhash2
+/** From https://github.com/jtpio/murmurhash2 */
 export const MurMurHash2 = (str: string, seed: number): number => {
     const m = 0x5bd1e995;
     const encoder = new TextEncoder();
@@ -119,10 +135,41 @@ export const createAchievementHash = (a: AchievementDefinition) => {
     return `${MurMurHash2(a.name, nameSeed).toString(16)}${MurMurHash2(a.desc, descSeed).toString(16)}_1`;
 }
 
+export const compileConds = (conds: AchievementCondition[]) => {
+    for (const c of conds) {
+        const tags = c.tags;
+
+        for (const key in tags) {
+            const value = tags[key as keyof AchievementTags] as string;
+
+            if (key === "total" || key === "value" || key === "delta") {
+                tags[key] = parseInt(value.slice(2));
+                const op = value.slice(0, 2);
+
+                switch (op) {
+                    case "==":
+                        tags.op = OP_EQUALS;
+                        break;
+                    case ">=":
+                        tags.op = OP_GTE;
+                        break;
+                    case "<=":
+                        tags.op = OP_LTE;
+                        break;
+                    default: throw new Error(`Invalid operation: ${op}`);
+                }
+            }
+        }
+    }
+
+    return conds;
+}
+
 export const compileAchievement = (a: AchievementDefinition) => {
     return {
         ...a,
-        hash: createAchievementHash(a)
+        hash: createAchievementHash(a),
+        conds: compileConds(a.conds)
     }
 }
 
@@ -146,7 +193,7 @@ export const achievementEventMap = Achievements.reduce((map, a) => {
 
 export const sendAchievementEvent = (client: Client, event: eventId, data: AchievementTags) => {
     const completed = [];
-    
+
     const achievements = achievementEventMap.get(event);
 
     for (const a of achievements) {
@@ -163,27 +210,29 @@ export const sendAchievementEvent = (client: Client, event: eventId, data: Achie
 export const checkCondition = (achievement: AchievementDefinition, data: AchievementTags) => {
     const conds = achievement.conds;
 
-    return conds.every(condition => parseTags(condition.tags ?? {}, data));
+    return conds.every(condition => parseTags(condition.tags, data));
 }
 
-export const parseTags = (tags: AchievementTags, data: AchievementTags): boolean => {
+export const parseTags = (tags: AchievementTags | null, data: AchievementTags): boolean => {
+    if (!tags) return true;
+
     for (const key in tags) {
-        const value = tags[key as keyof AchievementTags] as string;
+        const value = tags[key as keyof AchievementTags];
+        if (!value) continue;
 
         if (key === "total" || key === "value" || key === "delta") {
-            const op = value.charCodeAt(0);
-            const v = parseInt(value.slice(2));
-            const dataValue = data[key as keyof AchievementTags]!;
+            const op = tags.op;
+            const givenValue = data[key as keyof AchievementTags]!;
 
             switch (op) {
-                case 61: // ==
-                    if (dataValue !== v) return false;
+                case OP_EQUALS: // ==
+                    if (givenValue === value) return true;
                     break;
-                case 62: // >=
-                    if (dataValue < v) return false;
+                case OP_GTE: // >=
+                    if (givenValue > value) return true;
                     break;
-                case 60: // <=
-                    if (dataValue > v) return false;
+                case OP_LTE: // <=
+                    if (givenValue <= value) return true;
                     break;
                 default:
                     throw new Error(`Invalid operation: ${op}`);
@@ -197,7 +246,6 @@ export const parseTags = (tags: AchievementTags, data: AchievementTags): boolean
 
     return true;
 }
-
 
 export const sendAchievements = (client: Client, hashes: string[]) => {
     if (client.terminated) return;
