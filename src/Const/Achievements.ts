@@ -22,6 +22,9 @@ import Writer from "../Coder/Writer";
 import { ClientBound, Tank } from "./Enums";
 import { DevTank } from "./DevTankDefinitions";
 
+const NAME_SEED = 170;
+const DESC_SEED = 221;
+
 const OP_EQUALS = 0;
 const OP_GTE = 1;
 const OP_LTE = 2;
@@ -129,10 +132,7 @@ export const MurMurHash2 = (str: string, seed: number): number => {
 }
 
 export const createAchievementHash = (a: AchievementDefinition) => {
-    const nameSeed = 170;
-    const descSeed = 221;
-
-    return `${MurMurHash2(a.name, nameSeed).toString(16)}${MurMurHash2(a.desc, descSeed).toString(16)}_1`;
+    return `${MurMurHash2(a.name, NAME_SEED).toString(16)}${MurMurHash2(a.desc, DESC_SEED).toString(16)}_1`;
 }
 
 export const compileConds = (conds: AchievementCondition[]) => {
@@ -217,8 +217,7 @@ export const parseTags = (tags: AchievementTags | null, data: AchievementTags): 
     if (!tags) return true;
 
     for (const key in tags) {
-        const value = tags[key as keyof AchievementTags];
-        if (!value) continue;
+        const value = tags[key as keyof AchievementTags]!;
 
         if (key === "total" || key === "value" || key === "delta") {
             const op = tags.op;
@@ -232,10 +231,8 @@ export const parseTags = (tags: AchievementTags | null, data: AchievementTags): 
                     if (givenValue > value) return true;
                     break;
                 case OP_LTE: // <=
-                    if (givenValue <= value) return true;
+                    if (givenValue < value) return true;
                     break;
-                default:
-                    throw new Error(`Invalid operation: ${op}`);
             }
         } else {
             if (data[key as keyof AchievementTags] !== value) {
