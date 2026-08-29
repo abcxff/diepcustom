@@ -194,8 +194,16 @@ export default class TankBody extends LivingEntity implements BarrelBase {
     }
     /** See LivingEntity.onKill */
     public onKill(entity: LivingEntity, weapon?: LivingEntity) {
+        if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) {
+            this.cameraEntity.addScore(entity.scoreReward);
+        }
+
         const client = this.cameraEntity.getClient();
         if (client) {
+            if (entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName)) {
+                client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
+            }
+
             sendAchievementEvent(client, "kill", {
                 "weapon.isTank": !weapon,
                 "victim.arenaMobID": entity.arenaMobID,
@@ -203,13 +211,6 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 "victim.isBoss": AbstractBoss.isBoss(entity),
                 "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
             });
-        }
-
-        if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) this.cameraEntity.addScore(entity.scoreReward);
-
-        if ((entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName))) {
-            const client = this.cameraEntity.getClient();
-            if (client) client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
         }
 
         // TODO(ABC):
