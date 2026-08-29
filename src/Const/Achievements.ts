@@ -36,7 +36,7 @@ export type eventId = "kill" | "score" | "levelUp" | "statUpgraded" | "classChan
 export type achievementType = "counter";
 
 /**
- * Format that the game stores bullet definitions in its memory.
+ * Format that the game stores achievements in its memory.
  */
 export interface AchievementDefinition {
     /** Achievement name */
