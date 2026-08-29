@@ -53,7 +53,7 @@ import { Entity, EntityStateFlags } from "../Native/Entity";
 import { saveToVLog } from "../util";
 import { ClientBound, Stat, StatCount, PhysicsFlags, StyleFlags, Tank } from "./Enums";
 import { getTankByName } from "./TankDefinitions";
-import { sendAchievements, achievementHashMap, getAchievementByName } from "./Achievements";
+import { sendAchievements, getAchievementByName } from "./Achievements";
 
 const RELATIVE_POS_REGEX = new RegExp(/~(-?\d+)?/);
 
@@ -337,9 +337,8 @@ export const commandCallbacks = {
     game_achievement: (client: Client, nameArg: string) => {
         const achievement = getAchievementByName(nameArg);
         if (!achievement) return;
-        
-        const hash = achievementHashMap.get(achievement);
-        sendAchievements(client, [hash]);
+
+        sendAchievements(client, [achievement.hash]);
     },
     admin_summon: (client: Client, entityArg: string, countArg?: string, xArg?: string, yArg?: string) => {
         const count = countArg ? parseInt(countArg) : 1;

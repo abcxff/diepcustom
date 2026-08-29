@@ -37,6 +37,8 @@ export interface AchievementDefinition {
     desc: string;
     /** Conditions needed to unlock */
     conds: AchievementCondition[];
+    /** Achievement hash which is send to clients */
+    hash: string;
 }
 
 export interface AchievementTags {
@@ -65,9 +67,6 @@ export interface AchievementCondition {
     tags: AchievementTags;
     threshold?: number;
 }
-
-const Achievements = _Achievements as AchievementDefinition[];
-export default Achievements;
 
 // From https://github.com/jtpio/murmurhash2
 export const MurMurHash2 = (str: string, seed: number): number => {
@@ -120,27 +119,45 @@ export const createAchievementHash = (a: AchievementDefinition) => {
     return `${MurMurHash2(a.name, nameSeed).toString(16)}${MurMurHash2(a.desc, descSeed).toString(16)}_1`;
 }
 
-export const achievementHashMap = Achievements.reduce((map, a) => {
-    map.set(a, createAchievementHash(a));
+export const compileAchievement = (a: AchievementDefinition) => {
+    return {
+        ...a,
+        hash: createAchievementHash(a)
+    }
+}
+
+const Achievements = _Achievements.map(a => compileAchievement(a as AchievementDefinition));
+export default Achievements;
+
+export const achievementEventMap = Achievements.reduce((map, a) => {
+    for (const c of a.conds) {
+        const byEvent = map.get(c.event);
+        
+        if (!byEvent) {
+            map.set(c.event, [a]);
+            continue;
+        }
+        
+        byEvent.push(a);
+    }
+
     return map;
 }, new Map());
 
 export const sendAchievementEvent = (client: Client, event: eventId, data: AchievementTags) => {
-    console.time();
     const completed = [];
+    
+    const achievements = achievementEventMap.get(event);
 
-    for (const a of Achievements) {
-        if (a.conds.every(c => c.event !== event)) continue;
-
+    for (const a of achievements) {
         if (checkCondition(a, data)) {
-            completed.push(achievementHashMap.get(a));
+            completed.push(a.hash);
         }
     }
     
     if (completed.length) {
-        sendAchievements(client, completed);
+        client.giveAchievements(completed);
     }
-    console.timeEnd();
 }
 
 export const checkCondition = (achievement: AchievementDefinition, data: AchievementTags) => {
@@ -150,27 +167,37 @@ export const checkCondition = (achievement: AchievementDefinition, data: Achieve
 }
 
 export const parseTags = (tags: AchievementTags, data: AchievementTags): boolean => {
-    return Object.entries(tags).every(([key, value]) => {
+    for (const key in tags) {
+        const value = tags[key as keyof AchievementTags] as string;
+
         if (key === "total" || key === "value" || key === "delta") {
             const op = value.charCodeAt(0);
-            const v = value.slice(2);
+            const v = parseInt(value.slice(2));
             const dataValue = data[key as keyof AchievementTags]!;
 
             switch (op) {
                 case 61: // ==
-                    return dataValue == v;
+                    if (dataValue !== v) return false;
+                    break;
                 case 62: // >=
-                    return dataValue >= v;
+                    if (dataValue < v) return false;
+                    break;
                 case 60: // <=
-                    return dataValue <= v;
+                    if (dataValue > v) return false;
+                    break;
                 default:
                     throw new Error(`Invalid operation: ${op}`);
             }
+        } else {
+            if (data[key as keyof AchievementTags] !== value) {
+                return false;
+            }
         }
+    }
 
-        return data[key as keyof AchievementTags] === value;
-    });
+    return true;
 }
+
 
 export const sendAchievements = (client: Client, hashes: string[]) => {
     if (client.terminated) return;

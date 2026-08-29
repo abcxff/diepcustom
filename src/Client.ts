@@ -35,6 +35,7 @@ import { CameraFlags, ClientBound, ArenaFlags, InputFlags, NameFlags, ServerBoun
 import { AI, AIState, Inputs } from "./Entity/AI";
 import AbstractBoss from "./Entity/Boss/AbstractBoss";
 import { executeCommand } from "./Const/Commands";
+import { sendAchievements } from "./Const/Achievements";
 import { bannedClients } from ".";
 
 /** XORed onto the tank id in the Tank Upgrade packet. */
@@ -108,6 +109,9 @@ export default class Client {
     private devCheatsUsed: boolean = false;
     /** Wether or not the player is in godmode. */
     public isInvulnerable: boolean = false;
+
+    /** Achievements unlocked this tick */
+    private pendingAchievements: string[] = [];
 
     /** Returns a new writer stream connected to the socket. */
     public write() {
@@ -511,6 +515,10 @@ export default class Client {
         this.write().u8(ClientBound.Notification).stringNT(text).u32(color).float(time).stringNT(id).send();
     }
 
+    public giveAchievements(achievements: string[]) {
+        this.pendingAchievements.push(...achievements);
+    }
+
     /** Bans the ip from all servers until restart. */
     public ban() {
         const ws = this.ws;
@@ -543,7 +551,6 @@ export default class Client {
         const tank = camera.cameraData.player = camera.relationsData.owner = camera.relationsData.parent = new TankBody(this.game, camera, this.inputs);
         tank.setTank(Tank.Basic);
         tank.nameData.values.name = name;
-        this.game.arena.spawnPlayer(tank, this);
         camera.setLevel(camera.cameraData.values.respawnLevel);
 
         if (this.hasCheated()) this.setHasCheated(true);
@@ -553,6 +560,8 @@ export default class Client {
         camera.spectatee = null;
         this.inputs.isPossessing = false;
         this.inputs.movement.magnitude = 0;
+
+        this.game.arena.spawnPlayer(tank, this); // Should be last
     }
 
     public tick(tick: number) {
@@ -592,8 +601,15 @@ export default class Client {
             this.camera.cameraData.cameraX = this.camera.cameraData.cameraY = 0;
             this.camera.cameraData.flags &= ~CameraFlags.showingDeathStats;
         }
+
         if (tick >= this.lastPingTick + 60 * config.tps) {
             return this.terminate();
+        }
+        
+        if (this.pendingAchievements.length) {
+            sendAchievements(this, this.pendingAchievements);
+
+            this.pendingAchievements.length = 0;
         }
     }
     /** toString override from base Object. Adds debug info */
