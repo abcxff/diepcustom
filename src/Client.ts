@@ -329,7 +329,7 @@ export default class Client {
 
                         player.destroy();
                         player.onDeath(player);
-                        player.onKill(player);
+                        player.onKill(player, player);
                     }
                 }
 
