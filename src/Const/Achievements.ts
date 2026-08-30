@@ -250,7 +250,7 @@ export const sendAchievements = (client: Client, hashes: string[]) => {
     const w = client.write();
 
     w.u8(ClientBound.Achievement);
-    w.u8(hashes.length);
+    w.vu(hashes.length);
 
     for (let i = 0; i < hashes.length; ++i) {
         w.stringNT(hashes[i]);
