@@ -119,12 +119,12 @@ export default class LivingEntity extends ObjectEntity {
                 this.onDeath(killer);
             }
 
-            source.onKill(this);
+            source.onKill(this, source);
         }
     }
 
     /** Called when the entity kills another via collision. */
-    public onKill(entity: LivingEntity, weapon?: LivingEntity) {}
+    public onKill(entity: LivingEntity, weapon: LivingEntity) {}
 
     /** Called when the entity is killed via collision */
     public onDeath(killer: LivingEntity) {}

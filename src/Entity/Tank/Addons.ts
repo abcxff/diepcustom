@@ -175,9 +175,9 @@ export class GuardObject extends ObjectEntity implements BarrelBase {
      * Called (if ever) similarly to LivingEntity.onKill
      * Spreads onKill to owner
      */
-    public onKill(killedEntity: LivingEntity) {
+    public onKill(killedEntity: LivingEntity, weapon: LivingEntity) {
         if (!LivingEntity.isLive(this.owner)) return;
-        this.owner.onKill(killedEntity);
+        this.owner.onKill(killedEntity, weapon);
     }
 
     public tick(tick: number): void {

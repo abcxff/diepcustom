@@ -120,8 +120,8 @@ export default class AutoTurret extends ObjectEntity {
      * Called similarly to LivingEntity.onKill
      * Spreads onKill to owner
      */
-    public onKill(killedEntity: LivingEntity) {
-        (this.owner as unknown as LivingEntity)?.onKill?.(killedEntity);
+    public onKill(killedEntity: LivingEntity, weapon: LivingEntity) {
+        (this.owner as unknown as LivingEntity)?.onKill?.(killedEntity, weapon);
     }
 
     public tick(tick: number) {
