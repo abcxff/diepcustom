@@ -109,7 +109,7 @@ export default class ObjectEntity extends Entity {
     public velocity = new Vector();
 
     /** Percent of accel applied when dying. */
-    public deathAccelFactor = 0.5;
+    public deathAccelFactor = 0.9;
 
     /** For internal spatial hash grid */
     private _queryId: number = -1;
