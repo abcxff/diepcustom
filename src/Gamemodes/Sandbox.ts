@@ -49,6 +49,7 @@ export default class SandboxArena extends ArenaEntity {
 
         this.arenaData.values.flags |= ArenaFlags.canUseCheats;
         this.state = ArenaState.OPEN; // Sandbox should start instantly, no countdown
+        this.disableAchievements = true;
 
         this.setSandboxArenaSize(0);
     }
