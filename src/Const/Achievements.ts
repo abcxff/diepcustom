@@ -77,8 +77,6 @@ export interface AchievementTags {
     "victim.class"?: Tank | DevTank;
     /** Victim mob ID */
     "victim.arenaMobID"?: string | null;
-    /** Created during parsing */
-    "op"?: number | null;
 }
 
 export interface AchievementCondition {
@@ -86,6 +84,8 @@ export interface AchievementCondition {
     type?: achievementType;
     tags: AchievementTags;
     threshold?: number;
+    /** Created during parsing */
+    op?: number | null;
 }
 
 /** From https://github.com/jtpio/murmurhash2 */
@@ -149,13 +149,13 @@ export const compileConds = (conds: AchievementCondition[]) => {
 
                 switch (op) {
                     case "==":
-                        tags.op = OP_EQUALS;
+                        c.op = OP_EQUALS;
                         break;
                     case ">=":
-                        tags.op = OP_GTE;
+                        c.op = OP_GTE;
                         break;
                     case "<=":
-                        tags.op = OP_LTE;
+                        c.op = OP_LTE;
                         break;
                     default: throw new Error(`Invalid operation: ${op}`);
                 }
@@ -213,28 +213,29 @@ export const sendAchievementEvent = (client: Client, event: eventId, data: Achie
 const checkCondition = (achievement: AchievementDefinition, data: AchievementTags) => {
     const conds = achievement.conds;
 
-    return conds.every(condition => parseTags(condition.tags, data));
+    return conds.every(condition => parseCondition(condition, data));
 }
 
-const parseTags = (tags: AchievementTags | null, data: AchievementTags): boolean => {
-    if (!tags) return true;
+const parseCondition = (conds: AchievementCondition | null, data: AchievementTags): boolean => {
+    if (!conds) return true;
 
+    const tags = conds.tags
     for (const key in tags) {
         const value = tags[key as keyof AchievementTags]!;
 
         if (key === "total" || key === "value" || key === "delta") {
-            const op = tags.op;
+            const op = conds.op;
             const givenValue = data[key as keyof AchievementTags]!;
 
             switch (op) {
                 case OP_EQUALS: // ==
-                    if (givenValue === value) return true;
+                    if (givenValue !== value) return false;
                     break;
                 case OP_GTE: // >=
-                    if (givenValue > value) return true;
+                    if (givenValue < value) return false;
                     break;
                 case OP_LTE: // <=
-                    if (givenValue < value) return true;
+                    if (givenValue > value) return false;
                     break;
             }
         } else {
