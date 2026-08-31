@@ -104,7 +104,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
 
         this.entityTags |= EntityTags.isTank;
     }
-    
+
     public static isTank(entity: Entity | null | undefined): entity is TankBody {
         if (!ObjectEntity.isObject(entity)) return false;
 
@@ -180,9 +180,10 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         // Yeah, yeah why not
         this.cameraEntity.cameraData.tankOverride = tank.name;
         camera.setFieldFactor(tank.fieldFactor);
-        
+
         this.scale(1); // Update addons and etc
         this.calculateStatData(); // Re-calculate everything once this is done
+
         const client = camera.getClient();
         if (client) {
             if (tank.upgradeMessage) client.notify(tank.upgradeMessage, 0x000000, 10000);
@@ -194,6 +195,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             }
         }
     }
+
     /** See LivingEntity.onKill */
     public onKill(entity: LivingEntity, weapon: LivingEntity) {
         if (Entity.exists(this.cameraEntity.cameraData.values.player) && entity !== this) {
@@ -203,9 +205,9 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         const client = this.cameraEntity.getClient();
         if (client) {
             if (entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName)) {
-                client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
+                client.notify(`You've killed ${(entity.nameData.values.name || "an unnamed tank")}`);
             }
-            
+
             if (enableAchievements && !this.game.arena.disableAchievements) {
                 const victimIsTank = TankBody.isTank(entity);
 
@@ -248,7 +250,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         if (this.styleData.flags & StyleFlags.isFlashing) this.styleData.flags ^= StyleFlags.isFlashing;
 
         if (this.isInvulnerable === invulnerable) return;
-      
+
         if (invulnerable) {
             this.damageReduction = 0.0;
             this.physicsData.absorbtionFactor = 0.0;
@@ -256,7 +258,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             this.damageReduction = 1.0;
             this.physicsData.absorbtionFactor = this.definition.absorbtionFactor;
         }
-      
+
         this.isInvulnerable = invulnerable;
     }
 
@@ -273,7 +275,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         super.receiveDamage(source, amount);
 
     }
-    
+
     public calculateStatData() {
         // Body damage
         this.damagePerTick = this.cameraEntity.cameraData.statLevels[Stat.BodyDamage] + 5 + (this.definition.bodyDamage ?? 0);
@@ -295,7 +297,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         // Movement speed
         this.cameraEntity.cameraData.movementSpeed =
         this.definition.speed * 2.55 * Math.pow(1.07, this.cameraEntity.cameraData.values.statLevels.values[Stat.MovementSpeed]) / Math.pow(1.015, this.cameraEntity.cameraData.values.level - 1);
-        
+
         for (const barrel of this.barrels) barrel.calculateStatData();
     }
 
@@ -353,6 +355,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             this.healthData.health -= 2 + this.healthData.values.maxHealth / 500;
 
             if (this.isInvulnerable) this.setInvulnerability(false);
+
             if (this.styleData.values.flags & StyleFlags.isFlashing) {
                 this.styleData.flags ^= StyleFlags.isFlashing;
                 this.damageReduction = 1.0;
@@ -371,10 +374,10 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         } else if (this.cameraEntity.cameraData.values.flags & CameraFlags.usesCameraCoords) this.cameraEntity.cameraData.flags ^= CameraFlags.usesCameraCoords;
 
         if (this.definition.flags.invisibility) {
-
             if (this.inputs.flags & InputFlags.leftclick) this.styleData.opacity += this.definition.visibilityRateShooting;
+
             if (this.inputs.flags & (InputFlags.up | InputFlags.down | InputFlags.left | InputFlags.right) || this.inputs.movement.x || this.inputs.movement.y) this.styleData.opacity += this.definition.visibilityRateMoving;
-           
+
             this.styleData.opacity -= this.definition.invisibilityRate;
 
             this.styleData.opacity = util.constrain(this.styleData.values.opacity, 0, 1);
@@ -395,6 +398,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             x: this.inputs.movement.x * this.cameraEntity.cameraData.values.movementSpeed,
             y: this.inputs.movement.y * this.cameraEntity.cameraData.values.movementSpeed
         });
+
         this.inputs.movement.set({
             x: 0,
             y: 0
