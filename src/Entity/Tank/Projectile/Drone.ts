@@ -40,6 +40,9 @@ export default class Drone extends Bullet {
 
     /** Cached prop of the definition. */
     protected canControlDrones: boolean;
+    
+    /** Percent of accel applied when dying. */
+    public deathAccelFactor = 1.0;
 
     public constructor(barrel: Barrel, tank: BarrelBase, tankDefinition: TankDefinition | null, shootAngle: number) {
         super(barrel, tank, tankDefinition, shootAngle);

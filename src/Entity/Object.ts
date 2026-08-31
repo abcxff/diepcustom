@@ -48,6 +48,8 @@ class DeletionAnimation {
                 return;
             }
             case 5:
+                // when being deleted, entities slow down half speed
+                this.entity.velocity.magnitude *= this.entity.deathAccelFactor;
                 this.entity.styleData.opacity = 1 - (1 / 6);
             default:
                 this.entity.scale(1.1);
@@ -105,6 +107,9 @@ export default class ObjectEntity extends Entity {
 
     /** Velocity used for physics. */
     public velocity = new Vector();
+
+    /** Percent of accel applied when dying. */
+    public deathAccelFactor = 0.5;
 
     /** For internal spatial hash grid */
     private _queryId: number = -1;
@@ -273,8 +278,7 @@ export default class ObjectEntity extends Entity {
     /** Internal physics method used for calculating the current position of the object. */
     public applyPhysics() {
         if (this.velocity.magnitude < 0.01) this.velocity.magnitude = 0;
-        // when being deleted, entities slow down half speed
-        else if (this.deletionAnimation) this.velocity.magnitude /= 2;
+
         this.positionData.x += this.velocity.x;
         this.positionData.y += this.velocity.y;
 

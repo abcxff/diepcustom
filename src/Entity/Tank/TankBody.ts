@@ -217,6 +217,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                     "victim.isTank": victimIsTank,
                     "victim.isBoss": AbstractBoss.isBoss(entity),
                     "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
+                    "class": this.currentTank,
                     "victim.class": victimIsTank ? entity.currentTank : -1
                 });
             }

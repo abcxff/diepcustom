@@ -37,7 +37,7 @@ export default class Bullet extends LivingEntity {
     /** Starting velocity of the bullet. */
     protected baseSpeed = 0;
     /** Percent of accel applied when dying. */
-    protected deathAccelFactor = 0.5;
+    public deathAccelFactor = 0.5;
     /** Life length in ticks before the bullet dies. */
     protected lifeLength = 0;
     /** Angle the projectile is shot at. */
