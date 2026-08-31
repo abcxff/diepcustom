@@ -52,6 +52,9 @@ export const shinyChance: number = 1 / 1_000_000;
 /** Chance for a player to spawn out of an allied factory. */
 export const factorySpawnChance: number = 0.05;
 
+/** Enable achievement event system. */
+export const enableAchievements: boolean = true;
+
 /** Is hosting a rest api */
 export const enableApi: boolean = true;
 
