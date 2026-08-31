@@ -126,7 +126,7 @@ export class CameraEntity extends Entity {
 
         this.calculateLevelData();
 
-        if (!enableAchievements && !this.game.arena.disableAchievements) return;
+        if (!enableAchievements || this.game.arena.disableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
@@ -145,7 +145,7 @@ export class CameraEntity extends Entity {
     
         if (TankBody.isTank(player)) player.calculateStatData();
 
-        if (!enableAchievements && !this.game.arena.disableAchievements) return;
+        if (!enableAchievements || this.game.arena.disableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
