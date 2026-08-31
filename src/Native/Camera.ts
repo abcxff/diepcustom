@@ -78,7 +78,7 @@ export class CameraEntity extends Entity {
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor ?? 1);
         this.calculateLevelData();
         
-        if (!enableAchievements) return;
+        if (!enableAchievements || this.game.arena.disableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
@@ -88,6 +88,7 @@ export class CameraEntity extends Entity {
             "class": this.cameraData.values.tank
         });
     }
+
     /** Returns the camera's client if it exists */
     public getClient(): Client | null {
         return null;
