@@ -21,6 +21,7 @@ import Client from "../Client";
 import Writer from "../Coder/Writer";
 import { ClientBound, Tank } from "./Enums";
 import { DevTank } from "./DevTankDefinitions";
+import { enableAchievements } from "../config";
 
 const NAME_SEED = 170;
 const DESC_SEED = 221;
@@ -192,6 +193,8 @@ export const achievementEventMap = Achievements.reduce((map, a) => {
 }, new Map());
 
 export const sendAchievementEvent = (client: Client, event: eventId, data: AchievementTags) => {
+    if (!enableAchievements) return;
+
     const completed = [];
 
     const achievements = achievementEventMap.get(event);
@@ -207,13 +210,13 @@ export const sendAchievementEvent = (client: Client, event: eventId, data: Achie
     }
 }
 
-export const checkCondition = (achievement: AchievementDefinition, data: AchievementTags) => {
+const checkCondition = (achievement: AchievementDefinition, data: AchievementTags) => {
     const conds = achievement.conds;
 
     return conds.every(condition => parseTags(condition.tags, data));
 }
 
-export const parseTags = (tags: AchievementTags | null, data: AchievementTags): boolean => {
+const parseTags = (tags: AchievementTags | null, data: AchievementTags): boolean => {
     if (!tags) return true;
 
     for (const key in tags) {
