@@ -37,7 +37,7 @@ import { sendAchievementEvent } from "../../Const/Achievements";
 import { DevTank } from "../../Const/DevTankDefinitions";
 import { Inputs } from "../AI";
 import { ArenaState } from "../../Native/Arena";
-import { AccessLevel, maxPlayerLevel } from "../../config";
+import { AccessLevel, maxPlayerLevel, enableAchievements } from "../../config";
 
 /**
  * Abstract type of entity which barrels can connect to.
@@ -185,11 +185,13 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.calculateStatData(); // Re-calculate everything once this is done
         const client = camera.getClient();
         if (client) {
-            sendAchievementEvent(client, "classChange", {
-                "class": id
-            });
-
             if (tank.upgradeMessage) client.notify(tank.upgradeMessage, 0x000000, 10000);
+            
+            if (enableAchievements) {
+                sendAchievementEvent(client, "classChange", {
+                    "class": id
+                });
+            }
         }
     }
     /** See LivingEntity.onKill */
@@ -203,17 +205,19 @@ export default class TankBody extends LivingEntity implements BarrelBase {
             if (entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName)) {
                 client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
             }
+            
+            if (enableAchievements) {
+                const victimIsTank = TankBody.isTank(entity);
 
-            const victimIsTank = TankBody.isTank(entity);
-
-            sendAchievementEvent(client, "kill", {
-                "weapon.isTank": TankBody.isTank(weapon),
-                "victim.arenaMobID": entity.arenaMobID,
-                "victim.isTank": victimIsTank,
-                "victim.isBoss": AbstractBoss.isBoss(entity),
-                "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
-                "victim.class": victimIsTank ? entity.currentTank : -1
-            });
+                sendAchievementEvent(client, "kill", {
+                    "weapon.isTank": TankBody.isTank(weapon),
+                    "victim.arenaMobID": entity.arenaMobID,
+                    "victim.isTank": victimIsTank,
+                    "victim.isBoss": AbstractBoss.isBoss(entity),
+                    "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
+                    "victim.class": victimIsTank ? entity.currentTank : -1
+                });
+            }
         }
 
         // TODO(ABC):
