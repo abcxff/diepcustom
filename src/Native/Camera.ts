@@ -114,6 +114,7 @@ export class CameraEntity extends Entity {
         sendAchievementEvent(client, "score", {
             "total": this.cameraData.values.score,
             "delta": score,
+            "class": this.cameraData.values.tank
         });
     }
 
@@ -133,6 +134,7 @@ export class CameraEntity extends Entity {
         sendAchievementEvent(client, "score", {
             "total": this.cameraData.values.score,
             "delta": score,
+            "class": this.cameraData.values.tank
         });
     }
 
