@@ -204,12 +204,15 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
             }
 
+            const victimIsTank = TankBody.isTank(entity);
+
             sendAchievementEvent(client, "kill", {
                 "weapon.isTank": TankBody.isTank(weapon),
                 "victim.arenaMobID": entity.arenaMobID,
-                "victim.isTank": TankBody.isTank(entity),
+                "victim.isTank": victimIsTank,
                 "victim.isBoss": AbstractBoss.isBoss(entity),
                 "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
+                "victim.class": victimIsTank ? entity.currentTank : -1
             });
         }
 
