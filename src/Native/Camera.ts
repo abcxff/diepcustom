@@ -30,7 +30,7 @@ import { sendAchievementEvent } from "../Const/Achievements";
 import { removeFast } from "../util";
 
 import { compileCreation, compileUpdate } from "./UpcreateCompiler";
-import { maxPlayerLevel } from "../config";
+import { maxPlayerLevel, enableAchievements } from "../config";
 
 /**
  * Represents any entity with a camera field group.
@@ -78,6 +78,8 @@ export class CameraEntity extends Entity {
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor ?? 1);
         this.calculateLevelData();
         
+        if (!enableAchievements) return;
+
         const client = this.getClient();
         if (!client) return;
 
@@ -104,6 +106,8 @@ export class CameraEntity extends Entity {
 
         this.calculateLevelData();
         
+        if (!enableAchievements) return;
+
         const client = this.getClient();
         if (!client) return;
 
@@ -120,7 +124,9 @@ export class CameraEntity extends Entity {
         if (player?.scoreData) player.scoreData.score = score;
 
         this.calculateLevelData();
-        
+
+        if (!enableAchievements) return;
+
         const client = this.getClient();
         if (!client) return;
 
@@ -136,7 +142,9 @@ export class CameraEntity extends Entity {
         const player = this.cameraData.values.player;
     
         if (TankBody.isTank(player)) player.calculateStatData();
-        
+
+        if (!enableAchievements) return;
+
         const client = this.getClient();
         if (!client) return;
 
@@ -152,7 +160,9 @@ export class CameraEntity extends Entity {
         const player = this.cameraData.values.player;
     
         if (TankBody.isTank(player)) player.calculateStatData();
-        
+
+        if (!enableAchievements) return;
+
         const client = this.getClient();
         if (!client) return;
 
