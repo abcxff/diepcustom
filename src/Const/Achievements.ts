@@ -222,10 +222,10 @@ const parseCondition = (conds: AchievementCondition | null, data: AchievementTag
     const tags = conds.tags
     for (const key in tags) {
         const value = tags[key as keyof AchievementTags]!;
+        const givenValue = data[key as keyof AchievementTags]!;
 
         if (key === "total" || key === "value" || key === "delta") {
             const op = conds.op;
-            const givenValue = data[key as keyof AchievementTags]!;
 
             switch (op) {
                 case OP_EQUALS: // ==
@@ -239,7 +239,7 @@ const parseCondition = (conds: AchievementCondition | null, data: AchievementTag
                     break;
             }
         } else {
-            if (data[key as keyof AchievementTags] !== value) {
+            if (givenValue !== value) {
                 return false;
             }
         }
