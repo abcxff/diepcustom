@@ -205,7 +205,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         const client = this.cameraEntity.getClient();
         if (client) {
             if (entity.nameData && !(entity.nameData.values.flags & NameFlags.hiddenName)) {
-                client.notify(`You've killed ${(entity.nameData.values.name || "an unnamed tank")}`);
+                client.notify(`You've killed ${entity.nameData.values.name || "an unnamed tank"}`);
             }
 
             if (enableAchievements && !this.game.arena.disableAchievements) {
