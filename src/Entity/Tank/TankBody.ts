@@ -187,7 +187,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         if (client) {
             if (tank.upgradeMessage) client.notify(tank.upgradeMessage, 0x000000, 10000);
             
-            if (enableAchievements) {
+            if (enableAchievements && !this.game.arena.disableAchievements) {
                 sendAchievementEvent(client, "classChange", {
                     "class": id
                 });
@@ -206,7 +206,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 client.notify("You've killed " + (entity.nameData.values.name || "an unnamed tank"));
             }
             
-            if (enableAchievements) {
+            if (enableAchievements && !this.game.arena.disableAchievements) {
                 const victimIsTank = TankBody.isTank(entity);
 
                 sendAchievementEvent(client, "kill", {
