@@ -37,7 +37,7 @@ import { sendAchievementEvent } from "../../Const/Achievements";
 import { DevTank } from "../../Const/DevTankDefinitions";
 import { Inputs } from "../AI";
 import { ArenaState } from "../../Native/Arena";
-import { AccessLevel, maxPlayerLevel, enableAchievements } from "../../config";
+import { AccessLevel, maxPlayerLevel } from "../../config";
 
 /**
  * Abstract type of entity which barrels can connect to.
@@ -188,7 +188,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         if (client) {
             if (tank.upgradeMessage) client.notify(tank.upgradeMessage, 0x000000, 10000);
             
-            if (enableAchievements && !this.game.arena.disableAchievements) {
+            if (this.game.enableAchievements) {
                 sendAchievementEvent(client, "classChange", {
                     "class": id
                 });
@@ -208,7 +208,7 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 client.notify(`You've killed ${entity.nameData.values.name || "an unnamed tank"}`);
             }
 
-            if (enableAchievements && !this.game.arena.disableAchievements) {
+            if (this.game.enableAchievements) {
                 const victimIsTank = TankBody.isTank(entity);
 
                 sendAchievementEvent(client, "kill", {

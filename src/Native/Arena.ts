@@ -70,9 +70,6 @@ export default class ArenaEntity extends Entity implements TeamGroupEntity {
     public state: ArenaState = ArenaState.COUNTDOWN;
 
     public shapeScoreRewardMultiplier: number = 1;
-    
-    /** If achievements cannot be obtained in this arena */
-    public disableAchievements: boolean = false;
 
     /** The boss spawner. Set to null in gamemode file to disable boss spawning. */
     public bossManager: BossManager | null = new BossManager(this);

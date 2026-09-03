@@ -30,7 +30,7 @@ import { sendAchievementEvent } from "../Const/Achievements";
 import { removeFast } from "../util";
 
 import { compileCreation, compileUpdate } from "./UpcreateCompiler";
-import { maxPlayerLevel, enableAchievements } from "../config";
+import { maxPlayerLevel } from "../config";
 
 /**
  * Represents any entity with a camera field group.
@@ -78,7 +78,7 @@ export class CameraEntity extends Entity {
         this.setFieldFactor(getTankById(this.cameraData.values.tank)?.fieldFactor ?? 1);
         this.calculateLevelData();
         
-        if (!enableAchievements || this.game.arena.disableAchievements) return;
+        if (!this.game.enableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
@@ -107,7 +107,7 @@ export class CameraEntity extends Entity {
 
         this.calculateLevelData();
         
-        if (!enableAchievements && !this.game.arena.disableAchievements) return;
+        if (!this.game.enableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
@@ -127,7 +127,7 @@ export class CameraEntity extends Entity {
 
         this.calculateLevelData();
 
-        if (!enableAchievements || this.game.arena.disableAchievements) return;
+        if (!this.game.enableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
@@ -146,7 +146,7 @@ export class CameraEntity extends Entity {
     
         if (TankBody.isTank(player)) player.calculateStatData();
 
-        if (!enableAchievements || this.game.arena.disableAchievements) return;
+        if (!this.game.enableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;
@@ -164,7 +164,7 @@ export class CameraEntity extends Entity {
     
         if (TankBody.isTank(player)) player.calculateStatData();
 
-        if (!enableAchievements && !this.game.arena.disableAchievements) return;
+        if (!this.game.enableAchievements) return;
 
         const client = this.getClient();
         if (!client) return;

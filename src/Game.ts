@@ -32,6 +32,7 @@ import MothershipArena from "./Gamemodes/Mothership";
 import MazeArena from "./Gamemodes/Maze";
 import SandboxArena from "./Gamemodes/Sandbox";
 import { ClientBound } from "./Const/Enums";
+import { enableAchievements } from "./config";
 
 /**
  * WriterStream that broadcasts to all of the game's WebSockets.
@@ -92,6 +93,8 @@ export default class GameServer {
     public tick: number;
     /** The game's arena entity. */
     public arena: ArenaEntity;
+    /** If achievements can be earned on this game. */
+    public enableAchievements: boolean = enableAchievements;
     /** The interval timer of the tick loop. */
     private _tickInterval: NodeJS.Timeout;
     /** The Arena instantiator */
