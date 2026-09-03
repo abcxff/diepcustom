@@ -224,6 +224,10 @@ const parseCondition = (conds: AchievementCondition | null, data: AchievementTag
         const value = tags[key as keyof AchievementTags]!;
         const givenValue = data[key as keyof AchievementTags]!;
 
+        if (givenValue === undefined || givenValue === null) { // Just in case
+            return false;
+        }
+
         if (key === "total" || key === "value" || key === "delta") {
             const op = conds.op;
 
