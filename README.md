@@ -37,3 +37,7 @@ Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for information on contributing.
 ## License
 
 Please see [LICENSE](./LICENSE)
+
+## Derivative Works
+
+https://github.com/Maw-YT/luadiep
