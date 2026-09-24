@@ -24,7 +24,7 @@ import TankBody from "../Tank/TankBody";
 
 import { ClientBound, Color, PositionFlags, NameFlags, EntityTags } from "../../Const/Enums";
 import { VectorAbstract } from "../../Physics/Vector";
-import { AI, AIState, Inputs } from "../AI";
+import { AI, AIState, Inputs, PriorityLevel } from "../AI";
 import { NameGroup } from "../../Native/FieldGroups";
 import { Entity } from "../../Native/Entity";
 import { CameraEntity } from "../../Native/Camera";
@@ -127,6 +127,7 @@ export default class AbstractBoss extends LivingEntity {
 
         this.ai = new AI(this);
         this.ai.viewRange = 2000;
+        this.ai.doAimPrediction = true;
         this.ai['_findTargetInterval'] = 0;
         this.inputs = this.ai.inputs;
 
@@ -139,6 +140,8 @@ export default class AbstractBoss extends LivingEntity {
         this.reloadTime = 15 * Math.pow(0.914, 7);
 
         this.healthData.values.health = this.healthData.values.maxHealth = 3000;
+
+        this.aiPriority = PriorityLevel.Hostile;
 
         this.entityTags |= EntityTags.isBoss;
     }
@@ -182,7 +185,8 @@ export default class AbstractBoss extends LivingEntity {
         if (this.inputs !== this.ai.inputs) this.inputs = this.ai.inputs;
 
         this.ai.movementSpeed = this.movementSpeed;
-        
+        this.ai.aimSpeed = this.barrels[0]?.bulletAccel ?? 1;
+
         if (this.ai.state !== AIState.possessed) this.moveAroundMap();
         else {
             const x = this.positionData.values.x,

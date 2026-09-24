@@ -35,7 +35,7 @@ import { Addon, AddonById } from "./Addons";
 import { getTankById, TankDefinition, visibilityRateDamage } from "../../Const/TankDefinitions";
 import { sendAchievementEvent } from "../../Const/Achievements";
 import { DevTank } from "../../Const/DevTankDefinitions";
-import { Inputs } from "../AI";
+import { Inputs, PriorityLevel } from "../AI";
 import { ArenaState } from "../../Native/Arena";
 import { AccessLevel, maxPlayerLevel } from "../../config";
 
@@ -101,6 +101,8 @@ export default class TankBody extends LivingEntity implements BarrelBase {
         this.damagePerTick = 5;
         this.maxDamageMultiplier = 6;
         this.setTank(Tank.Basic);
+    
+        this.aiPriority = PriorityLevel.Hostile;
 
         this.entityTags |= EntityTags.isTank;
     }
@@ -212,13 +214,14 @@ export default class TankBody extends LivingEntity implements BarrelBase {
                 const victimIsTank = TankBody.isTank(entity);
 
                 sendAchievementEvent(client, "kill", {
-                    "weapon.isTank": TankBody.isTank(weapon),
+                    "weapon.isTank": weapon === this,
                     "victim.arenaMobID": entity.arenaMobID,
                     "victim.isTank": victimIsTank,
                     "victim.isBoss": AbstractBoss.isBoss(entity),
                     "victim.isShiny": !!(entity.entityTags & EntityTags.isShiny),
-                    "class": this.currentTank,
-                    "victim.class": victimIsTank ? entity.currentTank : -1
+                    // These exist but are unused by diep, uncomment if you need
+                    //"class": this.currentTank,
+                    //"victim.class": victimIsTank ? entity.currentTank : -1
                 });
             }
         }

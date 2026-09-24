@@ -23,6 +23,7 @@ import Vector from "../Physics/Vector";
 import { PhysicsGroup, PositionGroup, RelationsGroup, StyleGroup } from "../Native/FieldGroups";
 import { Entity } from "../Native/Entity";
 import { PositionFlags, PhysicsFlags, EntityTags } from "../Const/Enums";
+import { PriorityLevel } from "./AI";
 
 /**
  * The animator for how entities delete (the opacity and size fade out).
@@ -110,6 +111,9 @@ export default class ObjectEntity extends Entity {
 
     /** Percent of accel applied when dying. */
     public deathAccelFactor = 0.9;
+
+    /** AI target priority for this entity, makes drones and turret prioritize this entity over others. */
+    public aiPriority: PriorityLevel = PriorityLevel.Neutral;
 
     /** For internal spatial hash grid */
     private _queryId: number = -1;
@@ -341,6 +345,15 @@ export default class ObjectEntity extends Entity {
 
         this.isChild = true;
         this.isPhysical = false;
+    }
+
+    public getRootOwner(): ObjectEntity {
+        let owner: ObjectEntity = this;
+        while (ObjectEntity.isObject(owner.relationsData.values.owner) && owner.relationsData.values.owner.hash !== 0) {
+            owner = owner.relationsData.values.owner;
+        }
+
+        return owner;
     }
 
     /** Returns the true world position (even for objects who have parents). */

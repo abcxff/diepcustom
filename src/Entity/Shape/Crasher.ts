@@ -21,7 +21,7 @@ import LivingEntity from "../Live";
 import AbstractShape from "./AbstractShape";
 
 import { Color, PositionFlags } from "../../Const/Enums";
-import { AI, AIState } from "../AI";
+import { AI, AIState, PriorityLevel } from "../AI";
 import { tps } from "../../config";
 
 /**
@@ -57,8 +57,11 @@ export default class Crasher extends AbstractShape {
 
         this.ai = new AI(this);
         this.ai.viewRange = 2000;
+
         this.ai.aimSpeed = (this.ai.movementSpeed = this.targettingSpeed);
-        this.ai['_findTargetInterval'] = tps;
+        this.ai["_findTargetInterval"] = tps;
+        
+        this.aiPriority = PriorityLevel.Neutral;
 
         this.arenaMobID = "crasher";
     }

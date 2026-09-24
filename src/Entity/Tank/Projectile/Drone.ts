@@ -18,6 +18,8 @@
 
 import Barrel from "../Barrel";
 import Bullet from "./Bullet";
+import ObjectEntity from "../../Object";
+import LivingEntity from "../../Live";
 
 import { PhysicsFlags, StyleFlags } from "../../../Const/Enums";
 import { TankDefinition } from "../../../Const/TankDefinitions";
@@ -53,7 +55,8 @@ export default class Drone extends Bullet {
         
         this.ai = new AI(this);
         this.ai.viewRange = 900;
-        this.ai.targetFilter = (targetPos) => (targetPos.x - this.tank.positionData.values.x) ** 2 + (targetPos.y - this.tank.positionData.values.y) ** 2 <= this.ai.viewRange ** 2; // (1000 ** 2) 1000 radius
+        this.ai.stayAroundOwner = true;
+        //this.ai.ignoreShapes = this.barrelEntity.definition.ignoreShapes || false;
         this.canControlDrones = typeof this.barrelEntity.definition.canControlDrones === 'boolean' && this.barrelEntity.definition.canControlDrones;
         this.physicsData.values.sides = 3;
         if (this.physicsData.values.flags & PhysicsFlags.noOwnTeamCollision) this.physicsData.values.flags ^= PhysicsFlags.noOwnTeamCollision;
@@ -93,6 +96,12 @@ export default class Drone extends Bullet {
         super.tick(tick);
     }
 
+    public receiveDamage(source: LivingEntity, amount: number): void {
+        this.ai.onDamage(source, amount);
+
+        super.receiveDamage(source, amount);
+    }
+
     public tick(tick: number) {
         const usingAI = !this.canControlDrones || this.tank.inputs.deleted || (!this.tank.inputs.attemptingShot() && !this.tank.inputs.attemptingRepel());
         const inputs = !usingAI ? this.tank.inputs : this.ai.inputs;
@@ -130,8 +139,6 @@ export default class Drone extends Bullet {
             this.restCycle = false
         }
 
-
-        
         if (this.canControlDrones && inputs.attemptingRepel()) {
             this.positionData.angle += Math.PI; 
         }

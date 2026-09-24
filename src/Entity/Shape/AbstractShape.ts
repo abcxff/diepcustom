@@ -23,7 +23,7 @@ import LivingEntity from "../Live";
 import { Entity } from "../../Native/Entity";
 import { Color, PositionFlags, NameFlags, EntityTags } from "../../Const/Enums";
 import { NameGroup } from "../../Native/FieldGroups";
-import { AI } from "../AI";
+import { AI, PriorityLevel } from "../AI";
 import { normalizeAngle, PI2 } from "../../util";
 
 /**
@@ -76,6 +76,8 @@ export default class AbstractShape extends LivingEntity {
         this.orbitAngle = this.positionData.values.angle = (Math.random() * PI2);
         
         this.maxDamageMultiplier = 4.0;
+
+        this.aiPriority = PriorityLevel.Passive;
 
         this.entityTags |= EntityTags.isShape;
     }
