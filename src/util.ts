@@ -123,3 +123,10 @@ export const saveToLog = (title: string, description: string, color: number) => 
 export const saveToVLog = (text: string) => {
    if (doVerboseLogs) console.log("[v] " + text);
 }
+
+/**
+ * Returns a value inbetween 2 seperate numbers
+ */
+export const randomRange = (min: number, max: number): number => {
+    return min + ((max - min) * Math.random());
+}

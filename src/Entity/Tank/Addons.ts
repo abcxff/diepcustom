@@ -340,6 +340,7 @@ class PronouncedDomAddon extends Addon {
         pronounce.physicsData.values.sides = 2;
     }
 }
+
 /** Weird spike addon. Based on the arrasio Original. */
 class WeirdSpikeAddon extends Addon {
     public constructor(owner: BarrelBase) {
