@@ -337,7 +337,58 @@ Module.todo.push([() => {
     Module.status = "FETCH";
     // fetch necessary info and build
     return [
-        fetch(`${CDN}build_${BUILD}.wasm.wasm`).then(res => res.arrayBuffer()),
+        (async () => {
+            const url = `${CDN}build_${BUILD}.wasm.wasm`;
+            let cache;
+            try {
+                cache = await caches.open("diepcustom-wasm");
+                const hit = await cache.match(url);
+                if (hit) return await hit.arrayBuffer();
+            } catch (error) { console.warn("WASM cache unavailable", error); }
+
+            // A sandboxed frame sends Origin: null instead of the site's origin.
+            const buffer = await new Promise((resolve, reject) => {
+                const frame = document.createElement("iframe");
+                frame.hidden = true;
+                frame.setAttribute("sandbox", "allow-scripts");
+                const finish = data => {
+                    clearTimeout(timer);
+                    window.removeEventListener("message", onMessage);
+                    frame.remove();
+                    if (data instanceof ArrayBuffer) resolve(data);
+                    else {
+                        alert("Failed to load or verify the WASM build. Check the console for details.");
+                        reject(new Error(data?.error || "WASM fetch failed"));
+                    }
+                };
+                const onMessage = event => {
+                    if (event.source === frame.contentWindow && event.origin === "null") finish(event.data);
+                };
+                const timer = setTimeout(() => finish({ error: "WASM fetch timed out" }), 60000);
+                window.addEventListener("message", onMessage);
+                frame.srcdoc = `<script>
+                    fetch(${JSON.stringify(url).replace(/</g, "\\u003c")}, {
+                        integrity: ${JSON.stringify(BUILD_INTEGRITY)},
+                        credentials: "omit",
+                        referrerPolicy: "no-referrer",
+                        redirect: "error"
+                    }).then(response => {
+                        if (!response.ok) throw new Error("WASM HTTP " + response.status);
+                        return response.arrayBuffer();
+                    }).then(buffer => {
+                        parent.postMessage(buffer, "*", [buffer]);
+                    }).catch(error => {
+                        parent.postMessage({ error: String(error) }, "*");
+                    });
+                <\/script>`;
+                document.body.appendChild(frame);
+            });
+            try {
+                // Store the verified original bytes before Wail modifies them.
+                await cache?.put(url, new Response(buffer));
+            } catch (error) { console.warn("WASM could not be cached", error); }
+            return buffer;
+        })(),
         fetch(`${API_URL}servers`).then(res => res.json()),
         fetch(`${API_URL}tanks`).then(res => res.json())
     ];

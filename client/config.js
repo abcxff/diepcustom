@@ -17,6 +17,8 @@
 */
 
 const BUILD = "6f59094d60f98fafc14371671d3ff31ef4d75d9e";
+// Update this SHA-512 pin whenever BUILD changes.
+const BUILD_INTEGRITY = "sha512-wMsIkGuT5cbZoZqnzqJIRXmTOE1Tn4KP/XdiF40XobfJ6XVrgaiQNduF5USHoaut5p+X6a5rswWq8O4Ia9qXRw==";
 const CDN = "https://static.diep.io/";
 const API_URL = `${window.location.href}api/`;
 
