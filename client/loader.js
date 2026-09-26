@@ -341,14 +341,9 @@ Module.todo.push([() => {
             const url = `${CDN}build_${BUILD}.wasm.wasm`;
             let cache;
             try {
-                cache = await caches.open("diepcustom-wasm-v1");
+                cache = await caches.open("diepcustom-wasm");
                 const hit = await cache.match(url);
-                if (hit) {
-                    const buffer = await hit.arrayBuffer();
-                    const hash = await crypto.subtle.digest("SHA-512", buffer);
-                    if (`sha512-${btoa(String.fromCharCode(...new Uint8Array(hash)))}` === BUILD_INTEGRITY) return buffer;
-                    await cache.delete(url);
-                }
+                if (hit) return await hit.arrayBuffer();
             } catch (_) { /* Cache Storage may be unavailable. */ }
 
             // A sandboxed frame sends Origin: null instead of the site's origin.
