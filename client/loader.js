@@ -356,7 +356,10 @@ Module.todo.push([() => {
                     window.removeEventListener("message", onMessage);
                     frame.remove();
                     if (data instanceof ArrayBuffer) resolve(data);
-                    else reject(new Error(data?.error || "WASM fetch failed"));
+                    else {
+                        alert("Failed to load or verify the WASM build. Check the console for details.");
+                        reject(new Error(data?.error || "WASM fetch failed"));
+                    }
                 };
                 const onMessage = event => {
                     if (event.source === frame.contentWindow && event.origin === "null") finish(event.data);
