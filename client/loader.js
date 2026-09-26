@@ -344,7 +344,7 @@ Module.todo.push([() => {
                 cache = await caches.open("diepcustom-wasm");
                 const hit = await cache.match(url);
                 if (hit) return await hit.arrayBuffer();
-            } catch (_) { /* Cache Storage may be unavailable. */ }
+            } catch (error) { console.warn("WASM cache unavailable", error); }
 
             // A sandboxed frame sends Origin: null instead of the site's origin.
             const buffer = await new Promise((resolve, reject) => {
@@ -383,7 +383,7 @@ Module.todo.push([() => {
             try {
                 // Store the verified original bytes before Wail modifies them.
                 await cache?.put(url, new Response(buffer));
-            } catch (_) { /* A full or disabled cache must not prevent loading. */ }
+            } catch (error) { console.warn("WASM could not be cached", error); }
             return buffer;
         })(),
         fetch(`${API_URL}servers`).then(res => res.json()),
